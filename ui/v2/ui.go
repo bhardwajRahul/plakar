@@ -38,7 +38,7 @@ type UiOptions struct {
 	Token          string
 }
 
-//go:embed frontend/*
+//go:embed all:frontend/*
 var content embed.FS
 
 func Ui(repo *repository.Repository, ctx *appcontext.AppContext, addr string, opts *UiOptions) error {
