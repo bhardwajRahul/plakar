@@ -53,8 +53,7 @@ The subcommands are as follows:
 
 > The
 > **-config**
-> option specifies a file or URL to read the configuration from
-> (e.g., *./sources.yaml*).
+> option specifies a file or URL to read the configuration from.
 
 > The
 > **-overwrite**
@@ -69,7 +68,7 @@ The subcommands are as follows:
 > Specific sections can be imported by listing their names.
 
 > Sections can be renamed during import by appending
-> *file ...*:*newname*.
+> **:**&zwnj;*newname*.
 
 > For detailed examples and usage patterns, see the
 > [https://docs.plakar.io/en/guides/importing-configurations/](https://docs.plakar.io/en/guides/importing-configurations/)
