@@ -72,7 +72,7 @@ The subcommands are as follows:
 
 > For detailed examples and usage patterns, see the
 > [https://docs.plakar.io/en/guides/importing-configurations/](https://docs.plakar.io/en/guides/importing-configurations/)
-> "Importing Configurations"
+> Importing Configurations
 > guide.
 
 **ping** *name*
