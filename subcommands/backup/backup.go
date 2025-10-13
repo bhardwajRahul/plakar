@@ -104,9 +104,6 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
 	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
 	flags.Var(locate.NewTimeFlag(&cmd.ForcedTimestamp), "force-timestamp", "force a timestamp")
-	flags.StringVar(&cmd.PreHook, "pre-hook", "", "command to execute before backup")
-	flags.StringVar(&cmd.PostHook, "post-hook", "", "command to execute after successful backup")
-	flags.StringVar(&cmd.FailHook, "fail-hook", "", "command to execute after failed backup")
 	//flags.BoolVar(&opt_stdio, "stdio", false, "output one line per file to stdout instead of the default interactive output")
 	flags.Parse(args)
 
