@@ -24,6 +24,7 @@ func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 	backupSubcommand.Opts = make(map[string]string)
 	backupSubcommand.PreHook = task.PreHook
 	backupSubcommand.PostHook = task.PostHook
+	backupSubcommand.FailHook = task.FailHook
 	if task.Check.Enabled {
 		backupSubcommand.OptCheck = true
 	}

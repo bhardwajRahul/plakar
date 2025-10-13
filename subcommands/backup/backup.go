@@ -105,8 +105,6 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
 	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
 	flags.Var(locate.NewTimeFlag(&cmd.ForcedTimestamp), "force-timestamp", "force a timestamp")
-	flags.StringVar(&cmd.PreHook, "pre-hook", "", "command to execute before backup")
-	flags.StringVar(&cmd.PostHook, "post-hook", "", "command to execute after successful backup")
 	//flags.BoolVar(&opt_stdio, "stdio", false, "output one line per file to stdout instead of the default interactive output")
 	flags.Parse(args)
 
@@ -163,6 +161,7 @@ type Backup struct {
 	ForcedTimestamp     time.Time
 	PreHook             string
 	PostHook            string
+	FailHook            string
 }
 
 func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
@@ -253,6 +252,9 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 
 	if cmd.Silent {
 		if err := snap.Backup(imp, opts); err != nil {
+			if err := executeHook(ctx, cmd.FailHook); err != nil {
+				ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
+			}
 			return 1, fmt.Errorf("failed to create snapshot: %w", err), objects.MAC{}, nil
 		}
 	} else {
@@ -264,6 +266,9 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		ep := startEventsProcessor(ctx, root, true, cmd.Quiet)
 		if err := snap.Backup(imp, opts); err != nil {
 			ep.Close()
+			if err := executeHook(ctx, cmd.FailHook); err != nil {
+				ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
+			}
 			return 1, fmt.Errorf("failed to create snapshot: %w", err), objects.MAC{}, nil
 		}
 		ep.Close()
@@ -292,6 +297,9 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		checkSnap.SetCheckCache(checkCache)
 
 		if err := checkSnap.Check("/", checkOptions); err != nil {
+			if err := executeHook(ctx, cmd.FailHook); err != nil {
+				ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
+			}
 			return 1, fmt.Errorf("failed to check snapshot: %w", err), objects.MAC{}, nil
 		}
 	}
