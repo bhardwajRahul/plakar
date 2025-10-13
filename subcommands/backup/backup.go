@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -352,7 +353,15 @@ func executeHook(ctx *appcontext.AppContext, hook string) error {
 		return nil
 	}
 	ctx.GetLogger().Info("executing hook: %s", hook)
-	cmd := exec.Command("sh", "-c", hook)
+
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/C", hook)
+	default: // assume unix-esque
+		cmd = exec.Command("/bin/sh", "-c", hook)
+	}
+
 	cmd.Stdout = ctx.Stdout
 	cmd.Stderr = ctx.Stderr
 	return cmd.Run()
