@@ -88,6 +88,8 @@ func (cmd *Prune) Parse(ctx *appcontext.AppContext, args []string) error {
 
 // override values in "from" if it is set in "to"
 func mergePolicyOptions(to *locate.LocateOptions, from *locate.LocateOptions) {
+	to.Filters = from.Filters
+
 	merge := func(a, b *locate.LocatePeriod) {
 		if b.Keep != 0 {
 			a.Keep = b.Keep
