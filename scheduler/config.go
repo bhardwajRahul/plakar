@@ -44,6 +44,7 @@ type BackupConfig struct {
 	IgnoreFile string `yaml:"ignoreFile"`
 	PreHook    string `yaml:"preHook"`
 	PostHook   string `yaml:"postHook"`
+	FailHook   string `yaml:"failHook"`
 }
 
 // CheckDecodeHook is a mapstructure decode hook to allow users to specify
