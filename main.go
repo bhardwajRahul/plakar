@@ -121,6 +121,7 @@ func entryPoint() int {
 	var opt_agentless bool
 	var opt_enableSecurityCheck bool
 	var opt_disableSecurityCheck bool
+	var opt_cachememsize int
 
 	flag.StringVar(&opt_configdir, "config", opt_configDefault, "configuration directory")
 	flag.IntVar(&opt_cpuCount, "cpu", opt_cpuDefault, "limit the number of usable cores")
@@ -131,6 +132,7 @@ func entryPoint() int {
 	flag.BoolVar(&opt_quiet, "quiet", false, "no output except errors")
 	flag.StringVar(&opt_keyfile, "keyfile", "", "use passphrase from key file when prompted")
 	flag.BoolVar(&opt_agentless, "no-agent", false, "run without agent")
+	flag.IntVar(&opt_cachememsize, "cache-mem-size", 128, "in-memory cache size in MB (default 128MB)")
 	flag.BoolVar(&opt_enableSecurityCheck, "enable-security-check", false, "enable update check")
 	flag.BoolVar(&opt_disableSecurityCheck, "disable-security-check", false, "disable update check")
 
@@ -184,8 +186,9 @@ func entryPoint() int {
 		fmt.Fprintf(os.Stderr, "%s: could not get cache directory: %s\n", flag.CommandLine.Name(), err)
 		return 1
 	}
+
 	ctx.CacheDir = cacheDir
-	ctx.SetCache(caching.NewManager(cacheDir))
+	ctx.SetCache(caching.NewManager(cacheDir, uint64(opt_cachememsize)))
 	defer ctx.GetCache().Close()
 
 	dataDir, err := utils.GetDataDir("plakar")
