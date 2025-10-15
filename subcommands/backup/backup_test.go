@@ -79,7 +79,7 @@ func generateFixtures(t *testing.T, bufOut *bytes.Buffer, bufErr *bytes.Buffer) 
 	require.NoError(t, err)
 
 	// create a repository
-	cache := caching.NewManager(tmpCacheDir, 0)
+	cache := caching.NewManager(tmpCacheDir)
 	ctx.SetCache(cache)
 	ctx.Client = "plakar-test/1.0.0"
 

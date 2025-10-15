@@ -45,7 +45,7 @@ func TestAuthMiddleware(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := appcontext.NewAppContext()
-	cache := caching.NewManager("/tmp/test_plakar", 0)
+	cache := caching.NewManager("/tmp/test_plakar")
 	defer cache.Close()
 	ctx.SetCache(cache)
 	ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
@@ -105,7 +105,7 @@ func Test_UnknownEndpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := appcontext.NewAppContext()
-	cache := caching.NewManager("/tmp/test_plakar", 0)
+	cache := caching.NewManager("/tmp/test_plakar")
 	defer cache.Close()
 	ctx.SetCache(cache)
 	ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))

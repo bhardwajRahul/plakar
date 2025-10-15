@@ -42,7 +42,7 @@ func _Test_RepositoryConfiguration(t *testing.T) {
 	lstore, err := storage.Create(ctx.GetInner(), map[string]string{"location": "mock:///test/location"}, wrappedConfig)
 	require.NoError(t, err, "creating storage")
 
-	cache := caching.NewManager("/tmp/test_plakar", 0)
+	cache := caching.NewManager("/tmp/test_plakar")
 	defer cache.Close()
 	ctx.SetCache(cache)
 	ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
@@ -320,7 +320,7 @@ func _Test_RepositorySnapshots(t *testing.T) {
 			require.NoError(t, err)
 
 			ctx := appcontext.NewAppContext()
-			cache := caching.NewManager("/tmp/test_plakar", 0)
+			cache := caching.NewManager("/tmp/test_plakar")
 			defer cache.Close()
 			ctx.SetCache(cache)
 			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
@@ -420,7 +420,7 @@ func _Test_RepositorySnapshotsErrors(t *testing.T) {
 			require.NoError(t, err)
 
 			ctx := appcontext.NewAppContext()
-			cache := caching.NewManager("/tmp/test_plakar", 0)
+			cache := caching.NewManager("/tmp/test_plakar")
 			defer cache.Close()
 			ctx.SetCache(cache)
 			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
@@ -495,7 +495,7 @@ func _Test_RepositoryStates(t *testing.T) {
 			require.NoError(t, err)
 
 			ctx := appcontext.NewAppContext()
-			cache := caching.NewManager("/tmp/test_plakar", 0)
+			cache := caching.NewManager("/tmp/test_plakar")
 			defer cache.Close()
 			ctx.SetCache(cache)
 			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
@@ -564,7 +564,7 @@ func _Test_RepositoryState(t *testing.T) {
 			require.NoError(t, err)
 
 			ctx := appcontext.NewAppContext()
-			cache := caching.NewManager("/tmp/test_plakar", 0)
+			cache := caching.NewManager("/tmp/test_plakar")
 			defer cache.Close()
 			ctx.SetCache(cache)
 			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
@@ -638,7 +638,7 @@ func Test_RepositoryStateErrors(t *testing.T) {
 			require.NoError(t, err)
 
 			ctx := appcontext.NewAppContext()
-			cache := caching.NewManager("/tmp/test_plakar", 0)
+			cache := caching.NewManager("/tmp/test_plakar")
 			defer cache.Close()
 			ctx.SetCache(cache)
 			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))

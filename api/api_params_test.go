@@ -324,7 +324,7 @@ func _TestSnapshotPathParam(t *testing.T) {
 			lstore, err := storage.Create(ctx.GetInner(), map[string]string{"location": c.location}, wrappedConfig)
 			require.NoError(t, err, "creating storage")
 
-			cache := caching.NewManager("mock:///tmp/test_plakar", 0)
+			cache := caching.NewManager("mock:///tmp/test_plakar")
 			defer cache.Close()
 			ctx.SetCache(cache)
 			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))

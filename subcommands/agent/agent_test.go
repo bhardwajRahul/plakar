@@ -51,7 +51,7 @@ func initContext(t *testing.T, bufout *bytes.Buffer, buferr *bytes.Buffer) (*app
 		ctx.Stdout = bufout
 		ctx.Stderr = buferr
 	}
-	cache := caching.NewManager(tmpCacheDir, 0)
+	cache := caching.NewManager(tmpCacheDir)
 	ctx.SetCache(cache)
 	ctx.MaxConcurrency = 1
 	ctx.Client = "plakar-test/1.0.0"
