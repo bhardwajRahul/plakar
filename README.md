@@ -21,6 +21,17 @@
 
 ## 🔄 Latest Release
 
+### **V1.0.5 - Minor Release: Refinements, Hooks, Build Improvements** *(October 15, 2025)*
+
+- **Build & Packaging Improvements**: Homebrew packaging fixed for macOS, added Windows builds, and multiple dependency updates for a more robust development environment.
+- **UI & Documentation Updates**: New social links, updated documentation, synced Plakar UI to latest revision, improved asset serving, and enhanced manual pages.
+- **Pipeline & Concurrency Tuning**: Adjusted backup pipeline concurrency for better stability and resource usage.
+- **Backup Hooks & Sync Enhancements**: Added pre-hook, post-hook, and fail-hook support for backup commands, including Windows compatibility. Introduced passphrase_cmd for sync operations.
+- **Maintenance & Internal Refinements**: Improved type safety, clearer messaging, better login clarifications, enhanced error handling, cache-mem-size parameter, and miscellaneous bug fixes.
+- **New Contributors**: Welcome to @pata27 for their first contribution!
+
+[📝 Release article](https://www.plakar.io/posts/2025-10-15/release-v1.0.5-refinements-hooks-build-improvements/)
+
 ### **V1.0.4 - Major Release: Plugins, Windows, Packages, Performance** *(September 16, 2025)*
 
 - **Pre-packaged binaries** for easy installs: `.deb`, `.rpm`, `.apk`, plus static tarballs.  
