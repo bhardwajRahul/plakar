@@ -9,6 +9,7 @@ jobs:
   test-apt:
     name: Test APT
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -35,6 +36,7 @@ jobs:
   test-rpm:
     name: Test RPM (Fedora)
     runs-on: ubuntu-latest
+    permissions: {}
     container: fedora:latest
     steps:
       - name: Install dependencies
@@ -63,6 +65,7 @@ jobs:
   test-homebrew:
     name: Test Homebrew (on Linux)
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Install dependencies
         run: |
@@ -85,6 +88,7 @@ jobs:
   test-homebrew-tap:
     name: Test Homebrew tap (on Linux)
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Install dependencies
         run: |
