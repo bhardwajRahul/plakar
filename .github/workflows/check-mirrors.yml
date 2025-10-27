@@ -1,0 +1,105 @@
+name: Test Plakar Package Installation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 11 * * *"
+
+jobs:
+  test-apt:
+    name: Test APT
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update system and install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl sudo gnupg2
+
+      - name: Add Plakar APT repository
+        run: |
+          curl -fsSL https://packages.plakar.io/keys/plakar.gpg | sudo gpg --dearmor -o /usr/share/keyrings/plakar.gpg
+          echo "deb [signed-by=/usr/share/keyrings/plakar.gpg] https://packages.plakar.io/deb stable main" | sudo tee /etc/apt/sources.list.d/plakar.list
+          sudo apt-get update
+
+      - name: Install Plakar
+        run: |
+          sudo apt-get install -y plakar
+
+      - name: Verify installation
+        run: |
+          plakar version || (echo "❌ Plakar failed to install correctly" && exit 1)
+
+  test-rpm:
+    name: Test RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y curl gnupg2
+
+      - name: Add Plakar RPM repository
+        run: |
+          cat <<EOF | tee /etc/yum.repos.d/plakar.repo
+          [plakar]
+          name=Plakar Repository
+          baseurl=https://packages.plakar.io/rpm/$(uname -m)/
+          enabled=1
+          gpgcheck=0
+          gpgkey=https://packages.plakar.io/keys/plakar.gpg
+          EOF
+
+      - name: Install Plakar
+        run: |
+          dnf install -y plakar
+
+      - name: Verify installation
+        run: |
+          plakar version || (echo "❌ Plakar failed to install correctly" && exit 1)
+
+  test-homebrew:
+    name: Test Homebrew (on Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential procps curl file git
+
+      - name: Install Homebrew
+        run: |
+          curl -fsSL -o install.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+          NONINTERACTIVE=1 bash install.sh
+
+      - name: Install Plakar
+        run: |
+          /home/linuxbrew/.linuxbrew/bin/brew install plakar
+
+      - name: Verify installation
+        run: |
+          /home/linuxbrew/.linuxbrew/bin/plakar version || (echo "❌ Plakar failed to install correctly" && exit 1)
+
+  test-homebrew-tap:
+    name: Test Homebrew tap (on Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential procps curl file git
+
+      - name: Install Homebrew
+        run: |
+          curl -fsSL -o install.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+          NONINTERACTIVE=1 bash install.sh
+
+      - name: Install Plakar
+        run: |
+          /home/linuxbrew/.linuxbrew/bin/brew install plakarkorp/tap/plakar
+
+      - name: Verify installation
+        run: |
+          /home/linuxbrew/.linuxbrew/bin/plakar version || (echo "❌ Plakar failed to install correctly" && exit 1)
