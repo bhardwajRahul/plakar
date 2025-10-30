@@ -329,6 +329,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 				"secret_access_key",
 				"passphrase",
 				"password",
+				"pass",
 				"token",
 				"client_id",
 				"client_secret",
