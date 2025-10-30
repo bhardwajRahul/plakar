@@ -1,7 +1,6 @@
 package restore
 
 import (
-	"github.com/PlakarKorp/kloset/events"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -14,24 +13,19 @@ var (
 func eventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) chan struct{} {
 	done := make(chan struct{})
 	go func() {
-		for event := range ctx.Events().Listen() {
-			switch event := event.(type) {
-			case events.PathError:
-				ctx.GetLogger().Warn("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
+		for event := range ctx.Events() {
+			switch event.Type {
+			case "snapshot.restore.path.error", "snapshot.restore.directory.error", "snapshot.restore.file.error":
+				snapshotID := event.Data["snapshot_id"].([]byte)
+				pathname := event.Data["path"].(string)
+				errorMessage := event.Data["error"].(string)
+				ctx.GetLogger().Warn("%x: KO %s %s: %s", snapshotID[:4], crossMark, pathname, errorMessage)
 
-			case events.DirectoryError:
-				ctx.GetLogger().Warn("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
-
-			case events.FileError:
-				ctx.GetLogger().Warn("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
-
-			case events.DirectoryOK:
+			case "snapshot.restore.path.ok", "snapshot.restore.directory.ok", "snapshot.restore.file.ok":
 				if !quiet {
-					ctx.GetLogger().Info("%x: OK %s %s", event.SnapshotID[:4], checkMark, event.Pathname)
-				}
-			case events.FileOK:
-				if !quiet {
-					ctx.GetLogger().Info("%x: OK %s %s", event.SnapshotID[:4], checkMark, event.Pathname)
+					snapshotID := event.Data["snapshot_id"].([]byte)
+					pathname := event.Data["path"].(string)
+					ctx.GetLogger().Info("%x: OK %s %s", snapshotID[:4], checkMark, pathname)
 				}
 			default:
 			}

@@ -2,7 +2,6 @@ package check
 
 import (
 	"github.com/PlakarKorp/plakar/appcontext"
-	"github.com/PlakarKorp/kloset/events"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -14,39 +13,54 @@ var (
 func eventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) chan struct{} {
 	done := make(chan struct{})
 	go func() {
-		for event := range ctx.Events().Listen() {
-			switch event := event.(type) {
-			case events.DirectoryMissing:
-				ctx.GetLogger().Warn("%x: %s %s: missing directory", event.SnapshotID[:4], crossMark, event.Pathname)
-			case events.FileMissing:
-				ctx.GetLogger().Warn("%x: %s %s: missing file", event.SnapshotID[:4], crossMark, event.Pathname)
-			case events.ObjectMissing:
-				ctx.GetLogger().Warn("%x: %s %x: missing object", event.SnapshotID[:4], crossMark, event.MAC)
-			case events.ChunkMissing:
-				ctx.GetLogger().Warn("%x: %s %x: missing chunk", event.SnapshotID[:4], crossMark, event.MAC)
+		for event := range ctx.Events() {
+			switch event.Type {
+			case "snapshot.check.directory.missing":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				pathname := event.Data["path"].(string)
+				ctx.GetLogger().Warn("%x: %s %s: missing directory", snapshotID[:4], crossMark, pathname)
+			case "snapshot.check.file.missing":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				pathname := event.Data["path"].(string)
+				ctx.GetLogger().Warn("%x: %s %s: missing file", snapshotID[:4], crossMark, pathname)
+			case "snapshot.check.object.missing":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				contentMac := event.Data["content_mac"].([32]byte)
+				ctx.GetLogger().Warn("%x: %s %x: missing object", snapshotID[:4], crossMark, contentMac)
+			case "snapshot.check.chunk.missing":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				contentMac := event.Data["content_mac"].([32]byte)
+				ctx.GetLogger().Warn("%x: %s %x: missing chunk", snapshotID[:4], crossMark, contentMac)
 
-			case events.DirectoryCorrupted:
-				ctx.GetLogger().Warn("%x: %s %s: corrupted directory", event.SnapshotID[:4], crossMark, event.Pathname)
-			case events.FileCorrupted:
-				ctx.GetLogger().Warn("%x: %s %s: corrupted file", event.SnapshotID[:4], crossMark, event.Pathname)
-			case events.ObjectCorrupted:
-				ctx.GetLogger().Warn("%x: %s %x: corrupted object", event.SnapshotID[:4], crossMark, event.MAC)
-			case events.ChunkCorrupted:
-				ctx.GetLogger().Warn("%x: %s %x: corrupted chunk", event.SnapshotID[:4], crossMark, event.MAC)
+			case "snapshot.check.directory.corrupted":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				pathname := event.Data["path"].(string)
+				ctx.GetLogger().Warn("%x: %s %s: corrupted directory", snapshotID[:4], crossMark, pathname)
+			case "snapshot.check.file.corrupted":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				pathname := event.Data["path"].(string)
+				ctx.GetLogger().Warn("%x: %s %s: corrupted file", snapshotID[:4], crossMark, pathname)
+			case "snapshot.check.object.corrupted":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				contentMac := event.Data["content_mac"].([32]byte)
+				ctx.GetLogger().Warn("%x: %s %x: corrupted object", snapshotID[:4], crossMark, contentMac)
+			case "snapshot.check.chunk.corrupted":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				contentMac := event.Data["content_mac"].([32]byte)
+				ctx.GetLogger().Warn("%x: %s %x: corrupted chunk", snapshotID[:4], crossMark, contentMac)
 
-			case events.DirectoryOK:
+			case "snapshot.check.directory.ok", "snapshot.check.file.ok":
 				if !quiet {
-					ctx.GetLogger().Info("%x: %s %s", event.SnapshotID[:4], checkMark, event.Pathname)
-				}
-			case events.FileOK:
-				if !quiet {
-					ctx.GetLogger().Info("%x: %s %s", event.SnapshotID[:4], checkMark, event.Pathname)
+					snapshotID := event.Data["snapshot_id"].([16]byte)
+					pathname := event.Data["path"].(string)
+					ctx.GetLogger().Info("%x: %s %s", snapshotID[:4], checkMark, pathname)
 				}
 
-			case events.DirectoryError:
-				ctx.GetLogger().Stderr("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
-			case events.FileError:
-				ctx.GetLogger().Stderr("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
+			case "snapshot.check.directory.error", "snapshot.check.file.error":
+				snapshotID := event.Data["snapshot_id"].([16]byte)
+				pathname := event.Data["path"].(string)
+				errorMessage := event.Data["error"].(string)
+				ctx.GetLogger().Stderr("%x: KO %s %s: %s", snapshotID[:4], crossMark, pathname, errorMessage)
 			default:
 			}
 		}
