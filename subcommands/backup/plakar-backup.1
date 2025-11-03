@@ -12,7 +12,7 @@
 .Op Fl ignore-file Ar file
 .Op Fl check
 .Op Fl no-xattr
-.Op Fl o Ar option
+.Op Fl o Ar option Ns No = Ns Ar value
 .Op Fl packfiles Ar path
 .Op Fl quiet
 .Op Fl silent
@@ -55,7 +55,7 @@ ignore files or directories in the backup.
 Perform a full check on the backup after success.
 .It Fl no-xattr
 Skip extended attributes (xattrs) when creating the backup.
-.It Fl o Ar option
+.It Fl o Ar option Ns No = Ns Ar value
 Can be used to pass extra arguments to the source connector.
 The given
 .Ar option
@@ -91,6 +91,12 @@ $ plakar backup -ignore-file ~/my-ignore-file /var/www
 Backup a directory with specific file exclusions:
 .Bd -literal -offset indent
 $ plakar backup -ignore "*.tmp" -ignore "*.log" /var/www
+.Ed
+.Pp
+Pass an option to the importer, in this case to don't traverse mount
+points:
+.Bd -literal -offset indent
+$ plakar backup -o dont_traverse_fs=true /
 .Ed
 .Sh DIAGNOSTICS
 .Ex -std
