@@ -83,12 +83,12 @@ Create a snapshot of the current directory with two tags:
 $ plakar backup -tag daily-backup,production
 .Ed
 .Pp
-Backup a specific directory with exclusion patterns from a file:
+Ignore files using patterns in a given file:
 .Bd -literal -offset indent
 $ plakar backup -ignore-file ~/my-ignore-file /var/www
 .Ed
 .Pp
-Backup a directory with specific file exclusions:
+or by using patterns specified inline:
 .Bd -literal -offset indent
 $ plakar backup -ignore "*.tmp" -ignore "*.log" /var/www
 .Ed
