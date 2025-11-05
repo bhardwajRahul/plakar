@@ -7,7 +7,7 @@ PLAKAR(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar**
-\[**-config**&nbsp;*path*]
+\[**-config**&nbsp;*dir*]
 \[**-cpu**&nbsp;*number*]
 \[**-keyfile**&nbsp;*path*]
 \[**-no-agent**]
@@ -32,10 +32,11 @@ option.
 
 The following options are available:
 
-**-config** *path*
+**-config** *dir*
 
-> Use the configuration at
-> *path*.
+> Specify an alternate configuration directory.
+> Defaults to
+> *~/.config/plakar*.
 
 **-cpu** *number*
 
@@ -302,4 +303,4 @@ Remove snapshots older than 30 days:
 
 	$ plakar rm -before 30d
 
-Plakar - September 9, 2025
+Plakar - September 9, 2025 - PLAKAR(1)

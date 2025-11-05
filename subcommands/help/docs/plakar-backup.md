@@ -13,7 +13,7 @@ PLAKAR-BACKUP(1) - General Commands Manual
 \[**-ignore-file**&nbsp;*file*]
 \[**-check**]
 \[**-no-xattr**]
-\[**-o**&nbsp;*option*]
+\[**-o**&nbsp;*option*=*value*]
 \[**-packfiles**&nbsp;*path*]
 \[**-quiet**]
 \[**-silent**]
@@ -70,7 +70,7 @@ The options are as follows:
 
 > Skip extended attributes (xattrs) when creating the backup.
 
-**-o** *option*
+**-o** *option*=*value*
 
 > Can be used to pass extra arguments to the source connector.
 > The given
@@ -109,13 +109,18 @@ Create a snapshot of the current directory with two tags:
 
 	$ plakar backup -tag daily-backup,production
 
-Backup a specific directory with exclusion patterns from a file:
+Ignore files using patterns in a given file:
 
 	$ plakar backup -ignore-file ~/my-ignore-file /var/www
 
-Backup a directory with specific file exclusions:
+or by using patterns specified inline:
 
 	$ plakar backup -ignore "*.tmp" -ignore "*.log" /var/www
+
+Pass an option to the importer, in this case to don't traverse mount
+points:
+
+	$ plakar backup -o dont_traverse_fs=true /
 
 # DIAGNOSTICS
 
@@ -139,4 +144,4 @@ The **plakar-backup** utility exits&#160;0 on success, and&#160;&gt;0 if an erro
 plakar(1),
 plakar-source(1)
 
-Plakar - July 3, 2025
+Plakar - July 3, 2025 - PLAKAR-BACKUP(1)
