@@ -19,7 +19,7 @@ func startEventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) eventsPro
 	ep := eventsProcessorStdio{done: done}
 
 	go func() {
-		for event := range ctx.Events() {
+		for event := range ctx.Events().Listen() {
 			switch event.Type {
 			case "snapshot.backup.path.error", "snapshot.backup.directory.error", "snapshot.backup.file.error":
 				snapshotID := event.Data["snapshot_id"].([]byte)

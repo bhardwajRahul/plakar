@@ -13,7 +13,7 @@ var (
 func eventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) chan struct{} {
 	done := make(chan struct{})
 	go func() {
-		for event := range ctx.Events() {
+		for event := range ctx.Events().Listen() {
 			switch event.Type {
 			case "snapshot.restore.path.error", "snapshot.restore.directory.error", "snapshot.restore.file.error":
 				snapshotID := event.Data["snapshot_id"].([]byte)
