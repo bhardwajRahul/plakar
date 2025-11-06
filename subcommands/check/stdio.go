@@ -13,7 +13,7 @@ var (
 func eventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) chan struct{} {
 	done := make(chan struct{})
 	go func() {
-		for event := range ctx.Events().Listen() {
+		for event := range ctx.Events() {
 			switch event.Type {
 			case "snapshot.check.directory.missing":
 				snapshotID := event.Data["snapshot_id"].([16]byte)
