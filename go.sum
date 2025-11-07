@@ -21,6 +21,8 @@ github.com/PlakarKorp/kloset v1.0.10-0.20251015091822-320498989fc8 h1:f84b9pH5n2
 github.com/PlakarKorp/kloset v1.0.10-0.20251015091822-320498989fc8/go.mod h1:Amh/gPw1H6Xs2OoH6zHS8sGYtpDjlecWxtRfz5Uay+Y=
 github.com/PlakarKorp/kloset v1.0.10-0.20251031101203-47a708dd27d8 h1:95y2QzzLZPycHP4odAnefltc6nf7ZSg14FVqcBPYsOk=
 github.com/PlakarKorp/kloset v1.0.10-0.20251031101203-47a708dd27d8/go.mod h1:Amh/gPw1H6Xs2OoH6zHS8sGYtpDjlecWxtRfz5Uay+Y=
+github.com/PlakarKorp/kloset v1.0.10-0.20251107123210-2a2b28f86866 h1:Nnsg/etWqvWb0QBqdCTwcuwSbMRNIKnH8kZu5c0R6DE=
+github.com/PlakarKorp/kloset v1.0.10-0.20251107123210-2a2b28f86866/go.mod h1:udg/oX5gXA2iUZVJ5RJeK1zmZ/elaxgcV8KcyB9l4Vo=
 github.com/RaduBerinde/axisds v0.0.0-20250419182453-5135a0650657 h1:8XBWWQD+vFF+JqOsm16t0Kab1a7YWV8+GISVEP8AuZ8=
 github.com/RaduBerinde/axisds v0.0.0-20250419182453-5135a0650657/go.mod h1:UHGJonU9z4YYGKJxSaC6/TNcLOBptpmM5m2Cksbnw0Y=
 github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 h1:bsU8Tzxr/PNz75ayvCnxKZWEYdLMPDkUgticP4a4Bvk=
@@ -84,6 +86,7 @@ github.com/cockroachdb/metamorphic v0.0.0-20231108215700-4ba948b56895 h1:XANOgPY
 github.com/cockroachdb/metamorphic v0.0.0-20231108215700-4ba948b56895/go.mod h1:aPd7gM9ov9M8v32Yy5NJrDyOcD8z642dqs+F0CeNXfA=
 github.com/cockroachdb/pebble/v2 v2.1.0 h1:6KZvjSpWcEXZUvlLzTRC7T1A2G7r+bFskIzggklxixo=
 github.com/cockroachdb/pebble/v2 v2.1.0/go.mod h1:Aza05DCCc05ghIJZkB4Q/axv/JK9wx5cFwWcnhG0eGw=
+github.com/cockroachdb/pebble/v2 v2.1.1/go.mod h1:Aza05DCCc05ghIJZkB4Q/axv/JK9wx5cFwWcnhG0eGw=
 github.com/cockroachdb/redact v1.1.6 h1:zXJBwDZ84xJNlHl1rMyCojqyIxv+7YUpQiJLQ7n4314=
 github.com/cockroachdb/redact v1.1.6/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
 github.com/cockroachdb/swiss v0.0.0-20250624142022-d6e517c1d961 h1:Nua446ru3juLHLZd4AwKNzClZgL1co3pUPGv3o8FlcA=
@@ -113,6 +116,7 @@ github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/gabriel-vasile/mimetype v1.4.10 h1:zyueNbySn/z8mJZHLt6IPw0KoZsiQNszIpU+bX4+ZK0=
 github.com/gabriel-vasile/mimetype v1.4.10/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
+github.com/gabriel-vasile/mimetype v1.4.11/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
 github.com/getsentry/sentry-go v0.35.1 h1:iopow6UVLE2aXu46xKVIs8Z9D/YZkJrHkgozrxa+tOQ=
 github.com/getsentry/sentry-go v0.35.1/go.mod h1:C55omcY9ChRQIUcVcGcs+Zdy4ZpQGvNJ7JYHIoSWOtE=
 github.com/ghemawat/stream v0.0.0-20171120220530-696b145b53b9 h1:r5GgOLGbza2wVHRzK7aAj6lWZjfbAwiu/RDCVOKjRyM=

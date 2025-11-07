@@ -9,7 +9,7 @@ require (
 	github.com/PlakarKorp/integration-ptar v1.0.4
 	github.com/PlakarKorp/integration-stdio v1.0.3
 	github.com/PlakarKorp/integration-tar v1.0.0-beta.6
-	github.com/PlakarKorp/kloset v1.0.10-0.20251031101203-47a708dd27d8
+	github.com/PlakarKorp/kloset v1.0.10-0.20251107123210-2a2b28f86866
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.1
 	github.com/charmbracelet/bubbletea v1.3.10
@@ -57,7 +57,7 @@ require (
 	github.com/cockroachdb/crlib v0.0.0-20250718215705-7ff5051265b9 // indirect
 	github.com/cockroachdb/errors v1.12.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
-	github.com/cockroachdb/pebble/v2 v2.1.0 // indirect
+	github.com/cockroachdb/pebble/v2 v2.1.1 // indirect
 	github.com/cockroachdb/redact v1.1.6 // indirect
 	github.com/cockroachdb/swiss v0.0.0-20250624142022-d6e517c1d961 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
@@ -65,7 +65,7 @@ require (
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
 	github.com/getsentry/sentry-go v0.35.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
