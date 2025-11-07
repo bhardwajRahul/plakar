@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"github.com/PlakarKorp/kloset/events"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -21,22 +20,20 @@ func startEventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) eventsPro
 
 	go func() {
 		for event := range ctx.Events().Listen() {
-			switch event := event.(type) {
-			case events.PathError:
-				ctx.GetLogger().Stderr("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
-			case events.DirectoryOK:
+			switch event.Type {
+			case "snapshot.backup.path.error", "snapshot.backup.directory.error", "snapshot.backup.file.error":
+				snapshotID := event.Data["snapshot_id"].([]byte)
+				pathname := event.Data["path"].(string)
+				errorMessage := event.Data["error"].(string)
+
+				ctx.GetLogger().Stderr("%x: KO %s %s: %s", snapshotID[:4], crossMark, pathname, errorMessage)
+			case "snapshot.backup.directory.ok", "snapshot.backup.file.ok":
 				if !quiet {
-					ctx.GetLogger().Stdout("%x: OK %s %s", event.SnapshotID[:4], checkMark, event.Pathname)
+					snapshotID := event.Data["snapshot_id"].([]byte)
+					pathname := event.Data["path"].(string)
+					ctx.GetLogger().Stdout("%x: OK %s %s", snapshotID[:4], checkMark, pathname)
 				}
-			case events.FileOK:
-				if !quiet {
-					ctx.GetLogger().Stdout("%x: OK %s %s", event.SnapshotID[:4], checkMark, event.Pathname)
-				}
-			case events.DirectoryError:
-				ctx.GetLogger().Stderr("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
-			case events.FileError:
-				ctx.GetLogger().Stderr("%x: KO %s %s: %s", event.SnapshotID[:4], crossMark, event.Pathname, event.Message)
-			case events.Done:
+			case "snapshot.backup.done":
 				done <- struct{}{}
 			default:
 				//ctx.GetLogger().Warn("unknown event: %T", event)
