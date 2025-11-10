@@ -6,7 +6,7 @@
 .Nd effortless backups
 .Sh SYNOPSIS
 .Nm
-.Op Fl config Ar path
+.Op Fl config Ar dir
 .Op Fl cpu Ar number
 .Op Fl keyfile Ar path
 .Op Fl no-agent
@@ -29,9 +29,10 @@ option.
 .Pp
 The following options are available:
 .Bl -tag -width Ds
-.It Fl config Ar path
-Use the configuration at
-.Ar path .
+.It Fl config Ar dir
+Specify an alternate configuration directory.
+Defaults to
+.Pa ~/.config/plakar .
 .It Fl cpu Ar number
 Limit the number of parallel workers
 .Nm
