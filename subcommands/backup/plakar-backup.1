@@ -11,6 +11,7 @@
 .Op Fl ignore Ar pattern
 .Op Fl ignore-file Ar file
 .Op Fl check
+.Op Fl no-xattr
 .Op Fl o Ar option
 .Op Fl packfiles Ar path
 .Op Fl quiet
@@ -52,6 +53,8 @@ Specify a file containing gitignore exclusion patterns, one per line, to
 ignore files or directories in the backup.
 .It Fl check
 Perform a full check on the backup after success.
+.It Fl check
+Skip extended attributes (xattrs) when creating the backup.
 .It Fl o Ar option
 Can be used to pass extra arguments to the source connector.
 The given
