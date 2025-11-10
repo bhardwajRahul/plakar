@@ -12,6 +12,7 @@ PLAKAR-BACKUP(1) - General Commands Manual
 \[**-ignore**&nbsp;*pattern*]
 \[**-ignore-file**&nbsp;*file*]
 \[**-check**]
+\[**-no-xattr**]
 \[**-o**&nbsp;*option*]
 \[**-packfiles**&nbsp;*path*]
 \[**-quiet**]
@@ -64,6 +65,10 @@ The options are as follows:
 **-check**
 
 > Perform a full check on the backup after success.
+
+**-no-xattr**
+
+> Skip extended attributes (xattrs) when creating the backup.
 
 **-o** *option*
 
