@@ -104,6 +104,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.BoolVar(&cmd.OptCheck, "check", false, "check the snapshot after creating it")
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
 	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
+	flags.BoolVar(&cmd.NoXattr, "no-xattr", false, "do not back up extended attributes")
 	flags.Var(locate.NewTimeFlag(&cmd.ForcedTimestamp), "force-timestamp", "force a timestamp")
 	//flags.BoolVar(&opt_stdio, "stdio", false, "output one line per file to stdout instead of the default interactive output")
 	flags.Parse(args)
@@ -162,6 +163,7 @@ type Backup struct {
 	PreHook             string
 	PostHook            string
 	FailHook            string
+	NoXattr             bool
 }
 
 func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
@@ -175,6 +177,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		Name:           "default",
 		Tags:           cmd.Tags,
 		Excludes:       cmd.Excludes,
+		NoXattr:        cmd.NoXattr,
 	}
 
 	if !cmd.ForcedTimestamp.IsZero() {
