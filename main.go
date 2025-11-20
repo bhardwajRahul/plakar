@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -400,7 +401,7 @@ func entryPoint() int {
 	go func() {
 		<-c
 		fmt.Fprintf(os.Stderr, "%s: Interrupting, it might take a while...\n", flag.CommandLine.Name())
-		ctx.Cancel()
+		ctx.Cancel(fmt.Errorf("interrupted by user"))
 	}()
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
@@ -416,6 +417,10 @@ func entryPoint() int {
 	t1 := time.Since(t0)
 
 	if err != nil {
+		if ctx.Err() != nil {
+			err = context.Cause(ctx)
+		}
+
 		fmt.Fprintf(os.Stderr, "%s: %s\n", flag.CommandLine.Name(), utils.SanitizeText(err.Error()))
 		if errors.Is(err, agent.ErrWrongVersion) {
 			fmt.Fprintln(os.Stderr, "To stop the current agent, run:")

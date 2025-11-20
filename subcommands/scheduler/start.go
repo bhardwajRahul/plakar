@@ -290,7 +290,7 @@ func configureTasks(schedConfigBytes []byte) (int, error) {
 	defer schedulerContextSingleton.mtx.Unlock()
 
 	if schedulerContextSingleton.schedulerCtx != nil {
-		schedulerContextSingleton.schedulerCtx.Cancel()
+		schedulerContextSingleton.schedulerCtx.Cancel(nil)
 		schedulerContextSingleton.schedulerCtx = appcontext.NewAppContextFrom(schedulerContextSingleton.agentCtx)
 		go scheduler.NewScheduler(schedulerContextSingleton.schedulerCtx, schedConfig).Run()
 	}

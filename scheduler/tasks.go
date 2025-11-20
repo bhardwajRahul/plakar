@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/PlakarKorp/kloset/locate"
@@ -152,8 +153,7 @@ func (s *Scheduler) syncTask(taskset Task, task SyncConfig) {
 	} else if task.Direction == SyncDirectionWith {
 		syncSubcommand.Direction = "with"
 	} else {
-		//return fmt.Errorf("invalid sync direction: %s", task.Direction)
-		s.ctx.Cancel()
+		s.ctx.Cancel(fmt.Errorf("invalid sync direction: %s", task.Direction))
 		return
 	}
 	//	if taskset.Repository.Passphrase != "" {
