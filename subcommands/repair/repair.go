@@ -31,10 +31,6 @@ import (
 
 type Repair struct {
 	subcommands.SubcommandBase
-
-	repository    *repository.Repository
-	maintenanceID objects.MAC
-	cutoff        time.Time
 }
 
 func init() {
@@ -42,7 +38,7 @@ func init() {
 }
 
 func (cmd *Repair) Parse(ctx *appcontext.AppContext, args []string) error {
-	flags := flag.NewFlagSet("maintenance", flag.ExitOnError)
+	flags := flag.NewFlagSet("repair", flag.ExitOnError)
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "Usage: %s\n", flags.Name())
 	}
@@ -58,18 +54,24 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 	if err != nil {
 		return 1, err
 	}
+
 	remoteStatesMap := make(map[objects.MAC]struct{}, 0)
 	for _, stateID := range remoteStates {
 		remoteStatesMap[stateID] = struct{}{}
 	}
 
 	packfilesPerState := make(map[objects.MAC][]objects.MAC, 0)
-	for pe, _ := range repo.ListPackfileEntries() {
+	for pe, err := range repo.ListPackfileEntries() {
+		if err != nil {
+			return 1, err
+		}
 		if _, ok := remoteStatesMap[pe.StateID]; ok {
 			continue
 		}
 		packfilesPerState[pe.StateID] = append(packfilesPerState[pe.StateID], pe.Packfile)
 	}
+
+	// lookup timestamp
 
 	for stateID, packfiles := range packfilesPerState {
 		fmt.Printf("repairing missing remote state %x referencing packfiles:\n", stateID)
@@ -87,7 +89,9 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 				return 1, err
 			}
 
-			deltaState.Metadata.Timestamp = time.Unix(0, p.Footer.Timestamp) // XXX - get from local state if exists
+			if deltaState.Metadata.Timestamp.UnixNano() > p.Footer.Timestamp {
+				deltaState.Metadata.Timestamp = time.Unix(0, p.Footer.Timestamp)
+			}
 
 			for _, entry := range p.Index {
 				delta := &state.DeltaEntry{
@@ -125,5 +129,8 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 
 		scanCache.Close()
 	}
+
+	//
+
 	return 0, nil
 }
