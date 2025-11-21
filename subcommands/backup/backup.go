@@ -242,7 +242,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		cmd.PackfileTempStorage = ""
 	}
 
-	snap, err := snapshot.Create(repo, repository.DefaultType, cmd.PackfileTempStorage)
+	snap, err := snapshot.Create(repo, repository.DefaultType, cmd.PackfileTempStorage, objects.NilMac)
 	if err != nil {
 		ctx.GetLogger().Error("%s", err)
 		return 1, err, objects.MAC{}, nil
