@@ -135,7 +135,5 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 		scanCache.Close()
 	}
 
-	//
-
 	return 0, nil
 }
