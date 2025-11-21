@@ -71,10 +71,8 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 		packfilesPerState[pe.StateID] = append(packfilesPerState[pe.StateID], pe.Packfile)
 	}
 
-	// lookup timestamp
-
 	for stateID, packfiles := range packfilesPerState {
-		fmt.Printf("repairing missing remote state %x referencing packfiles:\n", stateID)
+		ctx.GetLogger().Info("repairing missing remote state %x\n", stateID)
 
 		scanCache, err := repo.AppContext().GetCache().Scan(stateID)
 		if err != nil {
