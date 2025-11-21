@@ -31,6 +31,8 @@ import (
 
 type Repair struct {
 	subcommands.SubcommandBase
+
+	Apply bool
 }
 
 func init() {
@@ -42,6 +44,7 @@ func (cmd *Repair) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "Usage: %s\n", flags.Name())
 	}
+	flags.BoolVar(&cmd.Apply, "apply", false, "do the actual repair")
 	flags.Parse(args)
 
 	cmd.RepositorySecret = ctx.GetSecret()
@@ -73,6 +76,10 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 
 	for stateID, packfiles := range packfilesPerState {
 		ctx.GetLogger().Info("repairing missing remote state %x\n", stateID)
+
+		if !cmd.Apply {
+			continue
+		}
 
 		scanCache, err := repo.AppContext().GetCache().Scan(stateID)
 		if err != nil {
