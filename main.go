@@ -417,7 +417,7 @@ func entryPoint() int {
 	t1 := time.Since(t0)
 
 	if err != nil {
-		if ctx.Err() != nil {
+		if errors.Is(err, context.Canceled) && ctx.Err() != nil {
 			err = context.Cause(ctx)
 		}
 
