@@ -125,7 +125,7 @@ func GenerateSnapshot(t *testing.T, repo *repository.Repository, files []MockFil
 	}
 
 	// create a snapshot
-	builder, err := snapshot.Create(repo, repository.DefaultType, "")
+	builder, err := snapshot.Create(repo, repository.DefaultType, "", objects.NilMac)
 	require.NoError(t, err)
 	require.NotNil(t, builder)
 
@@ -153,6 +153,8 @@ func GenerateSnapshot(t *testing.T, repo *repository.Repository, files []MockFil
 
 	err = builder.Repository().RebuildState()
 	require.NoError(t, err)
+
+	builder.Close()
 
 	// reopen it
 	snap, err := snapshot.Load(repo, builder.Header.Identifier)
