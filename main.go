@@ -401,7 +401,7 @@ func entryPoint() int {
 	go func() {
 		<-c
 		fmt.Fprintf(os.Stderr, "%s: Interrupting, it might take a while...\n", flag.CommandLine.Name())
-		ctx.Cancel(fmt.Errorf("interrupted by user"))
+		ctx.Cancel(fmt.Errorf("interrupted"))
 	}()
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
