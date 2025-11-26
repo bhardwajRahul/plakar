@@ -75,10 +75,11 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 	}
 
 	for stateID, packfiles := range packfilesPerState {
-		ctx.GetLogger().Info("repairing missing remote state %x\n", stateID)
-
 		if !cmd.Apply {
+			ctx.GetLogger().Info("found missing state %x\n", stateID)
 			continue
+		} else {
+			ctx.GetLogger().Info("repairing missing state %x\n", stateID)
 		}
 
 		scanCache, err := repo.AppContext().GetCache().Scan(stateID)
@@ -133,6 +134,14 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 		}
 
 		scanCache.Close()
+	}
+
+	if !cmd.Apply {
+		if len(packfilesPerState) == 0 {
+			ctx.GetLogger().Info("no repairs needed\n")
+		} else {
+			ctx.GetLogger().Info("to apply these repairs, run `plakar repair -apply`\n")
+		}
 	}
 
 	return 0, nil
