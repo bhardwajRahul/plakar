@@ -140,7 +140,7 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 		if len(packfilesPerState) == 0 {
 			ctx.GetLogger().Info("no repairs needed\n")
 		} else {
-			ctx.GetLogger().Info("to apply these repairs, run `plakar repair --apply`\n")
+			ctx.GetLogger().Info("to apply these repairs, run `plakar repair -apply`\n")
 		}
 	}
 
