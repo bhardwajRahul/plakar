@@ -14,11 +14,18 @@ command adds a local or a remote plugin.
 If
 .Ar plugin
 matches an existing local file, it is installed directly.
-Otherwise, it is treated as a recipe name and downloaded from the Plakar plugin server
-.Pq requires login via Xr plakar-login 1 .
+Otherwise, it is treated as a recipe name and downloaded from the Plakar plugin
+server which requires a login via the
+.Xr plakar-login 1
+command.
 .Pp
-To force local resolution, use an absolute path.
-To force remote fetching, pass an HTTP or HTTPS URL.
+Installing plugins without logging in is possible via the
+.Xr plakar-pkg-build 1
+command
+.Pq provided you have a working Go toolchain available .
+.Pp
+To force local resolution use an absolute path, otherwise to
+force remote fetching pass an HTTP or HTTPS URL.
 .Sh FILES
 .Bl -tag -width Ds
 .It Pa ~/.cache/plakar/plugins/

@@ -17,11 +17,18 @@ command adds a local or a remote plugin.
 If
 *plugin*
 matches an existing local file, it is installed directly.
-Otherwise, it is treated as a recipe name and downloaded from the Plakar plugin server
-(requires login via plakar-login(1)).
+Otherwise, it is treated as a recipe name and downloaded from the Plakar plugin
+server which requires a login via the
+plakar-login(1)
+command.
 
-To force local resolution, use an absolute path.
-To force remote fetching, pass an HTTP or HTTPS URL.
+Installing plugins without logging in is possible via the
+plakar-pkg-build(1)
+command
+(provided you have a working Go toolchain available).
+
+To force local resolution use an absolute path, otherwise to
+force remote fetching pass an HTTP or HTTPS URL.
 
 # FILES
 
