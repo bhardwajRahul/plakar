@@ -16,13 +16,13 @@ func eventsProcessorStdio(ctx *appcontext.AppContext, quiet bool) chan struct{} 
 	go func() {
 		for event := range ctx.Events().Listen() {
 			switch event.Type {
-			case "snapshot.restore.path.error", "snapshot.restore.directory.error", "snapshot.restore.file.error":
+			case "snapshot.restore.path.error", "snapshot.restore.directory.error", "snapshot.restore.file.error", "snapshot.restore.symlink.error":
 				snapshotID := event.Data["snapshot_id"].(objects.MAC)
 				pathname := event.Data["path"].(string)
 				errorMessage := event.Data["error"].(string)
 				ctx.GetLogger().Warn("%x: KO %s %s: %s", snapshotID[:4], crossMark, pathname, errorMessage)
 
-			case "snapshot.restore.path.ok", "snapshot.restore.directory.ok", "snapshot.restore.file.ok":
+			case "snapshot.restore.path.ok", "snapshot.restore.directory.ok", "snapshot.restore.file.ok", "snapshot.restore.symlink.ok":
 				if !quiet {
 					snapshotID := event.Data["snapshot_id"].(objects.MAC)
 					pathname := event.Data["path"].(string)
