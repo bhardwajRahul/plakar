@@ -24,8 +24,9 @@ command.
 
 Installing plugins without logging in is possible via the
 plakar-pkg-build(1)
-command
-(provided you have a working Go toolchain available).
+command, provided you have the necessary dependencies to build
+it locally
+(currently, official plugins require make and a working Go toolchain).
 
 To force local resolution use an absolute path, otherwise to
 force remote fetching pass an HTTP or HTTPS URL.
