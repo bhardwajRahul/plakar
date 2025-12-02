@@ -63,8 +63,12 @@ Examples:
 
 	cmd.Args = flags.Args()
 	for i, name := range cmd.Args {
-		absolute := filepath.Join(ctx.CWD, name)
-		if info, err := os.Stat(absolute); err == nil && !info.IsDir() {
+		absolute := name
+		if !filepath.IsAbs(absolute) {
+			absolute = filepath.Join(ctx.CWD, absolute)
+		}
+
+		if info, err := os.Stat(absolute); err == nil && info.Mode().IsRegular() {
 			cmd.Args[i] = absolute
 			continue
 		}
