@@ -24,7 +24,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -44,8 +43,16 @@ type PkgAdd struct {
 func (cmd *PkgAdd) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags := flag.NewFlagSet("pkg add", flag.ExitOnError)
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s plugin.ptar ...\n",
-			flags.Name())
+		fmt.Fprintf(flags.Output(), `Usage: %s <package> ...
+
+Arguments:
+  <package>    Local .ptar file, or recipe name to fetch from plugins.plakar.io
+               (local files take precedence over remote recipes)
+
+Examples:
+  pkg add imap           Fetch and install the 'imap' plugin
+  pkg add ./plugin.ptar  Install from local file
+`, flags.Name())
 	}
 
 	flags.Parse(args)
@@ -56,19 +63,27 @@ func (cmd *PkgAdd) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	cmd.Args = flags.Args()
 	for i, name := range cmd.Args {
-		if !filepath.IsAbs(name) && !strings.HasPrefix(name, "./") {
-			var recipe plugins.Recipe
-			if err := getRecipe(ctx, name, &recipe); err != nil {
-				return fmt.Errorf("failed to parse the %q recipe: %w", name, err)
-			}
-			u := *baseURL
-			u.Path = path.Join(u.Path, recipe.PkgName())
-			name = u.String()
-		} else if !filepath.IsAbs(name) {
-			name = filepath.Join(ctx.CWD, name)
+		absolute := name
+		if !filepath.IsAbs(absolute) {
+			absolute = filepath.Join(ctx.CWD, absolute)
 		}
 
-		cmd.Args[i] = name
+		if info, err := os.Stat(absolute); err == nil && info.Mode().IsRegular() {
+			cmd.Args[i] = absolute
+			continue
+		}
+
+		if filepath.IsAbs(name) {
+			return fmt.Errorf("file not found: %s", name)
+		}
+
+		var recipe plugins.Recipe
+		if err := getRecipe(ctx, name, &recipe); err != nil {
+			return fmt.Errorf("failed to parse the %q recipe: %w", name, err)
+		}
+		u := *baseURL
+		u.Path = path.Join(u.Path, recipe.PkgName())
+		cmd.Args[i] = u.String()
 	}
 
 	return nil

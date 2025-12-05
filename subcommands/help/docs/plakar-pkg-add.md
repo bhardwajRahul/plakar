@@ -16,13 +16,20 @@ command adds a local or a remote plugin.
 
 If
 *plugin*
-is an absolute path, or if it starts with
-'./',
-then it is considered a path to a local plugin file, otherwise
-it is downloaded from the Plakar plugin server.
-In the latter case, the user must be logged in via the
+matches an existing local file, it is installed directly.
+Otherwise, it is treated as a recipe name and downloaded from the Plakar plugin
+server which requires a login via the
 plakar-login(1)
 command.
+
+Installing plugins without logging in is possible via the
+plakar-pkg-build(1)
+command, provided you have the necessary dependencies to build
+it locally
+(currently, official plugins require make and a working Go toolchain).
+
+To force local resolution use an absolute path, otherwise to
+force remote fetching pass an HTTP or HTTPS URL.
 
 # FILES
 
@@ -48,4 +55,4 @@ plakar-pkg-create(1),
 plakar-pkg-rm(1),
 plakar-pkg-show(1)
 
-Plakar - July 11, 2025 - PLAKAR-PKG-ADD(1)
+Plakar - November 27, 2025 - PLAKAR-PKG-ADD(1)
