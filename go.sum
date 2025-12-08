@@ -17,8 +17,8 @@ github.com/PlakarKorp/integration-stdio v1.0.4 h1:h6dnYS7eX86VprbafxuDWVx2S0r2cK
 github.com/PlakarKorp/integration-stdio v1.0.4/go.mod h1:pCNqAlD0fARRB6+hDJOVqeRVgs4uwZfVNXPxyyv0s7M=
 github.com/PlakarKorp/integration-tar v1.0.0-beta.7 h1:O3G8sxxpaRwgnnrmA7WLtJ++U90Qr51ThJYk58uNALk=
 github.com/PlakarKorp/integration-tar v1.0.0-beta.7/go.mod h1:JheKpdjiureh7YfzjMYYwLT/rHJS2DR9kdb5itl8t3Y=
-github.com/PlakarKorp/kloset v1.0.12 h1:Vj8IT+Cw3uY0ehv+A/GbhQxPIG+U/1heqQGFaDq3Yp0=
-github.com/PlakarKorp/kloset v1.0.12/go.mod h1:nwkO5CSMAXp5HKJvxiQRkD1CSK4PN0oEjlt42cjPzYs=
+github.com/PlakarKorp/kloset v1.0.13-0.20251208135801-24c88b3f9d82 h1:o1liE6Zvwg4zpt0yZFhCsBIHc+ZRGxyWuz03Q1yxO6g=
+github.com/PlakarKorp/kloset v1.0.13-0.20251208135801-24c88b3f9d82/go.mod h1:5r+ioP+kQ7RcFEdtVcszzSkJuKxi6AAjXPj2nQ1UdeI=
 github.com/RaduBerinde/axisds v0.0.0-20250419182453-5135a0650657 h1:8XBWWQD+vFF+JqOsm16t0Kab1a7YWV8+GISVEP8AuZ8=
 github.com/RaduBerinde/axisds v0.0.0-20250419182453-5135a0650657/go.mod h1:UHGJonU9z4YYGKJxSaC6/TNcLOBptpmM5m2Cksbnw0Y=
 github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 h1:bsU8Tzxr/PNz75ayvCnxKZWEYdLMPDkUgticP4a4Bvk=
@@ -175,6 +175,8 @@ github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D
 github.com/mattn/go-runewidth v0.0.12/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRCM46jaSJTDAk=
 github.com/mattn/go-runewidth v0.0.16 h1:E5ScNMtiwvlvB5paMFdw9p4kSQzbXFikJ5SQO6TULQc=
 github.com/mattn/go-runewidth v0.0.16/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
+github.com/mattn/go-sqlite3 v1.14.32 h1:JD12Ag3oLy1zQA+BNn74xRgaBbdhbNIDYvQUEuuErjs=
+github.com/mattn/go-sqlite3 v1.14.32/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/microcosm-cc/bluemonday v1.0.27 h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwXFM08ygZfk=
 github.com/microcosm-cc/bluemonday v1.0.27/go.mod h1:jFi9vgW+H7c3V0lb6nR74Ib/DIB5OBs92Dimizgw2cA=
 github.com/minio/minlz v1.0.1-0.20250507153514-87eb42fe8882 h1:0lgqHvJWHLGW5TuObJrfyEi6+ASTKDBWikGvPqy9Yiw=
