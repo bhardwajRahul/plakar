@@ -29,6 +29,17 @@ import (
 	"github.com/google/uuid"
 )
 
+type Check struct {
+	subcommands.SubcommandBase
+
+	LocateOptions *locate.LocateOptions
+	FastCheck     bool
+	NoVerify      bool
+	Quiet         bool
+	Snapshots     []string
+	Silent        bool
+}
+
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Check{} }, subcommands.AgentSupport, "check")
 }
@@ -43,7 +54,6 @@ func (cmd *Check) Parse(ctx *appcontext.AppContext, args []string) error {
 		flags.PrintDefaults()
 	}
 
-	flags.Uint64Var(&cmd.Concurrency, "concurrency", uint64(ctx.MaxConcurrency), "maximum number of parallel tasks")
 	flags.BoolVar(&cmd.NoVerify, "no-verify", false, "disable signature verification")
 	flags.BoolVar(&cmd.FastCheck, "fast", false, "enable fast checking (no digest verification)")
 	flags.BoolVar(&cmd.Quiet, "quiet", false, "suppress output")
@@ -60,18 +70,6 @@ func (cmd *Check) Parse(ctx *appcontext.AppContext, args []string) error {
 	cmd.Snapshots = flags.Args()
 
 	return nil
-}
-
-type Check struct {
-	subcommands.SubcommandBase
-
-	LocateOptions *locate.LocateOptions
-	Concurrency   uint64
-	FastCheck     bool
-	NoVerify      bool
-	Quiet         bool
-	Snapshots     []string
-	Silent        bool
 }
 
 func (cmd *Check) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
@@ -111,8 +109,7 @@ func (cmd *Check) Execute(ctx *appcontext.AppContext, repo *repository.Repositor
 	}
 
 	opts := &snapshot.CheckOptions{
-		MaxConcurrency: cmd.Concurrency,
-		FastCheck:      cmd.FastCheck,
+		FastCheck: cmd.FastCheck,
 	}
 
 	checkCache, err := ctx.GetCache().Check()

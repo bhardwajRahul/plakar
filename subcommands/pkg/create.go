@@ -143,9 +143,8 @@ func (cmd *PkgCreate) Execute(ctx *appcontext.AppContext, _ *repository.Reposito
 	}
 
 	backupOptions := &snapshot.BackupOptions{
-		MaxConcurrency: 1,
-		NoCheckpoint:   true,
-		NoCommit:       true,
+		NoCheckpoint: true,
+		NoCommit:     true,
 	}
 
 	ep := startEventsProcessorStdio(ctx, false)

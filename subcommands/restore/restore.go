@@ -42,12 +42,11 @@ type Restore struct {
 	OptTag             string
 	OptSkipPermissions bool
 
-	Target      string
-	Strip       string
-	Concurrency uint64
-	Quiet       bool
-	Silent      bool
-	Snapshots   []string
+	Target    string
+	Strip     string
+	Quiet     bool
+	Silent    bool
+	Snapshots []string
 }
 
 func init() {
@@ -64,7 +63,6 @@ func (cmd *Restore) Parse(ctx *appcontext.AppContext, args []string) error {
 		flags.PrintDefaults()
 	}
 
-	flags.Uint64Var(&cmd.Concurrency, "concurrency", uint64(ctx.MaxConcurrency), "maximum number of parallel tasks")
 	flags.StringVar(&cmd.OptName, "name", "", "filter by name")
 	flags.StringVar(&cmd.OptCategory, "category", "", "filter by category")
 	flags.StringVar(&cmd.OptEnvironment, "environment", "", "filter by environment")
@@ -173,9 +171,7 @@ func (cmd *Restore) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 	defer exporterInstance.Close(ctx)
 
-	opts := &snapshot.RestoreOptions{
-		MaxConcurrency: cmd.Concurrency,
-	}
+	opts := &snapshot.RestoreOptions{}
 	if cmd.OptSkipPermissions {
 		opts.SkipPermissions = true
 	}
