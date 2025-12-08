@@ -6,7 +6,6 @@
 .Nd Create a new snapshot in a Kloset store
 .Sh SYNOPSIS
 .Nm plakar backup
-.Op Fl concurrency Ar number
 .Op Fl force-timestamp Ar timestamp
 .Op Fl ignore Ar pattern
 .Op Fl ignore-file Ar file
@@ -36,10 +35,6 @@ to reference a source connector configured with
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
-.It Fl concurrency Ar number
-Set the maximum number of parallel tasks for faster processing.
-Defaults to
-.Dv 8 * CPU count + 1 .
 .It Fl force-timestamp Ar timestamp
 Specify a fixed timestamp (in ISO 8601 or relative human format) to use
 for the snapshot.

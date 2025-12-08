@@ -7,7 +7,6 @@ PLAKAR-BACKUP(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;backup**
-\[**-concurrency**&nbsp;*number*]
 \[**-force-timestamp**&nbsp;*timestamp*]
 \[**-ignore**&nbsp;*pattern*]
 \[**-ignore-file**&nbsp;*file*]
@@ -38,12 +37,6 @@ to reference a source connector configured with
 plakar-source(1).
 
 The options are as follows:
-
-**-concurrency** *number*
-
-> Set the maximum number of parallel tasks for faster processing.
-> Defaults to
-> `8 * CPU count + 1`.
 
 **-force-timestamp** *timestamp*
 
@@ -144,4 +137,4 @@ The **plakar-backup** utility exits&#160;0 on success, and&#160;&gt;0 if an erro
 plakar(1),
 plakar-source(1)
 
-Plakar - July 3, 2025 - PLAKAR-BACKUP(1)
+Plakar - July 3, 2025
