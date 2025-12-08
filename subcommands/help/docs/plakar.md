@@ -215,6 +215,12 @@ The following commands are available:
 > Start a Plakar server, documented in
 > plakar-server(1).
 
+**service**
+
+> Manage additional Plakar services that require you to be logged in, documented
+> in
+> plakar-service(1).
+
 **source**
 
 > Manage configurations for the source connectors, documented in
