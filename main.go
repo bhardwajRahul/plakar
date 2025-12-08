@@ -267,7 +267,6 @@ func entryPoint() int {
 	ctx.MachineID = opt_machineIdDefault
 	ctx.KeyFromFile = secretFromKeyfile
 	ctx.ProcessID = os.Getpid()
-	ctx.MaxConcurrency = opt_cpuCount
 	ctx.MaxConcurrency = opt_maxConcurrency
 
 	if flag.NArg() == 0 {
