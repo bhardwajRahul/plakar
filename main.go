@@ -124,9 +124,11 @@ func entryPoint() int {
 	var opt_agentless bool
 	var opt_enableSecurityCheck bool
 	var opt_disableSecurityCheck bool
+	var opt_maxConcurrency int
 
 	flag.StringVar(&opt_configdir, "config", opt_configDefault, "configuration directory")
 	flag.IntVar(&opt_cpuCount, "cpu", opt_cpuDefault, "limit the number of usable cores")
+	flag.IntVar(&opt_maxConcurrency, "concurrency", -1, "limit the number of concurrent operations")
 	flag.StringVar(&opt_cpuProfile, "profile-cpu", "", "profile CPU usage")
 	flag.StringVar(&opt_memProfile, "profile-mem", "", "profile MEM usage")
 	flag.BoolVar(&opt_time, "time", false, "display command execution time")
@@ -225,6 +227,14 @@ func entryPoint() int {
 	}
 	runtime.GOMAXPROCS(opt_cpuCount)
 
+	if opt_maxConcurrency == 0 {
+		fmt.Fprintf(os.Stderr, "%s: invalid -concurrency value %d\n", flag.CommandLine.Name(), opt_maxConcurrency)
+		return 1
+	}
+	if opt_maxConcurrency == -1 {
+		opt_maxConcurrency = opt_cpuCount
+	}
+
 	if opt_cpuProfile != "" {
 		f, err := os.Create(opt_cpuProfile)
 		if err != nil {
@@ -257,7 +267,7 @@ func entryPoint() int {
 	ctx.MachineID = opt_machineIdDefault
 	ctx.KeyFromFile = secretFromKeyfile
 	ctx.ProcessID = os.Getpid()
-	ctx.MaxConcurrency = opt_cpuCount
+	ctx.MaxConcurrency = opt_maxConcurrency
 
 	if flag.NArg() == 0 {
 		fmt.Fprintf(os.Stderr, "%s: a subcommand must be provided\n", filepath.Base(flag.CommandLine.Name()))

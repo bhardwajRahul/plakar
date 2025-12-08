@@ -38,6 +38,26 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
+type Backup struct {
+	subcommands.SubcommandBase
+
+	Job                 string
+	Tags                []string
+	Excludes            []string
+	Silent              bool
+	Quiet               bool
+	Path                string
+	OptCheck            bool
+	Opts                map[string]string
+	DryRun              bool
+	PackfileTempStorage string
+	ForcedTimestamp     time.Time
+	PreHook             string
+	PostHook            string
+	FailHook            string
+	NoXattr             bool
+}
+
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Backup{} }, subcommands.AgentSupport, "backup")
 }
@@ -94,7 +114,6 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 		flags.PrintDefaults()
 	}
 
-	flags.Uint64Var(&cmd.Concurrency, "concurrency", uint64(ctx.MaxConcurrency), "maximum number of parallel tasks")
 	flags.Var(&opt_tags, "tag", "comma-separated list of tags to apply to the snapshot")
 	flags.StringVar(&opt_ignore_file, "ignore-file", "", "path to a file containing newline-separated gitignore patterns, treated as -ignore")
 	flags.Var(&opt_ignore, "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
@@ -145,27 +164,6 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	return nil
 }
 
-type Backup struct {
-	subcommands.SubcommandBase
-
-	Job                 string
-	Concurrency         uint64
-	Tags                []string
-	Excludes            []string
-	Silent              bool
-	Quiet               bool
-	Path                string
-	OptCheck            bool
-	Opts                map[string]string
-	DryRun              bool
-	PackfileTempStorage string
-	ForcedTimestamp     time.Time
-	PreHook             string
-	PostHook            string
-	FailHook            string
-	NoXattr             bool
-}
-
 func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
 	ret, err, _, _ := cmd.DoBackup(ctx, repo)
 	return ret, err
@@ -173,11 +171,10 @@ func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 
 func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Repository) (int, error, objects.MAC, error) {
 	opts := &snapshot.BackupOptions{
-		MaxConcurrency: cmd.Concurrency,
-		Name:           "default",
-		Tags:           cmd.Tags,
-		Excludes:       cmd.Excludes,
-		NoXattr:        cmd.NoXattr,
+		Name:     "default",
+		Tags:     cmd.Tags,
+		Excludes: cmd.Excludes,
+		NoXattr:  cmd.NoXattr,
 	}
 
 	if !cmd.ForcedTimestamp.IsZero() {
@@ -281,8 +278,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		repo.RebuildState()
 
 		checkOptions := &snapshot.CheckOptions{
-			MaxConcurrency: cmd.Concurrency,
-			FastCheck:      false,
+			FastCheck: false,
 		}
 
 		checkSnap, err := snapshot.Load(repo, snap.Header.Identifier)

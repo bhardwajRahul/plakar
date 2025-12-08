@@ -8,6 +8,7 @@ PLAKAR(1) - General Commands Manual
 
 **plakar**
 \[**-config**&nbsp;*dir*]
+\[**-concurrency**&nbsp;*number*]
 \[**-cpu**&nbsp;*number*]
 \[**-keyfile**&nbsp;*path*]
 \[**-no-agent**]
@@ -37,6 +38,13 @@ The following options are available:
 > Specify an alternate configuration directory.
 > Defaults to
 > *~/.config/plakar*.
+
+**-concurrency** *number*
+
+> Set the maximum number of parallel tasks for faster
+> processing.
+> Defaults to
+> `CPU count`.
 
 **-cpu** *number*
 
@@ -303,4 +311,4 @@ Remove snapshots older than 30 days:
 
 	$ plakar rm -before 30d
 
-Plakar - September 9, 2025 - PLAKAR(1)
+Plakar - September 9, 2025

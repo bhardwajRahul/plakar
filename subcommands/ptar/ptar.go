@@ -43,6 +43,23 @@ import (
 	"github.com/google/uuid"
 )
 
+type Ptar struct {
+	subcommands.SubcommandBase
+
+	KlosetPath string
+	KlosetUUID uuid.UUID
+
+	AllowWeak     bool
+	Hashing       string
+	NoEncryption  bool
+	NoCompression bool
+	Overwrite     bool
+
+	SyncTargets   listFlag
+	SyncSecrets   [][]byte
+	BackupTargets listFlag
+}
+
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Ptar{} }, subcommands.BeforeRepositoryWithStorage, "ptar")
 }
@@ -183,23 +200,6 @@ func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
 	}
 
 	return nil
-}
-
-type Ptar struct {
-	subcommands.SubcommandBase
-
-	KlosetPath string
-	KlosetUUID uuid.UUID
-
-	AllowWeak     bool
-	Hashing       string
-	NoEncryption  bool
-	NoCompression bool
-	Overwrite     bool
-
-	SyncTargets   listFlag
-	SyncSecrets   [][]byte
-	BackupTargets listFlag
 }
 
 func (cmd *Ptar) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
@@ -344,7 +344,6 @@ func (cmd *Ptar) backup(ctx *appcontext.AppContext, repo *repository.RepositoryW
 		}
 
 		backupOptions := &snapshot.BackupOptions{
-			MaxConcurrency:  4,
 			NoCheckpoint:    true,
 			NoCommit:        true,
 			CleanupVFSCache: true,

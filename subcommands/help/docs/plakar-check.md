@@ -7,7 +7,6 @@ PLAKAR-CHECK(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;check**
-\[**-concurrency**&nbsp;*number*]
 \[**-fast**]
 \[**-no-verify**]
 \[**-quiet**]
@@ -31,12 +30,6 @@ plakar-query(7)
 to precisely select snapshots.
 
 The options are as follows:
-
-**-concurrency** *number*
-
-> Set the maximum number of parallel tasks for faster processing.
-> Defaults to
-> `8 * CPU count + 1`.
 
 **-fast**
 
@@ -82,4 +75,4 @@ The **plakar-check** utility exits&#160;0 on success, and&#160;&gt;0 if an error
 plakar(1),
 plakar-query(7)
 
-Plakar - September 10, 2025 - PLAKAR-CHECK(1)
+Plakar - September 10, 2025

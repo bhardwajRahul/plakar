@@ -6,7 +6,6 @@
 .Nd Check data integrity in a Plakar repository
 .Sh SYNOPSIS
 .Nm plakar check
-.Op Fl concurrency Ar number
 .Op Fl fast
 .Op Fl no-verify
 .Op Fl quiet
@@ -29,10 +28,6 @@ to precisely select snapshots.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
-.It Fl concurrency Ar number
-Set the maximum number of parallel tasks for faster processing.
-Defaults to
-.Dv 8 * CPU count + 1 .
 .It Fl fast
 Enable a faster check that skips mac verification.
 This option performs only structural validation without confirming

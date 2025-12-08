@@ -16,7 +16,6 @@ PLAKAR-RESTORE(1) - General Commands Manual
 \[**-latest**]
 \[**-before**&nbsp;*date*]
 \[**-since**&nbsp;*date*]
-\[**-concurrency**&nbsp;*number*]
 \[**-quiet**]
 \[**-to**&nbsp;*directory*]
 \[**-skip-permissions**]
@@ -70,13 +69,6 @@ The options are as follows:
 
 > Only apply command to snapshots that match
 > *tag*.
-
-**-concurrency** *number*
-
-> Set the maximum number of parallel tasks for faster
-> processing.
-> Defaults to
-> `8 * CPU count + 1`.
 
 **-skip-permissions**
 
@@ -134,4 +126,4 @@ The **plakar-restore** utility exits&#160;0 on success, and&#160;&gt;0 if an err
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025 - PLAKAR-RESTORE(1)
+Plakar - July 3, 2025

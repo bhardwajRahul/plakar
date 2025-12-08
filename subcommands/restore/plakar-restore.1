@@ -15,7 +15,6 @@
 .Op Fl latest
 .Op Fl before Ar date
 .Op Fl since Ar date
-.Op Fl concurrency Ar number
 .Op Fl quiet
 .Op Fl to Ar directory
 .Op Fl skip-permissions
@@ -56,11 +55,6 @@ Only apply command to snapshots that match
 .It Fl tag Ar string
 Only apply command to snapshots that match
 .Ar tag .
-.It Fl concurrency Ar number
-Set the maximum number of parallel tasks for faster
-processing.
-Defaults to
-.Dv 8 * CPU count + 1 .
 .It Fl skip-permissions
 Skip restoring file permissions and ownership during restore,
 defaulting to 0750 for directories and 0640 for files.
