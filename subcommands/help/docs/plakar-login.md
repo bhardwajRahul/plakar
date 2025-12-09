@@ -7,10 +7,13 @@ PLAKAR-LOGIN(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;login**
-\[**-email**&nbsp;*email*]
-\[**-github**]
 \[**-no-spawn**]
 \[**-status**]
+\[**-email**&nbsp;*email*
+|
+**-env**
+|
+**-github**]
 
 # DESCRIPTION
 
@@ -24,7 +27,8 @@ See also
 plakar-service(1).
 
 Only one authentication method may be specified per invocation: the
-**-email**
+**-email**,
+**-env**,
 and
 **-github**
 options are mutually exclusive.
@@ -39,6 +43,14 @@ The options are as follows:
 > Send a login link to the specified email address.
 > Clicking the link in the received email will authenticate
 > **plakar**.
+
+**-env**
+
+> Persist the value of the
+> `PLAKAR_TOKEN`
+> environment variable into the configuration.
+> Generate this token with
+> plakar-token(1).
 
 **-github**
 

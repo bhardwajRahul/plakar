@@ -6,10 +6,15 @@
 .Nd Authenticate to Plakar services
 .Sh SYNOPSIS
 .Nm plakar login
-.Op Fl email Ar email
-.Op Fl github
 .Op Fl no-spawn
 .Op Fl status
+.Oo
+.Fl email Ar email
+|
+.Fl env
+|
+.Fl github
+.Oc
 .Sh DESCRIPTION
 The
 .Nm plakar login
@@ -21,7 +26,8 @@ See also
 .Xr plakar-service 1 .
 .Pp
 Only one authentication method may be specified per invocation: the
-.Fl email
+.Fl email ,
+.Fl env ,
 and
 .Fl github
 options are mutually exclusive.
@@ -35,6 +41,12 @@ The options are as follows:
 Send a login link to the specified email address.
 Clicking the link in the received email will authenticate
 .Nm plakar .
+.It Fl env
+Persist the value of the
+.Ev PLAKAR_TOKEN
+environment variable into the configuration.
+Generate this token with
+.Xr plakar-token 1 .
 .It Fl github
 Use GitHub OAuth to authenticate.
 A browser will be spawned to initiate the OAuth flow unless
