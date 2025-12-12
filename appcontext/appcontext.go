@@ -16,6 +16,8 @@ type AppContext struct {
 
 	ConfigDir string
 	secret    []byte
+
+	StoreConfig map[string]string
 }
 
 func NewAppContext() *AppContext {

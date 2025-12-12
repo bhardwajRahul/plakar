@@ -27,6 +27,7 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/storage"
+	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
@@ -199,12 +200,14 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	var srcRepository *repository.Repository
 	var dstRepository *repository.Repository
 
+	srcStoreConfig := ctx.StoreConfig
 	if cmd.Direction == "to" {
 		srcRepository = repo
 		dstRepository = peerRepository
 	} else if cmd.Direction == "from" {
 		srcRepository = peerRepository
 		dstRepository = repo
+		srcStoreConfig = storeConfig
 	} else if cmd.Direction == "with" {
 		srcRepository = repo
 		dstRepository = peerRepository
@@ -268,7 +271,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			return 1, err
 		}
 
-		err := synchronize(ctx, srcRepository, dstRepository, snapshotID, cmd.PackfileTempStorage)
+		err := synchronize(ctx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
 		if err != nil {
 			ctx.GetLogger().Error("failed to synchronize snapshot %x from store %s: %s",
 				snapshotID[:4], srcLocation, err)
@@ -295,7 +298,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			if err := ctx.Err(); err != nil {
 				return 1, err
 			}
-			err := synchronize(ctx, dstRepository, srcRepository, snapshotID, cmd.PackfileTempStorage)
+			err := synchronize(ctx, dstRepository, srcRepository, storeConfig, snapshotID, cmd.PackfileTempStorage)
 			if err != nil {
 				ctx.GetLogger().Error("failed to synchronize snapshot %x from peer store %s: %s",
 					snapshotID[:4], dstLocation, err)
@@ -322,7 +325,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	return 0, nil
 }
 
-func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, snapshotID objects.MAC, packfileDir string) error {
+func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC, packfileDir string) error {
 	srcLocation, err := srcRepository.Location()
 	if err != nil {
 		return err
@@ -349,7 +352,12 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 	// overwrite the header, we want to keep the original snapshot info
 	dstSnapshot.Header = srcSnapshot.Header
 
-	if err := srcSnapshot.Synchronize(dstSnapshot, true); err != nil {
+	StateRefresher := func() error {
+		_, err := agent.RebuildStateFromCached(ctx, srcRepository.Configuration().RepositoryID, srcStoreConfig)
+		return err
+	}
+
+	if err := srcSnapshot.Synchronize(dstSnapshot, true, true, StateRefresher); err != nil {
 		return err
 	}
 
