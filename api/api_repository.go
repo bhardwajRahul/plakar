@@ -34,6 +34,7 @@ type RepositoryInfoResponse struct {
 	Configuration storage.Configuration   `json:"configuration"`
 	OS            string                  `json:"os"`
 	Arch          string                  `json:"arch"`
+	Browsable     bool                    `json:"browsable"`
 }
 
 func getNSnapshotsPerDay(repo *repository.Repository, ndays int) ([]int, error) {
@@ -94,6 +95,11 @@ func (ui *uiserver) repositoryInfo(w http.ResponseWriter, r *http.Request) error
 		return fmt.Errorf("unable to get storage location: %w", err)
 	}
 
+	mode, err := ui.repository.Store().Mode(r.Context())
+	if err != nil {
+		return fmt.Errorf("unable to get storage mode: %w", err)
+	}
+
 	return json.NewEncoder(w).Encode(Item[RepositoryInfoResponse]{Item: RepositoryInfoResponse{
 		Location: location,
 		Snapshots: RepositoryInfoSnapshots{
@@ -106,6 +112,7 @@ func (ui *uiserver) repositoryInfo(w http.ResponseWriter, r *http.Request) error
 		Configuration: ui.config,
 		OS:            runtime.GOOS,
 		Arch:          runtime.GOARCH,
+		Browsable:     mode&storage.ModeRead != 0,
 	}})
 }
 
