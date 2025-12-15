@@ -267,7 +267,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 				Origins: []string{
 					importerOrigin,
 				},
-				// XXX TO FIX: Source matching based on importer origin/type
 			},
 		})
 		if err != nil {
@@ -295,8 +294,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 	defer snap.Close()
 
-	//snap.WithVFSCache(parentVFS)
-	_ = parentVFS
+	snap.WithVFSCache(parentVFS)
 
 	if cmd.Job != "" {
 		snap.Header.Job = cmd.Job
