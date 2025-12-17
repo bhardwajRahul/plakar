@@ -1,7 +1,7 @@
 //go:build linux || darwin
 // +build linux darwin
 
-package mount
+package fuse
 
 /*
  * Copyright (c) 2021 Gilles Chehade <gilles@poolp.org>
@@ -24,14 +24,14 @@ import (
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
-	"github.com/PlakarKorp/plakar/plakarfs"
+	"github.com/PlakarKorp/plakar/subcommands/mount/fuse/plakarfs"
 	"github.com/anacrolix/fuse"
 	"github.com/anacrolix/fuse/fs"
 )
 
-func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
+func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string) (int, error) {
 	c, err := fuse.Mount(
-		cmd.Mountpoint,
+		mountpoint,
 		fuse.FSName("plakar"),
 		fuse.Subtype("plakarfs"),
 		fuse.LocalVolume(),
@@ -45,14 +45,14 @@ func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repositor
 		return 1, fmt.Errorf("mount: %v", err)
 	}
 
-	ctx.GetLogger().Info("mounted repository %s at %s", loc, cmd.Mountpoint)
+	ctx.GetLogger().Info("mounted repository %s at %s", loc, mountpoint)
 
 	go func() {
 		<-ctx.Done()
-		fuse.Unmount(cmd.Mountpoint)
+		fuse.Unmount(mountpoint)
 	}()
 
-	err = fs.Serve(c, plakarfs.NewFS(repo, cmd.Mountpoint))
+	err = fs.Serve(c, plakarfs.NewFS(repo, mountpoint))
 	if err != nil {
 		return 1, err
 	}

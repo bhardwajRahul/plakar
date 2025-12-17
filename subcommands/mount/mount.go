@@ -20,9 +20,17 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
+	"github.com/PlakarKorp/plakar/subcommands/mount/fuse"
 )
+
+type Mount struct {
+	subcommands.SubcommandBase
+
+	Mountpoint string
+}
 
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Mount{} }, subcommands.AgentSupport, "mount")
@@ -45,8 +53,6 @@ func (cmd *Mount) Parse(ctx *appcontext.AppContext, args []string) error {
 	return nil
 }
 
-type Mount struct {
-	subcommands.SubcommandBase
-
-	Mountpoint string
+func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
+	return fuse.ExecuteFUSE(ctx, repo, cmd.Mountpoint)
 }
