@@ -14,15 +14,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-package mount
+package fuse
 
 import (
 	"fmt"
 
-	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/kloset/repository"
+	"github.com/PlakarKorp/plakar/appcontext"
 )
 
-func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
+func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string) (int, error) {
 	return 1, fmt.Errorf("mount not supported on %s", ctx.OperatingSystem)
 }
