@@ -11,7 +11,6 @@ import (
 )
 
 func stableIno(parts ...string) uint64 {
-	// Any stable 64-bit hash is fine. FNV-1a:
 	const off = 1469598103934665603
 	const prime = 1099511628211
 	h := uint64(off)
@@ -22,7 +21,7 @@ func stableIno(parts ...string) uint64 {
 		}
 	}
 	if h < 2 {
-		h += 2 // never zero
+		h += 2
 	}
 	return h
 }
@@ -32,32 +31,73 @@ type FS struct {
 	locateOptions *locate.LocateOptions
 
 	muFiles sync.Mutex
-	files   map[uint64]*File // ino to node
+	files   map[uint64]*File
 
-	muDirectories sync.Mutex
-	directories   map[uint64]*Dir // ino to node
+	muDirs sync.Mutex
+	dirs   map[uint64]*Dir
 }
 
-func NewFS(repo *repository.Repository, locateOptions *locate.LocateOptions, mountpoint string) *FS {
-	fs := &FS{
+func NewFS(repo *repository.Repository, locateOptions *locate.LocateOptions) *FS {
+	return &FS{
 		repo:          repo,
 		locateOptions: locateOptions,
 		files:         make(map[uint64]*File),
-		directories:   make(map[uint64]*Dir),
+		dirs:          make(map[uint64]*Dir),
 	}
-	return fs
+}
+
+func (f *FS) CacheFile(file *File) {
+	f.muFiles.Lock()
+	f.files[file.ino] = file
+	f.muFiles.Unlock()
+}
+
+func (f *FS) GetFile(ino uint64) (*File, bool) {
+	f.muFiles.Lock()
+	v, ok := f.files[ino]
+	f.muFiles.Unlock()
+	return v, ok
+}
+
+func (f *FS) RemoveFile(ino uint64) {
+	f.muFiles.Lock()
+	delete(f.files, ino)
+	f.muFiles.Unlock()
+}
+
+func (f *FS) CacheDir(dir *Dir) {
+	f.muDirs.Lock()
+	f.dirs[dir.ino] = dir
+	f.muDirs.Unlock()
+}
+
+func (f *FS) GetDir(ino uint64) (*Dir, bool) {
+	f.muDirs.Lock()
+	v, ok := f.dirs[ino]
+	f.muDirs.Unlock()
+	return v, ok
+}
+
+func (f *FS) RemoveDir(ino uint64) {
+	f.muDirs.Lock()
+	delete(f.dirs, ino)
+	f.muDirs.Unlock()
 }
 
 func (f *FS) Root() (fs.Node, error) {
-	f.muDirectories.Lock()
-	defer f.muDirectories.Unlock()
+	const rootIno = uint64(1)
 
-	//fmt.Println("Root() called: Initializing root directory")
-	if root, exists := f.directories[1]; exists {
-		return root, nil
-	} else {
-		root := &Dir{name: "/", repo: f.repo, fs: f, ino: 1}
-		f.directories[root.ino] = root
+	if root, ok := f.GetDir(rootIno); ok {
 		return root, nil
 	}
+
+	root := &Dir{
+		fs:       f,
+		repo:     f.repo,
+		name:     "/",
+		fullpath: "/",
+		ino:      rootIno,
+	}
+	f.CacheDir(root)
+	return root, nil
 }
