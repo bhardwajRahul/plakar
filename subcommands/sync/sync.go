@@ -46,7 +46,7 @@ type Sync struct {
 }
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Sync{} }, subcommands.AgentSupport, "sync")
+	subcommands.Register(func() subcommands.Subcommand { return &Sync{} }, 0, "sync")
 }
 
 func (cmd *Sync) Parse(ctx *appcontext.AppContext, args []string) error {

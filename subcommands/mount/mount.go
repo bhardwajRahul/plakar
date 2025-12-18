@@ -37,7 +37,7 @@ type Mount struct {
 }
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Mount{} }, subcommands.AgentSupport, "mount")
+	subcommands.Register(func() subcommands.Subcommand { return &Mount{} }, 0, "mount")
 }
 
 func (cmd *Mount) Parse(ctx *appcontext.AppContext, args []string) error {

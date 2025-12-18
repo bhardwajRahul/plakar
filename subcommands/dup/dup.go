@@ -33,7 +33,7 @@ type Dup struct {
 }
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Dup{} }, subcommands.AgentSupport, "dup")
+	subcommands.Register(func() subcommands.Subcommand { return &Dup{} }, 0, "dup")
 }
 
 func (cmd *Dup) Parse(ctx *appcontext.AppContext, args []string) error {

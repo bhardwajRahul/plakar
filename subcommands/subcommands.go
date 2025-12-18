@@ -16,8 +16,6 @@ const (
 	NeedRepositoryKey CommandFlags = 1 << iota
 	BeforeRepositoryWithStorage
 	BeforeRepositoryOpen
-	AgentSupport
-	IgnoreVersion
 )
 
 type Subcommand interface {

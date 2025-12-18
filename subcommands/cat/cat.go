@@ -33,7 +33,7 @@ import (
 )
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Cat{} }, subcommands.AgentSupport, "cat")
+	subcommands.Register(func() subcommands.Subcommand { return &Cat{} }, 0, "cat")
 }
 
 func (cmd *Cat) Parse(ctx *appcontext.AppContext, args []string) error {

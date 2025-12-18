@@ -121,7 +121,6 @@ func entryPoint() int {
 	var opt_trace string
 	var opt_quiet bool
 	var opt_keyfile string
-	var opt_agentless bool
 	var opt_enableSecurityCheck bool
 	var opt_disableSecurityCheck bool
 	var opt_maxConcurrency int
@@ -135,7 +134,6 @@ func entryPoint() int {
 	flag.StringVar(&opt_trace, "trace", "", "display trace logs, comma-separated (all, trace, repository, snapshot, server)")
 	flag.BoolVar(&opt_quiet, "quiet", false, "no output except errors")
 	flag.StringVar(&opt_keyfile, "keyfile", "", "use passphrase from key file when prompted")
-	flag.BoolVar(&opt_agentless, "no-agent", false, "run without agent")
 	flag.BoolVar(&opt_enableSecurityCheck, "enable-security-check", false, "enable update check")
 	flag.BoolVar(&opt_disableSecurityCheck, "disable-security-check", false, "disable update check")
 
@@ -164,14 +162,6 @@ func entryPoint() int {
 	ctx.Client = "plakar/" + utils.GetVersion()
 	ctx.CWD = cwd
 
-	_, envAgentLess := os.LookupEnv("PLAKAR_AGENTLESS")
-	if envAgentLess || runtime.GOOS == "windows" {
-		opt_agentless = true
-	}
-
-	// XXX: Temporary
-	opt_agentless = true
-
 	// default cachedir
 	cacheSubDir := "plakar"
 
@@ -184,9 +174,6 @@ func entryPoint() int {
 	ctx.SetCookies(cookies.NewManager(cookiesDir))
 	defer ctx.GetCookies().Close()
 
-	if opt_agentless {
-		cacheSubDir = "plakar-agentless"
-	}
 	cacheDir, err := utils.GetCacheDir(cacheSubDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: could not get cache directory: %s\n", flag.CommandLine.Name(), err)
@@ -387,19 +374,11 @@ func entryPoint() int {
 			return 1
 		}
 
-		if opt_agentless {
-			// Actual rebuild is done by cached.
-			repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %s\n", flag.CommandLine.Name(), err)
-				return 1
-			}
-		} else {
-			repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %s\n", flag.CommandLine.Name(), err)
-				return 1
-			}
+		// Actual rebuild is done by cached.
+		repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s: %s\n", flag.CommandLine.Name(), err)
+			return 1
 		}
 	}
 
@@ -424,20 +403,14 @@ func entryPoint() int {
 
 	var status int
 
-	runWithoutAgent := opt_agentless || cmd.GetFlags()&subcommands.AgentSupport == 0
-	if runWithoutAgent {
-		// If we are working on a repo, rebuild the state.
-		if cmd.GetFlags()&subcommands.BeforeRepositoryOpen == 0 && cmd.GetFlags()&subcommands.BeforeRepositoryWithStorage == 0 {
-			_, err = agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, storeConfig)
-			if err == nil {
-				status, err = task.RunCommand(ctx, cmd, repo, "@agentless")
-			}
-		} else {
+	// If we are working on a repo, rebuild the state.
+	if cmd.GetFlags()&subcommands.BeforeRepositoryOpen == 0 && cmd.GetFlags()&subcommands.BeforeRepositoryWithStorage == 0 {
+		_, err = agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, storeConfig)
+		if err == nil {
 			status, err = task.RunCommand(ctx, cmd, repo, "@agentless")
 		}
-
 	} else {
-		status, err = agent.ExecuteRPC(ctx, name, cmd, storeConfig)
+		status, err = task.RunCommand(ctx, cmd, repo, "@agentless")
 	}
 
 	t1 := time.Since(t0)

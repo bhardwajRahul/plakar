@@ -62,7 +62,7 @@ type Backup struct {
 }
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Backup{} }, subcommands.AgentSupport, "backup")
+	subcommands.Register(func() subcommands.Subcommand { return &Backup{} }, 0, "backup")
 }
 
 type ignoreFlags []string

@@ -1,23 +1,30 @@
 package scheduler
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/locate"
+	"github.com/PlakarKorp/kloset/repository"
+	"github.com/PlakarKorp/kloset/storage"
+	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/agent"
-	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/subcommands/backup"
 	"github.com/PlakarKorp/plakar/subcommands/check"
 	"github.com/PlakarKorp/plakar/subcommands/maintenance"
 	"github.com/PlakarKorp/plakar/subcommands/restore"
 	"github.com/PlakarKorp/plakar/subcommands/rm"
 	"github.com/PlakarKorp/plakar/subcommands/sync"
+	ptask "github.com/PlakarKorp/plakar/task"
 )
+
+// Needs to go.
+var ErrCantUnlock = errors.New("failed to unlock repository")
 
 func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 	backupSubcommand := &backup.Backup{}
-	backupSubcommand.Flags = subcommands.AgentSupport
 	backupSubcommand.Silent = true
 	backupSubcommand.Job = taskset.Name
 	backupSubcommand.Path = task.Path
@@ -32,7 +39,6 @@ func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 
 	rmSubcommand := &rm.Rm{}
 	rmSubcommand.Apply = true
-	rmSubcommand.Flags = subcommands.AgentSupport
 	rmSubcommand.LocateOptions = locate.NewDefaultLocateOptions(locate.WithJob(task.Name))
 
 	for {
@@ -64,16 +70,36 @@ func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 				continue
 			}
 
-			if retval, err := agent.ExecuteRPC(s.ctx, []string{"backup"}, backupSubcommand, storeConfig); err != nil || retval != 0 {
+			repo, err := s.makeRepository(storeConfig)
+			if err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			retval, err := ptask.RunCommand(s.ctx, backupSubcommand, repo, "@scheduler")
+			if err != nil || retval != 0 {
 				s.ctx.GetLogger().Error("Error creating backup: %s", err)
 				continue
 			}
 
 			if task.Retention != 0 {
+				if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+					s.ctx.GetLogger().Error("Error opening repository: %s", err)
+					continue
+				}
+
 				rmSubcommand.LocateOptions.Filters.Before = time.Now().Add(-task.Retention)
-				if retval, err := agent.ExecuteRPC(s.ctx, []string{"rm"}, rmSubcommand, storeConfig); err != nil || retval != 0 {
+				retval, err := ptask.RunCommand(s.ctx, rmSubcommand, repo, "@scheduler")
+				if err != nil || retval != 0 {
 					s.ctx.GetLogger().Error("Error removing obsolete backups: %s", err)
 					continue
+				} else {
+					s.ctx.GetLogger().Info("Retention purge succeeded")
 				}
 			}
 		}
@@ -82,7 +108,6 @@ func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 
 func (s *Scheduler) checkTask(taskset Task, task CheckConfig) {
 	checkSubcommand := &check.Check{}
-	checkSubcommand.Flags = subcommands.AgentSupport
 	checkSubcommand.LocateOptions = locate.NewDefaultLocateOptions(
 		locate.WithJob(taskset.Name),
 		locate.WithLatest(task.Latest),
@@ -104,9 +129,21 @@ func (s *Scheduler) checkTask(taskset Task, task CheckConfig) {
 				continue
 			}
 
-			retval, err := agent.ExecuteRPC(s.ctx, []string{"check"}, checkSubcommand, storeConfig)
+			repo, err := s.makeRepository(storeConfig)
+			if err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			retval, err := ptask.RunCommand(s.ctx, checkSubcommand, repo, "@scheduler")
 			if err != nil || retval != 0 {
 				s.ctx.GetLogger().Error("Error executing check: %s", err)
+				continue
 			}
 		}
 	}
@@ -114,7 +151,6 @@ func (s *Scheduler) checkTask(taskset Task, task CheckConfig) {
 
 func (s *Scheduler) restoreTask(taskset Task, task RestoreConfig) {
 	restoreSubcommand := &restore.Restore{}
-	restoreSubcommand.Flags = subcommands.AgentSupport
 	restoreSubcommand.OptJob = taskset.Name
 	restoreSubcommand.Target = task.Target
 	restoreSubcommand.Silent = true
@@ -134,9 +170,21 @@ func (s *Scheduler) restoreTask(taskset Task, task RestoreConfig) {
 				continue
 			}
 
-			retval, err := agent.ExecuteRPC(s.ctx, []string{"restore"}, restoreSubcommand, storeConfig)
+			repo, err := s.makeRepository(storeConfig)
+			if err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			retval, err := ptask.RunCommand(s.ctx, restoreSubcommand, repo, "@scheduler")
 			if err != nil || retval != 0 {
 				s.ctx.GetLogger().Error("Error executing restore: %s", err)
+				continue
 			}
 		}
 	}
@@ -144,7 +192,6 @@ func (s *Scheduler) restoreTask(taskset Task, task RestoreConfig) {
 
 func (s *Scheduler) syncTask(taskset Task, task SyncConfig) {
 	syncSubcommand := &sync.Sync{}
-	syncSubcommand.Flags = subcommands.AgentSupport
 	syncSubcommand.PeerRepositoryLocation = task.Peer
 	if task.Direction == SyncDirectionTo {
 		syncSubcommand.Direction = "to"
@@ -176,9 +223,21 @@ func (s *Scheduler) syncTask(taskset Task, task SyncConfig) {
 				continue
 			}
 
-			retval, err := agent.ExecuteRPC(s.ctx, []string{"sync"}, syncSubcommand, storeConfig)
+			repo, err := s.makeRepository(storeConfig)
+			if err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			retval, err := ptask.RunCommand(s.ctx, syncSubcommand, repo, "@scheduler")
 			if err != nil || retval != 0 {
-				s.ctx.GetLogger().Error("sync: %s", err)
+				s.ctx.GetLogger().Error("Error executing sync: %s", err)
+				continue
 			} else {
 				s.ctx.GetLogger().Info("sync: synchronization succeeded")
 			}
@@ -188,10 +247,8 @@ func (s *Scheduler) syncTask(taskset Task, task SyncConfig) {
 
 func (s *Scheduler) maintenanceTask(task MaintenanceConfig) {
 	maintenanceSubcommand := &maintenance.Maintenance{}
-	maintenanceSubcommand.Flags = subcommands.AgentSupport
 	rmSubcommand := &rm.Rm{}
 	rmSubcommand.Apply = true
-	rmSubcommand.Flags = subcommands.AgentSupport
 	rmSubcommand.LocateOptions = locate.NewDefaultLocateOptions(locate.WithJob("maintenance"))
 
 	for {
@@ -206,7 +263,18 @@ func (s *Scheduler) maintenanceTask(task MaintenanceConfig) {
 				continue
 			}
 
-			retval, err := agent.ExecuteRPC(s.ctx, []string{"maintenance"}, maintenanceSubcommand, storeConfig)
+			repo, err := s.makeRepository(storeConfig)
+			if err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				s.ctx.GetLogger().Error("Error opening repository: %s", err)
+				continue
+			}
+
+			retval, err := ptask.RunCommand(s.ctx, maintenanceSubcommand, repo, "@scheduler")
 			if err != nil || retval != 0 {
 				s.ctx.GetLogger().Error("Error executing maintenance: %s", err)
 				continue
@@ -215,8 +283,13 @@ func (s *Scheduler) maintenanceTask(task MaintenanceConfig) {
 			}
 
 			if task.Retention != 0 {
+				if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+					s.ctx.GetLogger().Error("Error opening repository: %s", err)
+					continue
+				}
+
 				rmSubcommand.LocateOptions.Filters.Before = time.Now().Add(-task.Retention)
-				retval, err := agent.ExecuteRPC(s.ctx, []string{"rm"}, rmSubcommand, storeConfig)
+				retval, err := ptask.RunCommand(s.ctx, rmSubcommand, repo, "@scheduler")
 				if err != nil || retval != 0 {
 					s.ctx.GetLogger().Error("Error removing obsolete backups: %s", err)
 					continue
@@ -226,4 +299,56 @@ func (s *Scheduler) maintenanceTask(task MaintenanceConfig) {
 			}
 		}
 	}
+}
+
+func (s *Scheduler) makeRepository(storeConfig map[string]string) (*repository.Repository, error) {
+	var serializedConfig []byte
+	store, serializedConfig, err := storage.Open(s.ctx.GetInner(), storeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	repoConfig, err := storage.NewConfigurationFromWrappedBytes(serializedConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if repoConfig.Version != versioning.FromString(storage.VERSION) {
+		return nil, err
+	}
+
+	if err := s.setupEncryption(repoConfig); err != nil {
+		return nil, err
+	}
+
+	// Actual rebuild is done by cached.
+	repo, err := repository.NewNoRebuild(s.ctx.GetInner(), s.ctx.GetSecret(), store, serializedConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
+}
+
+func (s *Scheduler) setupEncryption(config *storage.Configuration) error {
+	if config.Encryption == nil {
+		return nil
+	}
+
+	if s.ctx.KeyFromFile != "" {
+		secret := []byte(s.ctx.KeyFromFile)
+		key, err := encryption.DeriveKey(config.Encryption.KDFParams,
+			secret)
+		if err != nil {
+			return err
+		}
+
+		if !encryption.VerifyCanary(config.Encryption, key) {
+			return ErrCantUnlock
+		}
+		s.ctx.SetSecret(key)
+		return nil
+	}
+
+	return ErrCantUnlock
 }

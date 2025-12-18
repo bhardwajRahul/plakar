@@ -41,7 +41,7 @@ type Check struct {
 }
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Check{} }, subcommands.AgentSupport, "check")
+	subcommands.Register(func() subcommands.Subcommand { return &Check{} }, 0, "check")
 }
 
 func (cmd *Check) Parse(ctx *appcontext.AppContext, args []string) error {
