@@ -292,12 +292,16 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 	ctx.GetLogger().Info("cached rebuild request for %s", subcommand.RepoID)
 
 	// Is there already a job goroutine running for this repo:
+	var jq chan jobReq
+	var ok bool
 	cmd.jobMtx.Lock()
-	if _, ok := cmd.jobQueue[subcommand.RepoID]; !ok {
+	if jq, ok = cmd.jobQueue[subcommand.RepoID]; !ok {
 		cmd.jobQueue[subcommand.RepoID] = make(chan jobReq, 1)
+		jq = cmd.jobQueue[subcommand.RepoID]
 
-		err = cmd.rebuildJob(ctx, subcommand, storeConfig)
+		err = cmd.rebuildJob(ctx, jq, subcommand, storeConfig)
 	}
+
 	cmd.jobMtx.Unlock()
 
 	if err == nil {
@@ -305,7 +309,7 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 			ch: make(chan error, 1),
 		}
 
-		cmd.jobQueue[subcommand.RepoID] <- j
+		jq <- j
 		err = <-j.ch
 	}
 
@@ -323,7 +327,7 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 	})
 }
 
-func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, subcommand *cached.CachedReq, storeConfig map[string]string) error {
+func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, subcommand *cached.CachedReq, storeConfig map[string]string) error {
 	var serializedConfig []byte
 	store, serializedConfig, err := storage.Open(ctx.GetInner(), storeConfig)
 	if err != nil {
@@ -348,10 +352,6 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, subcommand *cached.Cac
 		defer repo.Close()
 
 		repoID := repo.Configuration().RepositoryID
-
-		// Safe to access without a lock because if we are inside this function it
-		// was definitely inserted before.
-		jobChan := cmd.jobQueue[repoID]
 
 	jobLoop:
 		for {
