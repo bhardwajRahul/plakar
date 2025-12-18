@@ -19,12 +19,14 @@ package mount
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/subcommands/mount/fuse"
+	"github.com/PlakarKorp/plakar/subcommands/mount/http"
 )
 
 type Mount struct {
@@ -59,5 +61,8 @@ func (cmd *Mount) Parse(ctx *appcontext.AppContext, args []string) error {
 }
 
 func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
+	if strings.HasPrefix(cmd.Mountpoint, "http://") {
+		return http.ExecuteHTTP(ctx, repo, cmd.Mountpoint, cmd.LocateOptions)
+	}
 	return fuse.ExecuteFUSE(ctx, repo, cmd.Mountpoint, cmd.LocateOptions)
 }
