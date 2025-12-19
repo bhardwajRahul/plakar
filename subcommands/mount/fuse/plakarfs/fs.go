@@ -7,6 +7,7 @@ import (
 
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
+	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/anacrolix/fuse/fs"
 )
 
@@ -27,6 +28,8 @@ func stableIno(parts ...string) uint64 {
 }
 
 type FS struct {
+	ctx *appcontext.AppContext
+
 	repo          *repository.Repository
 	locateOptions *locate.LocateOptions
 
@@ -37,8 +40,9 @@ type FS struct {
 	dirs   map[uint64]*Dir
 }
 
-func NewFS(repo *repository.Repository, locateOptions *locate.LocateOptions) *FS {
+func NewFS(ctx *appcontext.AppContext, repo *repository.Repository, locateOptions *locate.LocateOptions) *FS {
 	return &FS{
+		ctx:           ctx,
 		repo:          repo,
 		locateOptions: locateOptions,
 		files:         make(map[uint64]*File),

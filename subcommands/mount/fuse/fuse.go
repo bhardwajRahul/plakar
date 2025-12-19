@@ -53,7 +53,7 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 		fuse.Unmount(mountpoint)
 	}()
 
-	err = fs.Serve(c, plakarfs.NewFS(repo, locateOptions))
+	err = fs.Serve(c, plakarfs.NewFS(ctx, repo, locateOptions))
 	if err != nil {
 		return 1, err
 	}
