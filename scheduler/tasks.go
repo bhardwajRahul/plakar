@@ -25,6 +25,7 @@ var ErrCantUnlock = errors.New("failed to unlock repository")
 
 func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 	backupSubcommand := &backup.Backup{}
+	backupSubcommand.Tags = task.Tags
 	backupSubcommand.Silent = true
 	backupSubcommand.Job = taskset.Name
 	backupSubcommand.Path = task.Path
