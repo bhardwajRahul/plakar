@@ -18,6 +18,7 @@ import (
 	"github.com/PlakarKorp/kloset/snapshot/header"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/PlakarKorp/kloset/storage"
+	"github.com/PlakarKorp/plakar/agent"
 )
 
 type RepositoryInfoSnapshots struct {
@@ -151,7 +152,9 @@ func (ui *uiserver) repositorySnapshots(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	ui.repository.RebuildState()
+	if _, err := agent.RebuildStateFromCached(ui.ctx, ui.repository.Configuration().RepositoryID, ui.ctx.StoreConfig); err != nil {
+		return err
+	}
 
 	snapshotIDs, err := ui.repository.GetSnapshots()
 	if err != nil {
@@ -242,7 +245,9 @@ func (ui *uiserver) repositoryState(w http.ResponseWriter, r *http.Request) erro
 }
 
 func (ui *uiserver) repositoryImporterTypes(w http.ResponseWriter, r *http.Request) error {
-	ui.repository.RebuildState()
+	if _, err := agent.RebuildStateFromCached(ui.ctx, ui.repository.Configuration().RepositoryID, ui.ctx.StoreConfig); err != nil {
+		return err
+	}
 
 	snapshotIDs, err := ui.repository.GetSnapshots()
 	if err != nil {
@@ -321,7 +326,9 @@ func (ui *uiserver) repositoryLocatePathname(w http.ResponseWriter, r *http.Requ
 		return err
 	}
 
-	ui.repository.RebuildState()
+	if _, err := agent.RebuildStateFromCached(ui.ctx, ui.repository.Configuration().RepositoryID, ui.ctx.StoreConfig); err != nil {
+		return err
+	}
 
 	snapshotIDs, err := ui.repository.GetSnapshots()
 	if err != nil {
