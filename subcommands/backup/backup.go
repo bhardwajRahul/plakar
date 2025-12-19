@@ -332,7 +332,10 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 
 	if cmd.OptCheck {
-		repo.RebuildState()
+		_, err := agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+		if err != nil {
+			return 1, fmt.Errorf("failed to rebuild state %w", err), objects.MAC{}, nil
+		}
 
 		checkOptions := &snapshot.CheckOptions{
 			FastCheck: false,
