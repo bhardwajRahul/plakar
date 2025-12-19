@@ -38,7 +38,7 @@ import (
 )
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Diff{} }, subcommands.AgentSupport, "diff")
+	subcommands.Register(func() subcommands.Subcommand { return &Diff{} }, 0, "diff")
 }
 
 func (cmd *Diff) Parse(ctx *appcontext.AppContext, args []string) error {

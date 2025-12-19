@@ -36,7 +36,7 @@ type Repair struct {
 }
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Repair{} }, subcommands.AgentSupport, "repair")
+	subcommands.Register(func() subcommands.Subcommand { return &Repair{} }, 0, "repair")
 }
 
 func (cmd *Repair) Parse(ctx *appcontext.AppContext, args []string) error {

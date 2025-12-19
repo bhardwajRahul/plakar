@@ -26,7 +26,7 @@ import (
 )
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Info{} }, subcommands.AgentSupport, "info")
+	subcommands.Register(func() subcommands.Subcommand { return &Info{} }, 0, "info")
 }
 
 type Info struct {

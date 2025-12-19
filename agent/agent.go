@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -35,26 +34,8 @@ type Client struct {
 }
 
 var (
-	ErrWrongVersion = errors.New("agent is running with a different version of plakar")
+	ErrWrongVersion = errors.New("cached is running with a different version of plakar")
 )
-
-func ExecuteRPC(ctx *appcontext.AppContext, name []string, cmd subcommands.Subcommand, storeConfig map[string]string) (int, error) {
-	client, err := NewClient(filepath.Join(ctx.CacheDir, "agent.sock"), cmd.GetFlags()&subcommands.IgnoreVersion != 0)
-	if err != nil {
-		return 1, err
-	}
-	defer client.Close()
-
-	go func() {
-		<-ctx.Done()
-		client.Close()
-	}()
-
-	if status, err := client.SendCommand(ctx, name, cmd, storeConfig); err != nil {
-		return status, err
-	}
-	return 0, nil
-}
 
 func RebuildStateFromCached(ctx *appcontext.AppContext, repoID uuid.UUID, storeConfig map[string]string) (int, error) {
 	client, err := NewClient(filepath.Join(ctx.CacheDir, "cached.sock"), false)
@@ -67,7 +48,7 @@ func RebuildStateFromCached(ctx *appcontext.AppContext, repoID uuid.UUID, storeC
 	// lot.
 	cmd := cached.CachedReq{
 		RepoID:         repoID,
-		SubcommandBase: subcommands.SubcommandBase{Flags: subcommands.AgentSupport, RepositorySecret: ctx.GetSecret()},
+		SubcommandBase: subcommands.SubcommandBase{RepositorySecret: ctx.GetSecret()},
 	}
 
 	go func() {
@@ -180,10 +161,6 @@ func (c *Client) handshake(ignoreVersion bool) error {
 }
 
 func (c *Client) SendCommand(ctx *appcontext.AppContext, name []string, cmd subcommands.Subcommand, storeConfig map[string]string) (int, error) {
-	if cmd.GetFlags()&subcommands.AgentSupport == 0 {
-		return 1, fmt.Errorf("command %v doesn't support execution through agent", strings.Join(name, " "))
-	}
-
 	cmd.SetLogInfo(ctx.GetLogger().EnabledInfo)
 	cmd.SetLogTraces(ctx.GetLogger().EnabledTracing)
 

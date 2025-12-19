@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	subcommands.Register(func() subcommands.Subcommand { return &Locate{} }, subcommands.AgentSupport, "locate")
+	subcommands.Register(func() subcommands.Subcommand { return &Locate{} }, 0, "locate")
 }
 
 func (cmd *Locate) Parse(ctx *appcontext.AppContext, args []string) error {

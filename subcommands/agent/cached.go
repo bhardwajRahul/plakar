@@ -17,16 +17,20 @@
 package agent
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/plakar/agent"
@@ -38,6 +42,13 @@ import (
 
 	"github.com/vmihailenco/msgpack/v5"
 )
+
+func init() {
+	if runtime.GOOS != "windows" {
+		subcommands.Register(func() subcommands.Subcommand { return &Cached{} },
+			subcommands.BeforeRepositoryOpen, "cached")
+	}
+}
 
 type Cached struct {
 	subcommands.SubcommandBase
@@ -379,4 +390,58 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, s
 
 	return nil
 
+}
+
+func setupSecret(ctx *appcontext.AppContext, cmd subcommands.Subcommand, storeConfig map[string]string, storageConfig []byte) error {
+	config, err := storage.NewConfigurationFromWrappedBytes(storageConfig)
+	if err != nil {
+		return err
+	}
+
+	if config.Encryption == nil {
+		return nil
+	}
+
+	getKey := func() ([]byte, error) {
+		if key := cmd.GetRepositorySecret(); key != nil {
+			return key, nil
+		}
+
+		passphrase, ok := storeConfig["passphrase"]
+		if !ok {
+			cmd, ok := storeConfig["passphrase_cmd"]
+			if !ok {
+				return nil, fmt.Errorf("no passphrase specified")
+			}
+			passphrase, err = utils.GetPassphraseFromCommand(cmd)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read passphrase from command: %w", err)
+			}
+		}
+
+		key, err := encryption.DeriveKey(config.Encryption.KDFParams, []byte(passphrase))
+		if err != nil {
+			return nil, fmt.Errorf("failed to derive key: %w", err)
+		}
+		return key, nil
+	}
+
+	key, err := getKey()
+	if err != nil {
+		return err
+	}
+	if !encryption.VerifyCanary(config.Encryption, key) {
+		return fmt.Errorf("failed to verify key")
+	}
+
+	ctx.SetSecret(key)
+	return nil
+}
+
+func isDisconnectError(err error) bool {
+	if err == io.EOF || err == io.ErrUnexpectedEOF {
+		return true
+	}
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }
