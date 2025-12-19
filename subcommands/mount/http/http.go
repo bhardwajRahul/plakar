@@ -35,6 +35,7 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/header"
+	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
 )
 
@@ -45,8 +46,12 @@ func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 	addr := strings.TrimPrefix(mountpoint, "http://")
 
 	handler := NewDynamicSnapshotHandler(
-		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			repo.RebuildState()
+		func(innertctx context.Context, w http.ResponseWriter, r *http.Request) {
+			_, err := agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+			if err != nil {
+				http.Error(w, "failed to rebuild state", http.StatusInternalServerError)
+				return
+			}
 
 			snapshotIDs, _, err := locate.Match(repo, locateOptions)
 			if err != nil {
@@ -77,7 +82,7 @@ func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 			}
 			fmt.Fprintf(w, "</pre>\n")
 		},
-		func(ctx context.Context, snapshotID_string string) (fs.FS, error) {
+		func(innerctx context.Context, snapshotID_string string) (fs.FS, error) {
 			snapshotID, err := hex.DecodeString(snapshotID_string)
 			if err != nil {
 				return nil, err
