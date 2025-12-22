@@ -81,7 +81,6 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "workflow.end":
 			m.phase = "done !"
-			return m, tea.Quit
 
 		case "directory":
 			m.countDirs++

@@ -4,9 +4,11 @@ import (
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/ui/stdio"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/google/uuid"
 )
 
 type commandApp struct {
+	job    uuid.UUID
 	events chan Event    // events we feed into the Bubbletea model
 	done   chan struct{} // closed when Bubbletea program exits
 }
@@ -30,7 +32,7 @@ func Run(ctx *appcontext.AppContext) func() {
 
 			if app != nil {
 				app.events <- *e
-				if e.Type == "workflow.end" {
+				if e.Type == "workflow.end" && e.Job == app.job {
 					close(app.events)
 					<-app.done
 					app = nil
@@ -41,6 +43,7 @@ func Run(ctx *appcontext.AppContext) func() {
 			if e.Type == "workflow.start" {
 				app = startApp(ctx, e.Data["workflow"].(string))
 				if app != nil {
+					app.job = e.Job
 					app.events <- *e
 					continue
 				}
