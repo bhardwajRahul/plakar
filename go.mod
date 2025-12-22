@@ -9,7 +9,7 @@ require (
 	github.com/PlakarKorp/integration-ptar v1.0.5
 	github.com/PlakarKorp/integration-stdio v1.0.4
 	github.com/PlakarKorp/integration-tar v1.0.0-beta.7
-	github.com/PlakarKorp/kloset v1.0.13-0.20251218113037-5784d599e248
+	github.com/PlakarKorp/kloset v1.0.13-0.20251222110858-2539a972151c
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.1
 	github.com/charmbracelet/glamour v0.10.0
@@ -89,7 +89,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nickball/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/pierrec/lz4/v4 v4.1.22 // indirect
+	github.com/pierrec/lz4/v4 v4.1.23 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/xattr v0.4.12 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect

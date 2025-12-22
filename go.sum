@@ -17,8 +17,8 @@ github.com/PlakarKorp/integration-stdio v1.0.4 h1:h6dnYS7eX86VprbafxuDWVx2S0r2cK
 github.com/PlakarKorp/integration-stdio v1.0.4/go.mod h1:pCNqAlD0fARRB6+hDJOVqeRVgs4uwZfVNXPxyyv0s7M=
 github.com/PlakarKorp/integration-tar v1.0.0-beta.7 h1:O3G8sxxpaRwgnnrmA7WLtJ++U90Qr51ThJYk58uNALk=
 github.com/PlakarKorp/integration-tar v1.0.0-beta.7/go.mod h1:JheKpdjiureh7YfzjMYYwLT/rHJS2DR9kdb5itl8t3Y=
-github.com/PlakarKorp/kloset v1.0.13-0.20251218113037-5784d599e248 h1:wTZu2DgomTwolQPYZOH7UrqQz0GQMon3+ZXyXH9AWcE=
-github.com/PlakarKorp/kloset v1.0.13-0.20251218113037-5784d599e248/go.mod h1:LdeIoxL4rLTRgfx5U7a65Jr2YWfZ6wjwqEdWRHN2b0E=
+github.com/PlakarKorp/kloset v1.0.13-0.20251222110858-2539a972151c h1:N4WQNeJAuYdYLvQBGqDpceVrKtjhUlyVy/LPbsby8WQ=
+github.com/PlakarKorp/kloset v1.0.13-0.20251222110858-2539a972151c/go.mod h1:92g3MB7AdpnF+aYuAEuZw+FQoZ/7V9Xs0Zw7xMfDT+I=
 github.com/RaduBerinde/axisds v0.0.0-20250419182453-5135a0650657 h1:8XBWWQD+vFF+JqOsm16t0Kab1a7YWV8+GISVEP8AuZ8=
 github.com/RaduBerinde/axisds v0.0.0-20250419182453-5135a0650657/go.mod h1:UHGJonU9z4YYGKJxSaC6/TNcLOBptpmM5m2Cksbnw0Y=
 github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 h1:bsU8Tzxr/PNz75ayvCnxKZWEYdLMPDkUgticP4a4Bvk=
@@ -191,8 +191,8 @@ github.com/nickball/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5 h1:eQr2od
 github.com/nickball/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5/go.mod h1:1VYCE0dvZM9Y2q8kcAHdXZB6YwfrCUQDeSJ2DuIiA4k=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
-github.com/pierrec/lz4/v4 v4.1.22 h1:cKFw6uJDK+/gfw5BcDL0JL5aBsAFdsIT18eRtLj7VIU=
-github.com/pierrec/lz4/v4 v4.1.22/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
+github.com/pierrec/lz4/v4 v4.1.23 h1:oJE7T90aYBGtFNrI8+KbETnPymobAhzRrR8Mu8n1yfU=
+github.com/pierrec/lz4/v4 v4.1.23/go.mod h1:EoQMVJgeeEOMsCqCzqFm2O0cJvljX2nGZjcRIPL34O4=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
 github.com/pingcap/errors v0.11.4/go.mod h1:Oi8TUi2kEtXXLMJk9l1cGmz20kV3TaQ0usTwv5KuLY8=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
