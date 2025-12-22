@@ -19,6 +19,7 @@ import (
 	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/ui/stdio"
 	"github.com/stretchr/testify/require"
 )
 
@@ -102,6 +103,9 @@ func TestExecuteCmdCreateDefault(t *testing.T) {
 
 	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
 
+	defer stdio.Run(ctx)()
+	defer ctx.Close()
+
 	ctx.MaxConcurrency = 1
 	ctx.Stdout = bufOut
 	ctx.Stderr = bufErr
@@ -132,7 +136,7 @@ func TestExecuteCmdCreateDefault(t *testing.T) {
 	lines := strings.Split(strings.Trim(output, "\n"), "\n")
 	// last line should have the summary
 	lastline := lines[len(lines)-1]
-	require.Contains(t, lastline, "created unsigned snapshot")
+	require.Contains(t, lastline, "created snapshot")
 }
 
 func TestExecuteCmdCreateWithHooks(t *testing.T) {
@@ -140,6 +144,9 @@ func TestExecuteCmdCreateWithHooks(t *testing.T) {
 	bufErr := bytes.NewBuffer(nil)
 
 	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
+
+	defer stdio.Run(ctx)()
+	defer ctx.Close()
 
 	ctx.MaxConcurrency = 1
 	ctx.Stdout = bufOut
@@ -164,7 +171,7 @@ func TestExecuteCmdCreateWithHooks(t *testing.T) {
 	require.Contains(t, output, "pre-hook executed")
 	require.Contains(t, output, "executing hook: echo 'post-hook executed'")
 	require.Contains(t, output, "post-hook executed")
-	require.Contains(t, output, "created unsigned snapshot")
+	require.Contains(t, output, "created snapshot")
 }
 
 func TestExecuteCmdCreateDefaultWithIgnores(t *testing.T) {

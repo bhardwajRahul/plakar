@@ -13,6 +13,7 @@ import (
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/plakar/appcontext"
 	ptesting "github.com/PlakarKorp/plakar/testing"
+	"github.com/PlakarKorp/plakar/ui/stdio"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,6 +40,9 @@ func TestExecuteCmdCheckDefault(t *testing.T) {
 
 	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
 	defer snap.Close()
+
+	defer stdio.Run(ctx)()
+	defer ctx.Close()
 
 	args := []string{}
 
@@ -67,7 +71,7 @@ func TestExecuteCmdCheckDefault(t *testing.T) {
 
 	// last line should have the summary
 	lastline := lines[len(lines)-1]
-	require.Contains(t, lastline, fmt.Sprintf("info: check: verification of %s:%s completed successfully", hex.EncodeToString(snap.Header.GetIndexShortID()[:]), snap.Header.GetSource(0).Importer.Directory))
+	require.Contains(t, lastline, "check succeeded")
 }
 
 func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
@@ -77,6 +81,9 @@ func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
 	// create one snapshot
 	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
 	defer snap.Close()
+
+	defer stdio.Run(ctx)()
+	defer ctx.Close()
 
 	indexId := snap.Header.GetIndexID()
 	args := []string{fmt.Sprintf("%s", hex.EncodeToString(indexId[:]))}
@@ -105,5 +112,5 @@ func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
 	require.Equal(t, 8, len(lines))
 	// last line should have the summary
 	lastline := lines[len(lines)-1]
-	require.Contains(t, lastline, fmt.Sprintf("info: check: verification of %s:%s completed successfully", hex.EncodeToString(snap.Header.GetIndexShortID()[:]), snap.Header.GetSource(0).Importer.Directory))
+	require.Contains(t, lastline, "check succeeded")
 }
