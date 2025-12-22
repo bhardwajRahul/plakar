@@ -37,7 +37,6 @@ import (
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
-	"github.com/dustin/go-humanize"
 )
 
 type Backup struct {
@@ -46,8 +45,6 @@ type Backup struct {
 	Job                 string
 	Tags                []string
 	Excludes            []string
-	Silent              bool
-	Quiet               bool
 	Path                string
 	OptCheck            bool
 	Opts                map[string]string
@@ -121,8 +118,6 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.StringVar(&opt_ignore_file, "ignore-file", "", "path to a file containing newline-separated gitignore patterns, treated as -ignore")
 	flags.Var(&opt_ignore, "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
 	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "memory", "memory or a path to a directory to store temporary packfiles")
-	flags.BoolVar(&cmd.Quiet, "quiet", false, "suppress output")
-	flags.BoolVar(&cmd.Silent, "silent", false, "suppress ALL output")
 	flags.BoolVar(&cmd.OptCheck, "check", false, "check the snapshot after creating it")
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
 	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
@@ -307,28 +302,11 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		snap.Header.Job = cmd.Job
 	}
 
-	if cmd.Silent {
-		if err := snap.Backup(imp, opts); err != nil {
-			if err := executeHook(ctx, cmd.FailHook); err != nil {
-				ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
-			}
-			return 1, fmt.Errorf("failed to create snapshot: %w", err), objects.MAC{}, nil
+	if err := snap.Backup(imp, opts); err != nil {
+		if err := executeHook(ctx, cmd.FailHook); err != nil {
+			ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
 		}
-	} else {
-		root, err := imp.Root(ctx)
-		if err != nil {
-			return 1, fmt.Errorf("failed to get importer root: %w", err), objects.MAC{}, nil
-		}
-
-		ep := startEventsProcessor(ctx, root, true, cmd.Quiet)
-		if err := snap.Backup(imp, opts); err != nil {
-			ep.Close()
-			if err := executeHook(ctx, cmd.FailHook); err != nil {
-				ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
-			}
-			return 1, fmt.Errorf("failed to create snapshot: %w", err), objects.MAC{}, nil
-		}
-		ep.Close()
+		return 1, fmt.Errorf("failed to create snapshot: %w", err), objects.MAC{}, nil
 	}
 
 	if cmd.OptCheck {
@@ -367,16 +345,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	if err := executeHook(ctx, cmd.PostHook); err != nil {
 		ctx.GetLogger().Warn("post-backup hook failed: %s", err)
 	}
-
-	totalSize := snap.Header.GetSource(0).Summary.Directory.Size + snap.Header.GetSource(0).Summary.Below.Size
-
-	ctx.GetLogger().Info("backup: created %s snapshot %x of size %s in %s (wrote %s)",
-		"unsigned",
-		snap.Header.GetIndexShortID(),
-		humanize.IBytes(totalSize),
-		snap.Header.Duration,
-		humanize.IBytes(uint64(snap.Repository().WBytes())),
-	)
 
 	totalErrors := uint64(0)
 	for i := 0; i < len(snap.Header.Sources); i++ {
