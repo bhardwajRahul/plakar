@@ -153,7 +153,8 @@ func entryPoint() int {
 	flag.Parse()
 
 	ctx := appcontext.NewAppContext()
-	defer stdio.Run(ctx)()
+	uiDone := stdio.Run(ctx)
+	defer uiDone()
 	defer ctx.Close()
 
 	ctx.Quiet = opt_quiet
