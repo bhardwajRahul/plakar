@@ -3,8 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"runtime"
 	"slices"
@@ -12,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/header"
@@ -206,42 +203,6 @@ func (ui *uiserver) repositorySnapshots(w http.ResponseWriter, r *http.Request) 
 	}
 
 	return json.NewEncoder(w).Encode(items)
-}
-
-func (ui *uiserver) repositoryStates(w http.ResponseWriter, r *http.Request) error {
-	states, err := ui.repository.GetStates()
-	if err != nil {
-		return err
-	}
-
-	items := Items[objects.MAC]{
-		Total: len(states),
-		Items: make([]objects.MAC, len(states)),
-	}
-	for i, state := range states {
-		items.Items[i] = state
-	}
-
-	return json.NewEncoder(w).Encode(items)
-}
-
-func (ui *uiserver) repositoryState(w http.ResponseWriter, r *http.Request) error {
-	stateBytes32, err := PathParamToID(r, "state")
-	if err != nil {
-		return err
-	}
-
-	rd, err := ui.repository.GetState(stateBytes32)
-	if err != nil {
-		return err
-	}
-
-	defer rd.Close()
-	if _, err := io.Copy(w, rd); err != nil {
-		log.Println("write failed:", err)
-	}
-
-	return nil
 }
 
 func (ui *uiserver) repositoryImporterTypes(w http.ResponseWriter, r *http.Request) error {
