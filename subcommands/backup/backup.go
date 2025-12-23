@@ -215,19 +215,42 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		cmd.Opts["location"] = scanDir
 	}
 
+	emitter := repo.Emitter("backup")
+	defer emitter.Close()
+
 	imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cmd.Opts)
 	if err != nil {
 		return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
 	}
 	defer imp.Close(ctx)
 
+	excludes := exclude.NewRuleSet()
+	if err := excludes.AddRulesFromArray(cmd.Excludes); err != nil {
+		return 1, fmt.Errorf("failed to setup exclude rules: %w", err), objects.MAC{}, nil
+	}
+
 	if cmd.DryRun {
-		if err := dryrun(ctx, imp, cmd.Excludes); err != nil {
+		if err := dryrun(ctx, imp, excludes); err != nil {
 			return 1, err, objects.MAC{}, nil
 		}
 		return 0, nil, objects.MAC{}, nil
 	}
 
+	scanner, err := imp.Scan(ctx)
+	if err != nil {
+		return 1, fmt.Errorf("failed to scan: %w", err), objects.MAC{}, nil
+	}
+
+	go func() {
+		fsSummary := statistics(ctx, scanner, excludes)
+		emitter.FilesystemSummary(
+			fsSummary.FileCount,
+			fsSummary.DirCount,
+			fsSummary.SymlinkCount,
+			fsSummary.XattrCount,
+			fsSummary.TotalSize,
+		)
+	}()
 	// Execute pre-backup hook
 	if err := executeHook(ctx, cmd.PreHook); err != nil {
 		return 1, fmt.Errorf("pre-backup hook failed: %w", err), objects.MAC{}, nil
@@ -402,15 +425,10 @@ func executeHook(ctx *appcontext.AppContext, hook string) error {
 	return cmd.Run()
 }
 
-func dryrun(ctx *appcontext.AppContext, imp importer.Importer, excludePatterns []string) error {
+func dryrun(ctx *appcontext.AppContext, imp importer.Importer, excludes *exclude.RuleSet) error {
 	scanner, err := imp.Scan(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to scan: %w", err)
-	}
-
-	excludes := exclude.NewRuleSet()
-	if err := excludes.AddRulesFromArray(excludePatterns); err != nil {
-		return fmt.Errorf("failed to setup exclude rules: %w", err)
 	}
 
 	errors := false
@@ -448,4 +466,69 @@ func dryrun(ctx *appcontext.AppContext, imp importer.Importer, excludePatterns [
 		return fmt.Errorf("failed to scan some files")
 	}
 	return nil
+}
+
+type FilesystemSummary struct {
+	FileCount    uint64
+	DirCount     uint64
+	SymlinkCount uint64
+	XattrCount   uint64
+	TotalSize    uint64
+}
+
+func statistics(ctx *appcontext.AppContext, scanner <-chan *importer.ScanResult, excludes *exclude.RuleSet) FilesystemSummary {
+	errorCount := uint64(0)
+	directoryCount := uint64(0)
+	fileCount := uint64(0)
+	symlinkCount := uint64(0)
+	xattrCount := uint64(0)
+	totalSize := uint64(0)
+
+	for record := range scanner {
+		var pathname string
+		var isDir bool
+		switch {
+		case record.Record != nil:
+			pathname = record.Record.Pathname
+			isDir = record.Record.FileInfo.IsDir()
+		case record.Error != nil:
+			pathname = record.Error.Pathname
+			isDir = false
+		}
+
+		if excludes.IsExcluded(pathname, isDir) {
+			if record.Record != nil {
+				record.Record.Close()
+			}
+			continue
+		}
+
+		switch {
+		case record.Error != nil:
+			errorCount++
+		case record.Record != nil:
+			if record.Record.IsXattr {
+				xattrCount++
+				record.Record.Close()
+				continue
+			}
+
+			if record.Record.FileInfo.IsDir() {
+				directoryCount++
+			} else if record.Record.FileInfo.Mode()&os.ModeSymlink != 0 {
+				symlinkCount++
+			} else if record.Record.FileInfo.Mode().IsRegular() {
+				fileCount++
+				totalSize += uint64(record.Record.FileInfo.Size())
+			}
+			record.Record.Close()
+		}
+	}
+	return FilesystemSummary{
+		FileCount:    fileCount,
+		DirCount:     directoryCount,
+		SymlinkCount: symlinkCount,
+		XattrCount:   xattrCount,
+		TotalSize:    totalSize,
+	}
 }
