@@ -129,10 +129,7 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "snapshot.commit.end":
 			m.phase = "done committing snapshot..."
 
-		case "snapshot.backup.commit.done":
-			m.lastLog = fmt.Sprintf("%x: created unsigned snapshot", e.Snapshot[:4])
-
-		case "snapshot.backup.result":
+		case "result":
 			m.lastLog = fmt.Sprintf("%x: created unsigned snapshot", e.Snapshot[:4])
 		}
 

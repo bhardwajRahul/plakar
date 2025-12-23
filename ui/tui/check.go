@@ -108,7 +108,7 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "path.error":
 			m.countFilesErrors++
 
-		case "snapshot.check.result":
+		case "result":
 			errors := e.Data["errors"].(uint64)
 			if errors == 0 {
 				m.countSnapshotsOk++
