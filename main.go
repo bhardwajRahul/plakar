@@ -157,7 +157,7 @@ func entryPoint() int {
 	flag.Parse()
 
 	ctx := appcontext.NewAppContext()
-	if opt_stdio || opt_quiet || opt_silent || !term.IsTerminal(1) {
+	if opt_stdio || opt_quiet || opt_silent || opt_trace != "" || !term.IsTerminal(1) {
 		uiDone := stdio.Run(ctx)
 		defer uiDone()
 	} else {
