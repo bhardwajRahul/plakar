@@ -9,17 +9,26 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/dustin/go-humanize"
 )
 
 type checkModel struct {
 	appContext *appcontext.AppContext
 	events     <-chan Event
 
-	phase string
+	phase      string
+	detail     string
+	snapshotID string
 
 	startTime time.Time
-	lastLog   string
 	forceQuit bool
+
+	foundSummary        bool
+	fileCountTotal      uint64
+	directoryCountTotal uint64
+	symlinkCountTotal   uint64
+	xattrCountTotal     uint64
+	totalSize           uint64
 
 	// counts (event-driven, no per-path memory)
 	countSnapshots       uint64
@@ -33,7 +42,16 @@ type checkModel struct {
 	countDirsErrors      uint64
 
 	// UI
-	prog progress.Model
+	ressourcesProgress progress.Model
+	structureProgress  progress.Model
+
+	// ETA calculation
+	lastETAAt      time.Time
+	lastResDone    uint64
+	lastStructDone uint64
+	resRateEMA     float64 // items/sec
+	structRateEMA  float64 // items/sec
+
 	spin spinner.Model
 }
 
@@ -41,14 +59,16 @@ func newCheckModel(ctx *appcontext.AppContext, events <-chan Event) tea.Model {
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot
 
-	pr := progress.New(progress.WithDefaultGradient())
+	rpr := progress.New(progress.WithDefaultGradient())
+	spr := progress.New(progress.WithDefaultGradient())
 
 	return checkModel{
-		appContext: ctx,
-		events:     events,
-		startTime:  time.Now(),
-		prog:       pr,
-		spin:       sp,
+		appContext:         ctx,
+		events:             events,
+		startTime:          time.Now(),
+		ressourcesProgress: rpr,
+		structureProgress:  spr,
+		spin:               sp,
 	}
 }
 
@@ -63,10 +83,46 @@ func (m checkModel) Init() tea.Cmd {
 func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch event := msg.(type) {
 	case tickMsg:
-		// throttle percent updates
-		const minFrame = 100 * time.Millisecond
 		var cmd tea.Cmd
 		m.spin, cmd = m.spin.Update(msg)
+
+		now := time.Now()
+		if m.lastETAAt.IsZero() {
+			m.lastETAAt = now
+			m.lastResDone = m.countFilesOk + m.countFilesErrors
+			m.lastStructDone = m.countDirsOk + m.countDirsErrors
+			return m, tea.Batch(cmd, tick())
+		}
+
+		dt := now.Sub(m.lastETAAt).Seconds()
+		if dt > 0.2 {
+			resDone := m.countFilesOk + m.countFilesErrors
+			structDone := m.countDirsOk + m.countDirsErrors
+
+			resRate := float64(resDone-m.lastResDone) / dt
+			structRate := float64(structDone-m.lastStructDone) / dt
+
+			const alpha = 0.2
+			if resRate > 0 {
+				if m.resRateEMA == 0 {
+					m.resRateEMA = resRate
+				} else {
+					m.resRateEMA = alpha*resRate + (1-alpha)*m.resRateEMA
+				}
+			}
+			if structRate > 0 {
+				if m.structRateEMA == 0 {
+					m.structRateEMA = structRate
+				} else {
+					m.structRateEMA = alpha*structRate + (1-alpha)*m.structRateEMA
+				}
+			}
+
+			m.lastETAAt = now
+			m.lastResDone = resDone
+			m.lastStructDone = structDone
+		}
+
 		return m, tea.Batch(cmd, tick())
 
 	case spinner.TickMsg:
@@ -79,11 +135,22 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch e.Type {
 		case "workflow.start":
-			m.phase = "checking backup..."
-			m.countSnapshots++
+			m.startTime = time.Now()
+			m.phase = "checking"
+			m.snapshotID = fmt.Sprintf("%x", e.Snapshot[0:4])
 
 		case "workflow.end":
 			m.phase = "done !"
+
+		// If you emit totals, we can show real bars + ETA.
+		// If not, the UI stays in spinner mode (still nice).
+		case "fs.summary":
+			m.foundSummary = true
+			m.fileCountTotal = e.Data["files"].(uint64)
+			m.directoryCountTotal = e.Data["directories"].(uint64)
+			m.symlinkCountTotal = e.Data["symlinks"].(uint64)
+			m.xattrCountTotal = e.Data["xattrs"].(uint64)
+			m.totalSize = e.Data["size"].(uint64)
 
 		case "directory":
 			m.countDirs++
@@ -93,11 +160,11 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "file.ok":
 			m.countFilesOk++
-			m.lastLog = fmt.Sprintf("%x: %s", e.Snapshot[:4], e.Data["path"].(string))
+			m.detail = fmt.Sprintf("%s", e.Data["path"].(string))
 
 		case "directory.ok":
 			m.countDirsOk++
-			m.lastLog = fmt.Sprintf("%x: %s", e.Snapshot[:4], e.Data["path"].(string))
+			m.detail = fmt.Sprintf("%s", e.Data["path"].(string))
 
 		case "file.error":
 			m.countFilesErrors++
@@ -109,16 +176,10 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.countFilesErrors++
 
 		case "result":
-			errors := e.Data["errors"].(uint64)
-			if errors == 0 {
-				m.countSnapshotsOk++
-			} else {
-				m.countSnapshotsErrors++
-			}
-			m.lastLog = fmt.Sprintf("%x: checked snapshot", e.Snapshot[:4])
+			m.phase = "checked snapshot"
+			m.detail = fmt.Sprintf("size=%s errors=%d duration=%s", humanize.IBytes(e.Data["size"].(uint64)), e.Data["errors"].(uint64), e.Data["duration"].(time.Duration))
 		}
 
-		// re-arm exactly one next wait
 		return m, waitForDoneEvent(m.events)
 
 	case tea.KeyMsg:
@@ -129,7 +190,7 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.QuitMsg:
-		m.lastLog = "Aborted"
+		m.phase = "Aborted"
 		return m, tea.Quit
 	}
 
@@ -137,37 +198,90 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m checkModel) View() string {
-	// Don't flash UI if nothing happened
-	if m.countFilesOk == 0 && m.countFilesErrors == 0 && m.countDirsOk == 0 && m.countDirsErrors == 0 && m.lastLog == "" {
+	if m.countFilesOk == 0 && m.countFilesErrors == 0 && m.countDirsOk == 0 && m.countDirsErrors == 0 && m.phase == "" {
 		return ""
 	}
 
 	if m.forceQuit {
-		return fmt.Sprintf("%s Check aborted\n", crossMark)
+		return fmt.Sprintf("[%s] check: aborted !\n", humanDuration(time.Since(m.startTime)))
 	}
 
 	var s strings.Builder
 
-	fmt.Fprintf(&s, "[%s] check: %s\n", humanDuration(time.Since(m.startTime)), m.phase)
-
-	fmt.Fprintf(&s, "Resources: %s %d", checkMark, m.countFilesOk)
-	if m.countFilesErrors > 0 {
-		fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors)
+	detail := ""
+	if m.detail != "" {
+		detail = ": " + m.detail
 	}
-	fmt.Fprintf(&s, "\n")
 
-	fmt.Fprintf(&s, "Structure: %s %d", checkMark, m.countDirsOk)
-	if m.countDirsErrors > 0 {
-		fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
+	fmt.Fprintf(&s, "[%s] %s: %s%s\n", humanDuration(time.Since(m.startTime)), m.snapshotID, m.phase, detail)
+
+	// resources
+	if m.foundSummary && m.fileCountTotal > 0 {
+		done := m.countFilesOk + m.countFilesErrors
+		total := m.fileCountTotal
+
+		ratio := float64(done) / float64(total)
+		if ratio < 0 {
+			ratio = 0
+		} else if ratio > 1 {
+			ratio = 1
+		}
+
+		eta := ""
+		if m.resRateEMA > 0 && done > 10 && time.Since(m.startTime) > 2*time.Second {
+			remaining := float64(total - done)
+			etaDur := time.Duration(remaining / m.resRateEMA * float64(time.Second))
+			if v := fmtETA(etaDur); v != "" {
+				eta = " ETA " + v
+			}
+		}
+
+		fmt.Fprintf(&s, "resources: %s%s [%d/%d]", m.ressourcesProgress.ViewAs(ratio), eta, done, total)
+		if m.countFilesErrors > 0 {
+			fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors)
+		}
+		fmt.Fprintf(&s, "\n")
+	} else {
+		fmt.Fprintf(&s, "resources: %s %s %d", m.spin.View(), checkMark, m.countFilesOk)
+		if m.countFilesErrors > 0 {
+			fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors)
+		}
+		fmt.Fprintf(&s, "\n")
 	}
-	fmt.Fprintf(&s, "\n")
 
-	fmt.Fprintf(&s, "Snapshots: %s %d", checkMark, m.countSnapshotsOk)
-	if m.countSnapshotsErrors > 0 {
-		fmt.Fprintf(&s, "  %s %d", crossMark, m.countSnapshotsErrors)
+	// structure
+	if m.foundSummary && m.directoryCountTotal > 0 {
+		done := m.countDirsOk + m.countDirsErrors
+		total := m.directoryCountTotal
+
+		ratio := float64(done) / float64(total)
+		if ratio < 0 {
+			ratio = 0
+		} else if ratio > 1 {
+			ratio = 1
+		}
+
+		eta := ""
+		if m.structRateEMA > 0 && done > 10 && time.Since(m.startTime) > 2*time.Second {
+			remaining := float64(total - done)
+			etaDur := time.Duration(remaining / m.structRateEMA * float64(time.Second))
+			if v := fmtETA(etaDur); v != "" {
+				eta = " ETA " + v
+			}
+		}
+
+		fmt.Fprintf(&s, "structure: %s%s [%d/%d]", m.structureProgress.ViewAs(ratio), eta, done, total)
+		if m.countDirsErrors > 0 {
+			fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
+		}
+		fmt.Fprintf(&s, "\n")
+	} else {
+		fmt.Fprintf(&s, "structure: %s %s %d", m.spin.View(), checkMark, m.countDirsOk)
+		if m.countDirsErrors > 0 {
+			fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
+		}
+		fmt.Fprintf(&s, "\n")
 	}
-	fmt.Fprintf(&s, "\n")
 
-	fmt.Fprintf(&s, "%s\n", m.lastLog)
 	return s.String()
 }
