@@ -81,7 +81,6 @@ func (m restoreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "workflow.end":
 			m.phase = "done !"
-			return m, tea.Quit
 
 		case "directory":
 			m.countDirs++
@@ -106,7 +105,7 @@ func (m restoreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "path.error":
 			m.countFilesErrors++
 
-		case "snapshot.check.result":
+		case "result":
 			m.lastLog = fmt.Sprintf("%x: created unsigned snapshot", e.Snapshot[:4])
 		}
 

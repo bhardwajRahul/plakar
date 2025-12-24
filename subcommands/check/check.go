@@ -110,6 +110,9 @@ func (cmd *Check) Execute(ctx *appcontext.AppContext, repo *repository.Repositor
 	}
 	defer checkCache.Close()
 
+	emitter := repo.Emitter("check")
+	defer emitter.Close()
+
 	var failures int
 	for _, arg := range snapshots {
 		snap, pathname, err := locate.OpenSnapshotByPath(repo, arg)

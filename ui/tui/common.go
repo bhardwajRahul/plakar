@@ -22,7 +22,7 @@ func waitForDoneEvent(ch <-chan Event) tea.Cmd {
 	return func() tea.Msg {
 		e, ok := <-ch
 		if !ok {
-			return appMsg(Event{Type: "workflow.done"})
+			return tea.Quit()
 		}
 		return appMsg(e)
 	}

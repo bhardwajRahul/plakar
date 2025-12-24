@@ -22,12 +22,15 @@ type checkModel struct {
 	forceQuit bool
 
 	// counts (event-driven, no per-path memory)
-	countFiles       uint64
-	countFilesOk     uint64
-	countFilesErrors uint64
-	countDirs        uint64
-	countDirsOk      uint64
-	countDirsErrors  uint64
+	countSnapshots       uint64
+	countSnapshotsOk     uint64
+	countSnapshotsErrors uint64
+	countFiles           uint64
+	countFilesOk         uint64
+	countFilesErrors     uint64
+	countDirs            uint64
+	countDirsOk          uint64
+	countDirsErrors      uint64
 
 	// UI
 	prog progress.Model
@@ -76,12 +79,11 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch e.Type {
 		case "workflow.start":
-			m.startTime = time.Now()
 			m.phase = "checking backup..."
+			m.countSnapshots++
 
 		case "workflow.end":
 			m.phase = "done !"
-			return m, tea.Quit
 
 		case "directory":
 			m.countDirs++
@@ -106,8 +108,14 @@ func (m checkModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "path.error":
 			m.countFilesErrors++
 
-		case "snapshot.check.result":
-			m.lastLog = fmt.Sprintf("%x: created unsigned snapshot", e.Snapshot[:4])
+		case "result":
+			errors := e.Data["errors"].(uint64)
+			if errors == 0 {
+				m.countSnapshotsOk++
+			} else {
+				m.countSnapshotsErrors++
+			}
+			m.lastLog = fmt.Sprintf("%x: checked snapshot", e.Snapshot[:4])
 		}
 
 		// re-arm exactly one next wait
@@ -151,6 +159,12 @@ func (m checkModel) View() string {
 	fmt.Fprintf(&s, "Structure: %s %d", checkMark, m.countDirsOk)
 	if m.countDirsErrors > 0 {
 		fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
+	}
+	fmt.Fprintf(&s, "\n")
+
+	fmt.Fprintf(&s, "Snapshots: %s %d", checkMark, m.countSnapshotsOk)
+	if m.countSnapshotsErrors > 0 {
+		fmt.Fprintf(&s, "  %s %d", crossMark, m.countSnapshotsErrors)
 	}
 	fmt.Fprintf(&s, "\n")
 
