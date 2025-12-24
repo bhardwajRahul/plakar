@@ -71,7 +71,7 @@ func TestExecuteCmdCheckDefault(t *testing.T) {
 
 	// last line should have the summary
 	lastline := lines[len(lines)-1]
-	require.Contains(t, lastline, "check succeeded")
+	require.Contains(t, lastline, "check completed without errors")
 }
 
 func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
@@ -112,5 +112,5 @@ func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
 	require.Equal(t, 8, len(lines))
 	// last line should have the summary
 	lastline := lines[len(lines)-1]
-	require.Contains(t, lastline, "check succeeded")
+	require.Contains(t, lastline, "check completed without errors")
 }
