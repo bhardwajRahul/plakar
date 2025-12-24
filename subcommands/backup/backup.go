@@ -56,6 +56,7 @@ type Backup struct {
 	FailHook            string
 	NoXattr             bool
 	NoVFSCache          bool
+	NoProgress          bool
 }
 
 func init() {
@@ -123,6 +124,8 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
 	flags.BoolVar(&cmd.NoXattr, "no-xattr", false, "do not back up extended attributes")
 	flags.BoolVar(&cmd.NoVFSCache, "no-vfs-cache", false, "do not use VFS cache for this backup")
+	flags.BoolVar(&cmd.NoProgress, "no-progress", false, "do not display progress")
+
 	flags.Var(locate.NewTimeFlag(&cmd.ForcedTimestamp), "force-timestamp", "force a timestamp")
 	//flags.BoolVar(&opt_stdio, "stdio", false, "output one line per file to stdout instead of the default interactive output")
 	flags.Parse(args)
@@ -236,21 +239,23 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		return 0, nil, objects.MAC{}, nil
 	}
 
-	scanner, err := imp.Scan(ctx)
-	if err != nil {
-		return 1, fmt.Errorf("failed to scan: %w", err), objects.MAC{}, nil
-	}
+	if !cmd.NoProgress {
+		scanner, err := imp.Scan(ctx)
+		if err != nil {
+			return 1, fmt.Errorf("failed to scan: %w", err), objects.MAC{}, nil
+		}
 
-	go func() {
-		fsSummary := statistics(ctx, scanner, excludes)
-		emitter.FilesystemSummary(
-			fsSummary.FileCount,
-			fsSummary.DirCount,
-			fsSummary.SymlinkCount,
-			fsSummary.XattrCount,
-			fsSummary.TotalSize,
-		)
-	}()
+		go func() {
+			fsSummary := statistics(ctx, scanner, excludes)
+			emitter.FilesystemSummary(
+				fsSummary.FileCount,
+				fsSummary.DirCount,
+				fsSummary.SymlinkCount,
+				fsSummary.XattrCount,
+				fsSummary.TotalSize,
+			)
+		}()
+	}
 	// Execute pre-backup hook
 	if err := executeHook(ctx, cmd.PreHook); err != nil {
 		return 1, fmt.Errorf("pre-backup hook failed: %w", err), objects.MAC{}, nil
