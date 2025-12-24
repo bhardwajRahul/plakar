@@ -437,7 +437,14 @@ func dryrun(ctx *appcontext.AppContext, imp importer.Importer, excludes *exclude
 	}
 
 	errors := false
+	i := 0
 	for record := range scanner {
+
+		if i%1000 == 0 && ctx.Err() != nil {
+			return ctx.Err()
+		}
+		i++
+
 		var pathname string
 		var isDir bool
 		switch {
@@ -489,7 +496,14 @@ func statistics(ctx *appcontext.AppContext, scanner <-chan *importer.ScanResult,
 	xattrCount := uint64(0)
 	totalSize := uint64(0)
 
+	i := 0
 	for record := range scanner {
+
+		if i%1000 == 0 && ctx.Err() != nil {
+			break
+		}
+		i++
+
 		var pathname string
 		var isDir bool
 		switch {
