@@ -408,9 +408,6 @@ func entryPoint() int {
 		return 1
 	}
 
-	cmd.SetCWD(ctx.CWD)
-	cmd.SetCommandLine(ctx.CommandLine)
-
 	c := make(chan os.Signal, 1)
 	go func() {
 		<-c

@@ -22,26 +22,11 @@ type Subcommand interface {
 	GetRepositorySecret() []byte
 	GetFlags() CommandFlags
 	setFlags(CommandFlags)
-	GetCWD() string
-	SetCWD(string)
-	GetCommandLine() string
-	SetCommandLine(string)
-
-	GetLogInfo() bool
-	SetLogInfo(bool)
-	GetLogTraces() string
-	SetLogTraces(string)
 }
 
 type SubcommandBase struct {
 	RepositorySecret []byte
 	Flags            CommandFlags
-	CWD              string
-	CommandLine      string
-
-	// XXX - rework that post-release
-	LogInfo   bool
-	LogTraces string
 }
 
 func (cmd *SubcommandBase) setFlags(flags CommandFlags) {
@@ -50,38 +35,6 @@ func (cmd *SubcommandBase) setFlags(flags CommandFlags) {
 
 func (cmd *SubcommandBase) GetFlags() CommandFlags {
 	return cmd.Flags
-}
-
-func (cmd *SubcommandBase) GetCWD() string {
-	return cmd.CWD
-}
-
-func (cmd *SubcommandBase) SetCWD(cwd string) {
-	cmd.CWD = cwd
-}
-
-func (cmd *SubcommandBase) GetCommandLine() string {
-	return cmd.CommandLine
-}
-
-func (cmd *SubcommandBase) SetCommandLine(cmdline string) {
-	cmd.CommandLine = cmdline
-}
-
-func (cmd *SubcommandBase) GetLogInfo() bool {
-	return cmd.LogInfo
-}
-
-func (cmd *SubcommandBase) GetLogTraces() string {
-	return cmd.LogTraces
-}
-
-func (cmd *SubcommandBase) SetLogInfo(v bool) {
-	cmd.LogInfo = v
-}
-
-func (cmd *SubcommandBase) SetLogTraces(traces string) {
-	cmd.LogTraces = traces
 }
 
 func (cmd *SubcommandBase) GetRepositorySecret() []byte {
