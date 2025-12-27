@@ -36,7 +36,6 @@ import (
 	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
-	"github.com/PlakarKorp/plakar/subcommands/cached"
 	"github.com/PlakarKorp/plakar/utils"
 	"github.com/google/uuid"
 
@@ -212,9 +211,6 @@ func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn) {
 	defer conn.Close()
 
-	mu := sync.Mutex{}
-
-	var encodingErrorOccurred bool
 	encoder := msgpack.NewEncoder(conn)
 	decoder := msgpack.NewDecoder(conn)
 
@@ -230,25 +226,8 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 		return
 	}
 
-	write := func(packet agent.Packet) {
-		if encodingErrorOccurred {
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			mu.Lock()
-			if err := encoder.Encode(&packet); err != nil {
-				encodingErrorOccurred = true
-				ctx.GetLogger().Warn("client write error: %v", err)
-			}
-			mu.Unlock()
-		}
-	}
-
-	_, storeConfig, request, err := subcommands.DecodeRPC(decoder)
-	if err != nil {
+	pkt := &agent.RequestPkt{}
+	if err := decoder.Decode(pkt); err != nil {
 		if isDisconnectError(err) {
 			ctx.GetLogger().Warn("client disconnected during initial request")
 			return
@@ -260,30 +239,25 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 	// Attempt another decode to detect client disconnection during processing
 	go func() {
 		for {
-			var pkt agent.Packet
+			var pkt agent.RequestPkt
 			if err := decoder.Decode(&pkt); err != nil {
 				return
 			}
 		}
 	}()
 
-	subcommand := &cached.CachedReq{}
-	if err := msgpack.Unmarshal(request, subcommand); err != nil {
-		ctx.GetLogger().Warn("Failed to decode client request: %v", err)
-		return
-	}
-
-	ctx.GetLogger().Info("cached rebuild request for %s", subcommand.RepoID)
+	ctx.GetLogger().Info("cached rebuild request for %s", pkt.RepoID)
 
 	// Is there already a job goroutine running for this repo:
 	var jq chan jobReq
 	var ok bool
+	var err error
 	cmd.jobMtx.Lock()
-	if jq, ok = cmd.jobQueue[subcommand.RepoID]; !ok {
-		cmd.jobQueue[subcommand.RepoID] = make(chan jobReq, 1)
-		jq = cmd.jobQueue[subcommand.RepoID]
+	if jq, ok = cmd.jobQueue[pkt.RepoID]; !ok {
+		cmd.jobQueue[pkt.RepoID] = make(chan jobReq, 1)
+		jq = cmd.jobQueue[pkt.RepoID]
 
-		err = cmd.rebuildJob(ctx, jq, subcommand, storeConfig)
+		err = cmd.rebuildJob(ctx, jq, pkt.RepoID, pkt.Secret, pkt.StoreConfig)
 	}
 
 	cmd.jobMtx.Unlock()
@@ -304,21 +278,23 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 		exitCode = -1
 	}
 
-	write(agent.Packet{
-		Type:     "exit",
+	response := &agent.ResponsePkt{
 		ExitCode: exitCode,
 		Err:      errStr,
-	})
+	}
+	if err := encoder.Encode(&response); err != nil {
+		ctx.GetLogger().Warn("client write error: %v", err)
+	}
 }
 
-func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, subcommand *cached.CachedReq, storeConfig map[string]string) error {
+func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, repoID uuid.UUID, secret []byte, storeConfig map[string]string) error {
 	var serializedConfig []byte
 	store, serializedConfig, err := storage.Open(ctx.GetInner(), storeConfig)
 	if err != nil {
 		return fmt.Errorf("failed to open storage: %w", err)
 	}
 
-	key, err := getSecret(ctx, subcommand, storeConfig, serializedConfig)
+	key, err := getSecret(ctx, secret, serializedConfig)
 	if err != nil {
 		return fmt.Errorf("failed to setup secret: %w", err)
 	}
@@ -328,8 +304,8 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, s
 		return fmt.Errorf("failed to open repository: %w", err)
 	}
 
-	if subcommand.RepoID != repo.Configuration().RepositoryID {
-		return fmt.Errorf("invalid uuid given %q repository id is %q", subcommand.RepoID.String(), repo.Configuration().RepositoryID.String())
+	if repoID != repo.Configuration().RepositoryID {
+		return fmt.Errorf("invalid uuid given %q repository id is %q", repoID.String(), repo.Configuration().RepositoryID.String())
 	}
 
 	go func() {
@@ -366,7 +342,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, s
 
 }
 
-func getSecret(ctx *appcontext.AppContext, cmd subcommands.Subcommand, storeConfig map[string]string, storageConfig []byte) ([]byte, error) {
+func getSecret(ctx *appcontext.AppContext, secret []byte, storageConfig []byte) ([]byte, error) {
 	config, err := storage.NewConfigurationFromWrappedBytes(storageConfig)
 	if err != nil {
 		return nil, err
@@ -376,7 +352,7 @@ func getSecret(ctx *appcontext.AppContext, cmd subcommands.Subcommand, storeConf
 		return nil, nil
 	}
 
-	key := cmd.GetRepositorySecret()
+	key := secret
 	if !encryption.VerifyCanary(config.Encryption, key) {
 		return nil, fmt.Errorf("failed to verify key")
 	}
