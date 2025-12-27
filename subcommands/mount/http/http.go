@@ -35,8 +35,8 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/header"
-	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/cached"
 )
 
 type ListFn func(ctx context.Context, w http.ResponseWriter, r *http.Request)
@@ -47,7 +47,7 @@ func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 
 	handler := NewDynamicSnapshotHandler(
 		func(innertctx context.Context, w http.ResponseWriter, r *http.Request) {
-			_, err := agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+			_, err := cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
 			if err != nil {
 				http.Error(w, "failed to rebuild state", http.StatusInternalServerError)
 				return

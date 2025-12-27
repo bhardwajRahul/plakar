@@ -10,7 +10,7 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/kloset/versioning"
-	"github.com/PlakarKorp/plakar/agent"
+	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands/backup"
 	"github.com/PlakarKorp/plakar/subcommands/check"
 	"github.com/PlakarKorp/plakar/subcommands/maintenance"
@@ -75,7 +75,7 @@ func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 				continue
 			}
 
-			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+			if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 				s.ctx.GetLogger().Error("Error opening repository: %s", err)
 				continue
 			}
@@ -87,7 +87,7 @@ func (s *Scheduler) backupTask(taskset Task, task BackupConfig) {
 			}
 
 			if task.Retention != 0 {
-				if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 					s.ctx.GetLogger().Error("Error opening repository: %s", err)
 					continue
 				}
@@ -133,7 +133,7 @@ func (s *Scheduler) checkTask(taskset Task, task CheckConfig) {
 				continue
 			}
 
-			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+			if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 				s.ctx.GetLogger().Error("Error opening repository: %s", err)
 				continue
 			}
@@ -173,7 +173,7 @@ func (s *Scheduler) restoreTask(taskset Task, task RestoreConfig) {
 				continue
 			}
 
-			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+			if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 				s.ctx.GetLogger().Error("Error opening repository: %s", err)
 				continue
 			}
@@ -226,7 +226,7 @@ func (s *Scheduler) syncTask(taskset Task, task SyncConfig) {
 				continue
 			}
 
-			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+			if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 				s.ctx.GetLogger().Error("Error opening repository: %s", err)
 				continue
 			}
@@ -266,7 +266,7 @@ func (s *Scheduler) maintenanceTask(task MaintenanceConfig) {
 				continue
 			}
 
-			if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+			if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 				s.ctx.GetLogger().Error("Error opening repository: %s", err)
 				continue
 			}
@@ -280,7 +280,7 @@ func (s *Scheduler) maintenanceTask(task MaintenanceConfig) {
 			}
 
 			if task.Retention != 0 {
-				if _, err := agent.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
+				if _, err := cached.RebuildStateFromCached(s.ctx, repo.Configuration().RepositoryID, storeConfig); err != nil {
 					s.ctx.GetLogger().Error("Error opening repository: %s", err)
 					continue
 				}

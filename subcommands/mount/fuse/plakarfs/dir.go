@@ -14,7 +14,7 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
-	"github.com/PlakarKorp/plakar/agent"
+	"github.com/PlakarKorp/plakar/cached"
 	"github.com/anacrolix/fuse"
 	"github.com/anacrolix/fuse/fs"
 )
@@ -207,7 +207,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	if d.name == "/" {
-		_, err := agent.RebuildStateFromCached(d.fs.ctx, d.repo.Configuration().RepositoryID, d.fs.ctx.StoreConfig)
+		_, err := cached.RebuildStateFromCached(d.fs.ctx, d.repo.Configuration().RepositoryID, d.fs.ctx.StoreConfig)
 		if err != nil {
 			return nil, err
 		}

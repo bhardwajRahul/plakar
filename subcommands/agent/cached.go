@@ -33,8 +33,8 @@ import (
 	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/storage"
-	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
 	"github.com/google/uuid"
@@ -142,7 +142,7 @@ func (cmd *Cached) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 }
 
 func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
-	lock, err := agent.LockedFile(cmd.socketPath + ".cached-lock")
+	lock, err := cached.LockedFile(cmd.socketPath + ".cached-lock")
 	if err != nil {
 		return fmt.Errorf("failed to obtain lock")
 	}
@@ -226,7 +226,7 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 		return
 	}
 
-	pkt := &agent.RequestPkt{}
+	pkt := &cached.RequestPkt{}
 	if err := decoder.Decode(pkt); err != nil {
 		if isDisconnectError(err) {
 			ctx.GetLogger().Warn("client disconnected during initial request")
@@ -239,7 +239,7 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 	// Attempt another decode to detect client disconnection during processing
 	go func() {
 		for {
-			var pkt agent.RequestPkt
+			var pkt cached.RequestPkt
 			if err := decoder.Decode(&pkt); err != nil {
 				return
 			}
@@ -278,7 +278,7 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 		exitCode = -1
 	}
 
-	response := &agent.ResponsePkt{
+	response := &cached.ResponsePkt{
 		ExitCode: exitCode,
 		Err:      errStr,
 	}

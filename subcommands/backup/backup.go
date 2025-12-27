@@ -33,8 +33,8 @@ import (
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/importer"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
-	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
 )
@@ -180,7 +180,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		StateRefresher: func() error {
 			// empty map is safe here because the repo has already been opened
 			// on cached side.
-			_, err := agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+			_, err := cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
 			return err
 		},
 	}
@@ -341,7 +341,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 
 	if cmd.OptCheck {
-		_, err := agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+		_, err := cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
 		if err != nil {
 			return 1, fmt.Errorf("failed to rebuild state %w", err), objects.MAC{}, nil
 		}
