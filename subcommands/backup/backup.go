@@ -221,16 +221,19 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	emitter := repo.Emitter("backup")
 	defer emitter.Close()
 
-	imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cmd.Opts)
-	if err != nil {
-		return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
-	}
-	defer imp.Close(ctx)
-
 	excludes := exclude.NewRuleSet()
 	if err := excludes.AddRulesFromArray(cmd.Excludes); err != nil {
 		return 1, fmt.Errorf("failed to setup exclude rules: %w", err), objects.MAC{}, nil
 	}
+
+	importerOpts := ctx.ImporterOpts()
+	importerOpts.Excludes = cmd.Excludes
+
+	imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmd.Opts)
+	if err != nil {
+		return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
+	}
+	defer imp.Close(ctx)
 
 	if cmd.DryRun {
 		if err := dryrun(ctx, imp, excludes); err != nil {
