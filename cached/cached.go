@@ -112,7 +112,7 @@ func NewClient(socketPath string, ignoreVersion bool) (*Client, error) {
 
 		attempt++
 		if attempt > 1000 {
-			return nil, fmt.Errorf("failed to run the agent")
+			return nil, fmt.Errorf("failed to run cached")
 		}
 
 		if lockfile == nil {
@@ -144,7 +144,7 @@ func NewClient(socketPath string, ignoreVersion bool) (*Client, error) {
 
 			plakar := exec.Command(me, "cached")
 			if err := plakar.Start(); err != nil {
-				return nil, fmt.Errorf("failed to start the agent: %w", err)
+				return nil, fmt.Errorf("failed to start cached: %w", err)
 			}
 			spawned = true
 		}
@@ -175,13 +175,13 @@ func (c *Client) handshake(ignoreVersion bool) error {
 		return err
 	}
 
-	var agentvers []byte
-	if err := c.dec.Decode(&agentvers); err != nil {
+	var cachedvers []byte
+	if err := c.dec.Decode(&cachedvers); err != nil {
 		return err
 	}
 
-	if !ignoreVersion && !slices.Equal(ourvers, agentvers) {
-		return fmt.Errorf("%w (%v)", ErrWrongVersion, string(agentvers))
+	if !ignoreVersion && !slices.Equal(ourvers, cachedvers) {
+		return fmt.Errorf("%w (%v)", ErrWrongVersion, string(cachedvers))
 	}
 
 	return nil
