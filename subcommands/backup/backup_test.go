@@ -136,7 +136,7 @@ func TestExecuteCmdCreateDefault(t *testing.T) {
 	lines := strings.Split(strings.Trim(output, "\n"), "\n")
 	// last line should have the summary
 	lastline := lines[len(lines)-1]
-	require.Contains(t, lastline, "created snapshot")
+	require.Contains(t, lastline, "backup completed")
 }
 
 func TestExecuteCmdCreateWithHooks(t *testing.T) {
@@ -171,7 +171,7 @@ func TestExecuteCmdCreateWithHooks(t *testing.T) {
 	require.Contains(t, output, "pre-hook executed")
 	require.Contains(t, output, "executing hook: echo 'post-hook executed'")
 	require.Contains(t, output, "post-hook executed")
-	require.Contains(t, output, "created snapshot")
+	require.Contains(t, output, "backup completed")
 }
 
 func TestExecuteCmdCreateDefaultWithIgnores(t *testing.T) {
