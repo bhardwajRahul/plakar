@@ -207,7 +207,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	if d.name == "/" {
-		_, err := cached.RebuildStateFromCached(d.fs.ctx, d.repo.Configuration().RepositoryID, d.fs.ctx.StoreConfig)
+		_, err := cached.RebuildStateFromStore(d.fs.ctx, d.repo.Configuration().RepositoryID, d.fs.ctx.StoreConfig)
 		if err != nil {
 			return nil, err
 		}

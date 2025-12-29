@@ -47,7 +47,7 @@ func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 
 	handler := NewDynamicSnapshotHandler(
 		func(innertctx context.Context, w http.ResponseWriter, r *http.Request) {
-			_, err := cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+			_, err := cached.RebuildStateFromStore(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
 			if err != nil {
 				http.Error(w, "failed to rebuild state", http.StatusInternalServerError)
 				return

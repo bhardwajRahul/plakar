@@ -178,10 +178,10 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		Tags:     cmd.Tags,
 		Excludes: cmd.Excludes,
 		NoXattr:  cmd.NoXattr,
-		StateRefresher: func() error {
+		StateRefresher: func(mac objects.MAC) error {
 			// empty map is safe here because the repo has already been opened
 			// on cached side.
-			_, err := cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+			_, err := cached.RebuildStateFromStateFile(ctx, mac, repo.Configuration().RepositoryID, ctx.StoreConfig)
 			return err
 		},
 	}
@@ -342,7 +342,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 
 	if cmd.OptCheck {
-		_, err := cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+		_, err := cached.RebuildStateFromStore(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
 		if err != nil {
 			return 1, fmt.Errorf("failed to rebuild state %w", err), objects.MAC{}, nil
 		}

@@ -420,7 +420,7 @@ func entryPoint() int {
 
 	// If we are working on a repo, rebuild the state.
 	if cmd.GetFlags()&subcommands.BeforeRepositoryOpen == 0 && cmd.GetFlags()&subcommands.BeforeRepositoryWithStorage == 0 {
-		_, err = cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, storeConfig)
+		_, err = cached.RebuildStateFromStore(ctx, repo.Configuration().RepositoryID, storeConfig)
 		if err == nil {
 			status, err = task.RunCommand(ctx, cmd, repo, "@agentless")
 		}
