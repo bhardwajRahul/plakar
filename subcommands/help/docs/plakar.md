@@ -11,7 +11,6 @@ PLAKAR(1) - General Commands Manual
 \[**-concurrency**&nbsp;*number*]
 \[**-cpu**&nbsp;*number*]
 \[**-keyfile**&nbsp;*path*]
-\[**-no-agent**]
 \[**-quiet**]
 \[**-trace**&nbsp;*subsystems*]
 \[**at**&nbsp;*kloset*]
@@ -63,10 +62,6 @@ The following options are available:
 > `PLAKAR_PASSPHRASE`
 > environment variable.
 
-**-no-agent**
-
-> Run without attempting to connect to the agent.
-
 **-quiet**
 
 > Disable all output except for errors.
@@ -90,11 +85,6 @@ The following options are available:
 > plakar-store(1).
 
 The following commands are available:
-
-**agent**
-
-> Run the plakar agent and configure scheduled tasks, documented in
-> plakar-agent(1).
 
 **archive**
 
