@@ -1,4 +1,4 @@
-package agent
+package cached
 
 import (
 	"errors"
@@ -12,19 +12,22 @@ import (
 	"time"
 
 	"github.com/PlakarKorp/plakar/appcontext"
-	"github.com/PlakarKorp/plakar/subcommands"
-	"github.com/PlakarKorp/plakar/subcommands/cached"
 	"github.com/PlakarKorp/plakar/utils"
 	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-type Packet struct {
-	Type     string
-	Data     []byte
-	ExitCode int
-	Eof      bool
+type RequestPkt struct {
+	Type string
+
+	Secret      []byte
+	RepoID      uuid.UUID
+	StoreConfig map[string]string
+}
+
+type ResponsePkt struct {
 	Err      string
+	ExitCode int
 }
 
 type Client struct {
@@ -44,19 +47,43 @@ func RebuildStateFromCached(ctx *appcontext.AppContext, repoID uuid.UUID, storeC
 	}
 	defer client.Close()
 
-	// XXX: Empty vessel for the secret, this will need to be trimmed down a
-	// lot.
-	cmd := cached.CachedReq{
-		RepoID:         repoID,
-		SubcommandBase: subcommands.SubcommandBase{RepositorySecret: ctx.GetSecret()},
-	}
-
 	go func() {
 		<-ctx.Done()
 		client.Close()
 	}()
 
-	return client.SendCommand(ctx, []string{"n/a"}, &cmd, storeConfig)
+	req := &RequestPkt{
+		Type:        "",
+		Secret:      ctx.GetSecret(),
+		RepoID:      repoID,
+		StoreConfig: storeConfig,
+	}
+
+	if err := client.enc.Encode(req); err != nil {
+		return 1, err
+	}
+
+	response := &ResponsePkt{}
+	for {
+		if err := client.dec.Decode(response); err != nil {
+			if err == io.EOF {
+				break
+			}
+			if err := ctx.Err(); err != nil {
+				return 1, err
+			}
+			return 1, fmt.Errorf("failed to decode response: %w", err)
+		}
+
+		var err error
+		if response.Err != "" {
+			err = fmt.Errorf("%s", response.Err)
+		}
+
+		return response.ExitCode, err
+	}
+
+	return 0, nil
 }
 
 func NewClient(socketPath string, ignoreVersion bool) (*Client, error) {
@@ -85,7 +112,7 @@ func NewClient(socketPath string, ignoreVersion bool) (*Client, error) {
 
 		attempt++
 		if attempt > 1000 {
-			return nil, fmt.Errorf("failed to run the agent")
+			return nil, fmt.Errorf("failed to run cached")
 		}
 
 		if lockfile == nil {
@@ -117,7 +144,7 @@ func NewClient(socketPath string, ignoreVersion bool) (*Client, error) {
 
 			plakar := exec.Command(me, "cached")
 			if err := plakar.Start(); err != nil {
-				return nil, fmt.Errorf("failed to start the agent: %w", err)
+				return nil, fmt.Errorf("failed to start cached: %w", err)
 			}
 			spawned = true
 		}
@@ -148,66 +175,16 @@ func (c *Client) handshake(ignoreVersion bool) error {
 		return err
 	}
 
-	var agentvers []byte
-	if err := c.dec.Decode(&agentvers); err != nil {
+	var cachedvers []byte
+	if err := c.dec.Decode(&cachedvers); err != nil {
 		return err
 	}
 
-	if !ignoreVersion && !slices.Equal(ourvers, agentvers) {
-		return fmt.Errorf("%w (%v)", ErrWrongVersion, string(agentvers))
+	if !ignoreVersion && !slices.Equal(ourvers, cachedvers) {
+		return fmt.Errorf("%w (%v)", ErrWrongVersion, string(cachedvers))
 	}
 
 	return nil
-}
-
-func (c *Client) SendCommand(ctx *appcontext.AppContext, name []string, cmd subcommands.Subcommand, storeConfig map[string]string) (int, error) {
-	cmd.SetLogInfo(ctx.GetLogger().EnabledInfo)
-	cmd.SetLogTraces(ctx.GetLogger().EnabledTracing)
-
-	if err := subcommands.EncodeRPC(c.enc, name, cmd, storeConfig); err != nil {
-		return 1, err
-	}
-
-	var response Packet
-	for {
-		if err := c.dec.Decode(&response); err != nil {
-			if err == io.EOF {
-				break
-			}
-			if err := ctx.Err(); err != nil {
-				return 1, err
-			}
-			return 1, fmt.Errorf("failed to decode response: %w", err)
-		}
-		switch response.Type {
-		case "stdin":
-			var buf [8192]byte
-			n, err := os.Stdin.Read(buf[:])
-			pkt := &Packet{
-				Type: "stdin",
-				Data: buf[:n],
-			}
-			if err != nil {
-				pkt.Eof = err == io.EOF
-				pkt.Err = err.Error()
-			}
-			err = c.enc.Encode(pkt)
-			if err != nil {
-				return 1, fmt.Errorf("failed to send stdin: %w", err)
-			}
-		case "stdout":
-			fmt.Printf("%s", string(response.Data))
-		case "stderr":
-			fmt.Fprintf(os.Stderr, "%s", string(response.Data))
-		case "exit":
-			var err error
-			if response.Err != "" {
-				err = fmt.Errorf("%s", response.Err)
-			}
-			return response.ExitCode, err
-		}
-	}
-	return 0, nil
 }
 
 func (c *Client) Close() error {

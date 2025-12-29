@@ -27,8 +27,8 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/storage"
-	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
 )
@@ -353,7 +353,7 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 	dstSnapshot.Header = srcSnapshot.Header
 
 	StateRefresher := func() error {
-		_, err := agent.RebuildStateFromCached(ctx, srcRepository.Configuration().RepositoryID, srcStoreConfig)
+		_, err := cached.RebuildStateFromCached(ctx, srcRepository.Configuration().RepositoryID, srcStoreConfig)
 		return err
 	}
 

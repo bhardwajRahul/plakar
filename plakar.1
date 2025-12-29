@@ -10,7 +10,6 @@
 .Op Fl concurrency Ar number
 .Op Fl cpu Ar number
 .Op Fl keyfile Ar path
-.Op Fl no-agent
 .Op Fl quiet
 .Op Fl trace Ar subsystems
 .Op Cm at Ar kloset
@@ -52,8 +51,6 @@ instead of prompting.
 Overrides the
 .Ev PLAKAR_PASSPHRASE
 environment variable.
-.It Fl no-agent
-Run without attempting to connect to the agent.
 .It Fl quiet
 Disable all output except for errors.
 .It Fl trace Ar subsystems
@@ -75,9 +72,6 @@ to reference a configuration created with
 The following commands are available:
 .Pp
 .Bl -tag -width maintenance -compact
-.It Cm agent
-Run the plakar agent and configure scheduled tasks, documented in
-.Xr plakar-agent 1 .
 .It Cm archive
 Create an archive from a Kloset snapshot, documented in
 .Xr plakar-archive 1 .
@@ -186,7 +180,7 @@ Token to authenticate for Plakar services.
 .El
 .Sh FILES
 .Bl -tag -width Ds
-.It Pa ~/.cache/plakar No and Pa ~/.cache/plakar-agentless
+.It Pa ~/.cache/plakar
 Plakar cache directories.
 .It Pa ~/.config/plakar/destinations.yml
 Restore destinations configuration.

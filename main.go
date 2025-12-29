@@ -24,8 +24,8 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/kloset/versioning"
-	"github.com/PlakarKorp/plakar/agent"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/cookies"
 	"github.com/PlakarKorp/plakar/plugins"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -37,9 +37,9 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 
-	_ "github.com/PlakarKorp/plakar/subcommands/agent"
 	_ "github.com/PlakarKorp/plakar/subcommands/archive"
 	_ "github.com/PlakarKorp/plakar/subcommands/backup"
+	_ "github.com/PlakarKorp/plakar/subcommands/cached"
 	_ "github.com/PlakarKorp/plakar/subcommands/cat"
 	_ "github.com/PlakarKorp/plakar/subcommands/check"
 	_ "github.com/PlakarKorp/plakar/subcommands/clone"
@@ -408,9 +408,6 @@ func entryPoint() int {
 		return 1
 	}
 
-	cmd.SetCWD(ctx.CWD)
-	cmd.SetCommandLine(ctx.CommandLine)
-
 	c := make(chan os.Signal, 1)
 	go func() {
 		<-c
@@ -423,7 +420,7 @@ func entryPoint() int {
 
 	// If we are working on a repo, rebuild the state.
 	if cmd.GetFlags()&subcommands.BeforeRepositoryOpen == 0 && cmd.GetFlags()&subcommands.BeforeRepositoryWithStorage == 0 {
-		_, err = agent.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, storeConfig)
+		_, err = cached.RebuildStateFromCached(ctx, repo.Configuration().RepositoryID, storeConfig)
 		if err == nil {
 			status, err = task.RunCommand(ctx, cmd, repo, "@agentless")
 		}
@@ -439,9 +436,9 @@ func entryPoint() int {
 		}
 
 		fmt.Fprintf(os.Stderr, "%s: %s\n", flag.CommandLine.Name(), utils.SanitizeText(err.Error()))
-		if errors.Is(err, agent.ErrWrongVersion) {
-			fmt.Fprintln(os.Stderr, "To stop the current agent, run:")
-			fmt.Fprintln(os.Stderr, "\t$ plakar agent stop")
+		if errors.Is(err, cached.ErrWrongVersion) {
+			fmt.Fprintln(os.Stderr, "To stop the current cached, run:")
+			fmt.Fprintln(os.Stderr, "\t$ plakar cached stop")
 		}
 	}
 
@@ -609,7 +606,7 @@ func listCmds(out io.Writer, prefix string) {
 
 	all := subcommands.List()
 	for _, cmd := range all {
-		if len(cmd) == 0 || cmd[0] == "diag" {
+		if len(cmd) == 0 || cmd[0] == "diag" || cmd[0] == "cached" {
 			continue
 		}
 
