@@ -232,6 +232,9 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		return 1, fmt.Errorf("failed to setup exclude rules: %w", err), objects.MAC{}, nil
 	}
 
+	importerOpts := ctx.ImporterOpts()
+	importerOpts.Excludes = cmd.Excludes
+
 	if cmd.DryRun {
 		if err := dryrun(ctx, imp, excludes); err != nil {
 			return 1, err, objects.MAC{}, nil
