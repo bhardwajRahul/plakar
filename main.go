@@ -37,9 +37,9 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 
-	_ "github.com/PlakarKorp/plakar/subcommands/agent"
 	_ "github.com/PlakarKorp/plakar/subcommands/archive"
 	_ "github.com/PlakarKorp/plakar/subcommands/backup"
+	_ "github.com/PlakarKorp/plakar/subcommands/cached"
 	_ "github.com/PlakarKorp/plakar/subcommands/cat"
 	_ "github.com/PlakarKorp/plakar/subcommands/check"
 	_ "github.com/PlakarKorp/plakar/subcommands/clone"
@@ -606,7 +606,7 @@ func listCmds(out io.Writer, prefix string) {
 
 	all := subcommands.List()
 	for _, cmd := range all {
-		if len(cmd) == 0 || cmd[0] == "diag" {
+		if len(cmd) == 0 || cmd[0] == "diag" || cmd[0] == "cached" {
 			continue
 		}
 
