@@ -36,7 +36,7 @@ require (
 	golang.org/x/sys v0.39.0
 	golang.org/x/term v0.38.0
 	golang.org/x/tools v0.40.0
-	google.golang.org/grpc v1.77.0
+	google.golang.org/grpc v1.78.0
 	gopkg.in/ini.v1 v1.67.0
 )
 
