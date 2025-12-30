@@ -141,7 +141,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 			if !ok {
 				return fmt.Errorf("failed to retrieve configuration for source %q", name)
 			}
-			imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cfg)
+			imp, _, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cfg)
 			if err != nil {
 				return err
 			}

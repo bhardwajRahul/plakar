@@ -28,6 +28,7 @@ import (
 
 	"github.com/PlakarKorp/kloset/exclude"
 	"github.com/PlakarKorp/kloset/locate"
+	"github.com/PlakarKorp/kloset/location"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
@@ -229,7 +230,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	importerOpts := ctx.ImporterOpts()
 	importerOpts.Excludes = cmd.Excludes
 
-	imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmd.Opts)
+	imp, flags, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmd.Opts)
 	if err != nil {
 		return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
 	}
@@ -242,7 +243,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		return 0, nil, objects.MAC{}, nil
 	}
 
-	if !cmd.NoProgress {
+	if !cmd.NoProgress && (flags&location.FLAG_STREAM) == 0 {
 		scanner, err := imp.Scan(ctx)
 		if err != nil {
 			return 1, fmt.Errorf("failed to scan: %w", err), objects.MAC{}, nil
