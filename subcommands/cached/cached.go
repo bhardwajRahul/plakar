@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/PlakarKorp/kloset/encryption"
+	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -62,7 +63,8 @@ type Cached struct {
 }
 
 type jobReq struct {
-	ch (chan error)
+	stateID objects.MAC
+	ch      chan error
 }
 
 func (cmd *Cached) Parse(ctx *appcontext.AppContext, args []string) error {
@@ -264,7 +266,8 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 
 	if err == nil {
 		j := jobReq{
-			ch: make(chan error, 1),
+			ch:      make(chan error, 1),
+			stateID: pkt.StateID,
 		}
 
 		jq <- j
@@ -318,9 +321,15 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 		for {
 			select {
 			case job := <-jobChan:
-				// XXX: This is wrong as this reinstantiates a cache every time, it
-				// kneeds an API change on kloset side. It'll do for now though.
-				err := repo.RebuildState()
+
+				var err error
+				if job.stateID == objects.NilMac {
+					// XXX: This is wrong as this reinstantiates a cache every time, it
+					// needs an API change on kloset side. It'll do for now though.
+					err = repo.RebuildState()
+				} else {
+					err = repo.IngestStateFile(job.stateID)
+				}
 
 				// Notify that we ended
 				job.ch <- err

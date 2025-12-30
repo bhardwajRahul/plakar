@@ -11,6 +11,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/utils"
 	"github.com/google/uuid"
@@ -18,11 +19,12 @@ import (
 )
 
 type RequestPkt struct {
-	Type string
-
 	Secret      []byte
 	RepoID      uuid.UUID
 	StoreConfig map[string]string
+
+	// If empty do a full rebuild otherwise ingest that file from disk.
+	StateID objects.MAC
 }
 
 type ResponsePkt struct {
@@ -40,8 +42,29 @@ var (
 	ErrWrongVersion = errors.New("cached is running with a different version of plakar")
 )
 
-func RebuildStateFromCached(ctx *appcontext.AppContext, repoID uuid.UUID, storeConfig map[string]string) (int, error) {
-	client, err := NewClient(filepath.Join(ctx.CacheDir, "cached.sock"), false)
+func RebuildStateFromStateFile(ctx *appcontext.AppContext, stateID objects.MAC, repoID uuid.UUID, storeConfig map[string]string) (int, error) {
+	req := &RequestPkt{
+		Secret:      ctx.GetSecret(),
+		RepoID:      repoID,
+		StoreConfig: storeConfig,
+		StateID:     stateID,
+	}
+
+	return rebuildStateRequest(ctx, req)
+}
+
+func RebuildStateFromStore(ctx *appcontext.AppContext, repoID uuid.UUID, storeConfig map[string]string) (int, error) {
+	req := &RequestPkt{
+		Secret:      ctx.GetSecret(),
+		RepoID:      repoID,
+		StoreConfig: storeConfig,
+	}
+
+	return rebuildStateRequest(ctx, req)
+}
+
+func rebuildStateRequest(ctx *appcontext.AppContext, req *RequestPkt) (int, error) {
+	client, err := newClient(filepath.Join(ctx.CacheDir, "cached.sock"), false)
 	if err != nil {
 		return 1, err
 	}
@@ -51,13 +74,6 @@ func RebuildStateFromCached(ctx *appcontext.AppContext, repoID uuid.UUID, storeC
 		<-ctx.Done()
 		client.Close()
 	}()
-
-	req := &RequestPkt{
-		Type:        "",
-		Secret:      ctx.GetSecret(),
-		RepoID:      repoID,
-		StoreConfig: storeConfig,
-	}
 
 	if err := client.enc.Encode(req); err != nil {
 		return 1, err
@@ -86,7 +102,7 @@ func RebuildStateFromCached(ctx *appcontext.AppContext, repoID uuid.UUID, storeC
 	return 0, nil
 }
 
-func NewClient(socketPath string, ignoreVersion bool) (*Client, error) {
+func newClient(socketPath string, ignoreVersion bool) (*Client, error) {
 	var lockfile *os.File
 	var spawned bool
 
