@@ -4,7 +4,6 @@ package plakarfs
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"os"
@@ -34,9 +33,10 @@ type Dir struct {
 	cacheKey string
 	attr     *fuse.Attr
 
-	readDirMutex    sync.Mutex
-	readDirLast     time.Time
-	readDirChildren []fuse.Dirent
+	readDirMutex           sync.Mutex
+	readDirSnapshotMapping map[string]objects.MAC
+	readDirLast            time.Time
+	readDirChildren        []fuse.Dirent
 }
 
 func NewDirectory(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*Dir, error) {
@@ -77,15 +77,10 @@ func NewDirectory(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*Dir,
 		}
 		if !dir.IsRoot() {
 			if dir.vfs == nil {
-				identifier, err := hex.DecodeString(pathname)
-				if err != nil {
-					return nil, syscall.ENOENT
-				}
-				if len(identifier) != 32 {
-					return nil, syscall.ENOENT
-				}
-
-				snap, err := snapshot.Load(pfs.repo, objects.MAC(identifier))
+				parent.readDirMutex.Lock()
+				identifier := parent.readDirSnapshotMapping[pathname]
+				parent.readDirMutex.Unlock()
+				snap, err := snapshot.Load(pfs.repo, identifier)
 				if err != nil {
 					return nil, syscall.ENOENT
 				}
@@ -184,13 +179,17 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 		}
 
 		d.readDirLast = now
+		readDirSnapshotMapping := make(map[string]objects.MAC)
 		out := make([]fuse.Dirent, 0, len(snapshotIDs))
 		for _, snapshotID := range snapshotIDs {
+			name := fmt.Sprintf("%x", snapshotID[:4])
+			readDirSnapshotMapping[name] = snapshotID
 			out = append(out, fuse.Dirent{
-				Name: fmt.Sprintf("%x", snapshotID),
+				Name: name,
 				Type: fuse.DT_Dir,
 			})
 		}
+		d.readDirSnapshotMapping = readDirSnapshotMapping
 		d.readDirChildren = out
 	} else if d.readDirLast.IsZero() {
 		children, err := fs.ReadDir(d.vfs, path.Join(".", d.path))
