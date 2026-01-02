@@ -5,26 +5,26 @@ package plakarfs
 import (
 	"context"
 	"io"
+	"io/fs"
 	"syscall"
 
-	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/anacrolix/fuse"
-	"github.com/anacrolix/fuse/fs"
+	fusefs "github.com/anacrolix/fuse/fs"
 )
 
-var _ fs.Node = (*File)(nil)
-var _ fs.NodeOpener = (*File)(nil)
+var _ fusefs.Node = (*File)(nil)
+var _ fusefs.NodeOpener = (*File)(nil)
 
 type fileHandle struct {
 	f io.ReadCloser
 }
 
-var _ fs.Handle = (*fileHandle)(nil)
-var _ fs.HandleReader = (*fileHandle)(nil)
+var _ fusefs.Handle = (*fileHandle)(nil)
+var _ fusefs.HandleReader = (*fileHandle)(nil)
 
 type File struct {
-	fs  *FS
-	vfs *vfs.Filesystem
+	pfs *plakarFS
+	vfs fs.FS
 
 	path string
 
@@ -32,38 +32,41 @@ type File struct {
 	attr     *fuse.Attr
 }
 
-func NewFile(fs *FS, vfs *vfs.Filesystem, parent *Dir, path string) (*File, error) {
+func NewFile(pfs *plakarFS, vfs fs.FS, parent *Dir, path string) (*File, error) {
 	key := stableKey("file", parent.snapKey, path)
-	if f, ok := fs.inodeCache.getFile(key); ok {
+	if f, ok := pfs.inodeCache.getFile(key); ok {
 		return f, nil
 	} else {
-		entry, err := vfs.GetEntryNoFollow(path)
+		st, err := fs.Stat(vfs, path)
 		if err != nil {
 			return nil, syscall.ENOENT
 		}
+
 		f := &File{
-			fs:       fs,
+			pfs:      pfs,
 			vfs:      vfs,
 			path:     path,
 			cacheKey: key,
 			attr: &fuse.Attr{
-				Valid: fs.kernelCacheTTL,
-				Mode:  entry.Stat().Mode(),
-				Uid:   uint32(entry.Stat().Uid()),
-				Gid:   uint32(entry.Stat().Gid()),
-				Ctime: entry.Stat().ModTime(),
-				Mtime: entry.Stat().ModTime(),
-				Atime: entry.Stat().ModTime(),
-				Size:  uint64(entry.Stat().Size()),
-				Nlink: uint32(entry.Stat().Nlink()),
+				Valid: pfs.kernelCacheTTL,
+				Mode:  st.Mode(),
+				//Uid:   uint32(entry.Stat().Uid()),
+				//Gid:   uint32(entry.Stat().Gid()),
+				Ctime: st.ModTime(),
+				Mtime: st.ModTime(),
+				Atime: st.ModTime(),
+				Size:  uint64(st.Size()),
+				//Nlink: uint32(st.Nlink()),
 			},
 		}
-		fs.inodeCache.setFile(f.cacheKey, f)
+		pfs.inodeCache.setFile(f.cacheKey, f)
 		return f, nil
 	}
 }
 
-func (f *File) Forget() { f.fs.inodeCache.removeFile(f.cacheKey) }
+func (f *File) Forget() {
+	f.pfs.inodeCache.removeFile(f.cacheKey)
+}
 
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 	*a = *f.attr
@@ -73,7 +76,7 @@ func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 	return nil
 }
 
-func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fs.Handle, error) {
+func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fusefs.Handle, error) {
 	resp.Flags |= fuse.OpenDirectIO
 	resp.Flags |= fuse.OpenKeepCache
 

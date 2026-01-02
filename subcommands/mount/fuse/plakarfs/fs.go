@@ -3,34 +3,39 @@
 package plakarfs
 
 import (
+	"io/fs"
 	"time"
 
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
-	"github.com/anacrolix/fuse/fs"
+	fusefs "github.com/anacrolix/fuse/fs"
 )
 
-type FS struct {
+type plakarFS struct {
 	ctx *appcontext.AppContext
 
 	repo          *repository.Repository
 	locateOptions *locate.LocateOptions
+	chrootfs      fs.FS
 
+	rootRefresh    time.Duration
 	kernelCacheTTL time.Duration
 	inodeCache     *inodeCache
 }
 
-func NewFS(ctx *appcontext.AppContext, repo *repository.Repository, locateOptions *locate.LocateOptions) *FS {
-	return &FS{
+func NewFS(ctx *appcontext.AppContext, repo *repository.Repository, locateOptions *locate.LocateOptions, chrootfs fs.FS) *plakarFS {
+	return &plakarFS{
 		ctx:            ctx,
 		repo:           repo,
 		locateOptions:  locateOptions,
+		chrootfs:       chrootfs,
+		rootRefresh:    10 * time.Second,
 		kernelCacheTTL: time.Minute,
 		inodeCache:     newInodeCache(),
 	}
 }
 
-func (fs *FS) Root() (fs.Node, error) {
-	return NewDirectory(fs, nil, nil, "/")
+func (fs *plakarFS) Root() (fusefs.Node, error) {
+	return NewDirectory(fs, fs.chrootfs, nil, "")
 }

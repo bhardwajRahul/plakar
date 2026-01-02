@@ -21,16 +21,29 @@ package fuse
 
 import (
 	"fmt"
+	"io/fs"
+	"os"
+
+	"path/filepath"
 
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands/mount/fuse/plakarfs"
 	"github.com/anacrolix/fuse"
-	"github.com/anacrolix/fuse/fs"
+	fusefs "github.com/anacrolix/fuse/fs"
+	"github.com/google/uuid"
 )
 
-func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions) (int, error) {
+func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions, chrootfs fs.FS) (int, error) {
+	if mountpoint == "" {
+		mountpoint = filepath.Join(ctx.CWD, uuid.New().String())
+		if err := os.MkdirAll(mountpoint, 0700); err != nil {
+			return 1, err
+		}
+		defer os.Remove(mountpoint)
+	}
+
 	c, err := fuse.Mount(
 		mountpoint,
 		fuse.FSName("plakar"),
@@ -53,7 +66,7 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 		fuse.Unmount(mountpoint)
 	}()
 
-	err = fs.Serve(c, plakarfs.NewFS(ctx, repo, locateOptions))
+	err = fusefs.Serve(c, plakarfs.NewFS(ctx, repo, locateOptions, chrootfs))
 	if err != nil {
 		return 1, err
 	}
