@@ -319,7 +319,7 @@ func (s *Scheduler) makeRepository(storeConfig map[string]string) (*repository.R
 	}
 
 	// Actual rebuild is done by cached.
-	repo, err := repository.NewNoRebuild(s.ctx.GetInner(), s.ctx.GetSecret(), store, serializedConfig)
+	repo, err := repository.NewNoRebuild(s.ctx.GetInner(), s.ctx.GetSecret(), store, serializedConfig, true)
 	if err != nil {
 		return nil, err
 	}

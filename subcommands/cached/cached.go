@@ -302,7 +302,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 		return fmt.Errorf("failed to setup secret: %w", err)
 	}
 
-	repo, err := repository.NewNoRebuild(ctx.GetInner(), key, store, serializedConfig)
+	repo, err := repository.NewNoRebuild(ctx.GetInner(), key, store, serializedConfig, false)
 	if err != nil {
 		return fmt.Errorf("failed to open repository: %w", err)
 	}
@@ -324,8 +324,6 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 
 				var err error
 				if job.stateID == objects.NilMac {
-					// XXX: This is wrong as this reinstantiates a cache every time, it
-					// needs an API change on kloset side. It'll do for now though.
 					err = repo.RebuildState()
 				} else {
 					err = repo.IngestStateFile(job.stateID)
