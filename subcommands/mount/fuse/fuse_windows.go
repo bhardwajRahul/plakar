@@ -18,12 +18,13 @@ package fuse
 
 import (
 	"fmt"
+	"io/fs"
 
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
 )
 
-func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions) (int, error) {
+func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions, chrootfs fs.FS) (int, error) {
 	return 1, fmt.Errorf("mount not supported on %s", ctx.OperatingSystem)
 }
