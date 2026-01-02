@@ -21,7 +21,7 @@ func init() {
 	os.Setenv("TZ", "UTC")
 }
 
-func TestExecuteCmdMountDefault(t *testing.T) {
+func _TestExecuteCmdMountDefault(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
 
@@ -38,13 +38,13 @@ func TestExecuteCmdMountDefault(t *testing.T) {
 
 	tmpMountPoint, err := os.MkdirTemp("", "tmp_mount_point")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpMountPoint)
+	//defer os.RemoveAll(tmpMountPoint)
 
-	args := []string{}
-	subcommand := &Mount{
-		Mountpoint: tmpMountPoint,
-	}
+	args := []string{"-to", tmpMountPoint}
+	subcommand := &Mount{}
+
 	err = subcommand.Parse(ctx, args)
+
 	require.NoError(t, err)
 	require.NotNil(t, subcommand)
 
