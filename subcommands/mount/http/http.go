@@ -46,61 +46,62 @@ func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 	addr := strings.TrimPrefix(mountpoint, "http://")
 
 	var handler http.Handler
+	handler = NewDynamicSnapshotHandler(
+		func(innertctx context.Context, w http.ResponseWriter, r *http.Request) {
+			_, err := cached.RebuildStateFromStore(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
+			if err != nil {
+				http.Error(w, "failed to rebuild state", http.StatusInternalServerError)
+				return
+			}
+
+			snapshotIDs, _, err := locate.Match(repo, locateOptions)
+			if err != nil {
+				http.Error(w, "failed to list snapshots", http.StatusInternalServerError)
+				return
+			}
+
+			headers := make([]header.Header, 0, len(snapshotIDs))
+			for _, snapID := range snapshotIDs {
+				snap, err := snapshot.Load(repo, snapID)
+				if err != nil {
+					continue
+				}
+				headers = append(headers, *snap.Header)
+				snap.Close()
+			}
+
+			sort.Slice(headers, func(i, j int) bool {
+				return bytes.Compare(headers[i].Identifier[:], headers[j].Identifier[:]) < 0
+			})
+
+			fmt.Fprintf(w, "<!doctype html>\n")
+			fmt.Fprintf(w, "<meta name=\"viewport\" content=\"width=device-width\">\n")
+			fmt.Fprintf(w, "<pre>\n")
+			for _, hdr := range headers {
+				snapURL := fmt.Sprintf("/%x/", hdr.Identifier)
+				fmt.Fprintf(w, "<a href=\"%s\">%x</a>\n", snapURL, hdr.Identifier[0:4])
+			}
+			fmt.Fprintf(w, "</pre>\n")
+		},
+		func(innerctx context.Context, snapshotID_string string) (fs.FS, error) {
+			snapshotID, err := hex.DecodeString(snapshotID_string)
+			if err != nil {
+				return nil, err
+			}
+			snap, err := snapshot.Load(repo, objects.MAC(snapshotID))
+			if err != nil {
+				return nil, err
+			}
+			defer snap.Close()
+
+			return snap.Filesystem()
+		},
+	)
+
 	if chrootfs != nil {
 		handler = http.FileServer(http.FS(chrootfs))
-	} else {
-		handler = NewDynamicSnapshotHandler(
-			func(innertctx context.Context, w http.ResponseWriter, r *http.Request) {
-				_, err := cached.RebuildStateFromStore(ctx, repo.Configuration().RepositoryID, ctx.StoreConfig)
-				if err != nil {
-					http.Error(w, "failed to rebuild state", http.StatusInternalServerError)
-					return
-				}
-
-				snapshotIDs, _, err := locate.Match(repo, locateOptions)
-				if err != nil {
-					http.Error(w, "failed to list snapshots", http.StatusInternalServerError)
-					return
-				}
-
-				headers := make([]header.Header, 0, len(snapshotIDs))
-				for _, snapID := range snapshotIDs {
-					snap, err := snapshot.Load(repo, snapID)
-					if err != nil {
-						continue
-					}
-					headers = append(headers, *snap.Header)
-					snap.Close()
-				}
-
-				sort.Slice(headers, func(i, j int) bool {
-					return bytes.Compare(headers[i].Identifier[:], headers[j].Identifier[:]) < 0
-				})
-
-				fmt.Fprintf(w, "<!doctype html>\n")
-				fmt.Fprintf(w, "<meta name=\"viewport\" content=\"width=device-width\">\n")
-				fmt.Fprintf(w, "<pre>\n")
-				for _, hdr := range headers {
-					snapURL := fmt.Sprintf("/%x/", hdr.Identifier)
-					fmt.Fprintf(w, "<a href=\"%s\">%x</a>\n", snapURL, hdr.Identifier[0:4])
-				}
-				fmt.Fprintf(w, "</pre>\n")
-			},
-			func(innerctx context.Context, snapshotID_string string) (fs.FS, error) {
-				snapshotID, err := hex.DecodeString(snapshotID_string)
-				if err != nil {
-					return nil, err
-				}
-				snap, err := snapshot.Load(repo, objects.MAC(snapshotID))
-				if err != nil {
-					return nil, err
-				}
-				defer snap.Close()
-
-				return snap.Filesystem()
-			},
-		)
 	}
+
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
