@@ -4,6 +4,7 @@ package plakarfs
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/PlakarKorp/kloset/locate"
+	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/anacrolix/fuse"
@@ -75,18 +77,28 @@ func NewDirectory(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*Dir,
 		}
 		if !dir.IsRoot() {
 			if dir.vfs == nil {
-				snap, _, err := locate.OpenSnapshotByPath(pfs.repo, pathname)
+				identifier, err := hex.DecodeString(pathname)
 				if err != nil {
 					return nil, syscall.ENOENT
 				}
+				if len(identifier) != 32 {
+					return nil, syscall.ENOENT
+				}
+
+				snap, err := snapshot.Load(pfs.repo, objects.MAC(identifier))
+				if err != nil {
+					return nil, syscall.ENOENT
+				}
+
 				snapfs, err := snap.Filesystem()
 				if err != nil {
 					return nil, err
 				}
+
 				dir.snap = snap
 				dir.vfs = snapfs
 				dir.path = ""
-				dir.snapKey = fmt.Sprintf("%x", dir.snap.Header.Identifier[:4])
+				dir.snapKey = fmt.Sprintf("%x", dir.snap.Header.Identifier)
 
 				dir.attr.Mode = os.ModeDir | 0o700
 				ts := snap.Header.Timestamp
@@ -175,7 +187,7 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 		out := make([]fuse.Dirent, 0, len(snapshotIDs))
 		for _, snapshotID := range snapshotIDs {
 			out = append(out, fuse.Dirent{
-				Name: fmt.Sprintf("%x", snapshotID)[:8],
+				Name: fmt.Sprintf("%x", snapshotID),
 				Type: fuse.DT_Dir,
 			})
 		}
