@@ -39,9 +39,11 @@ func TestExecuteCmdMountDefault(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpMountPoint)
 
-	args := []string{tmpMountPoint}
+	args := []string{}
 
-	subcommand := &Mount{}
+	subcommand := &Mount{
+		Mountpoint: tmpMountPoint,
+	}
 	err = subcommand.Parse(ctx, args)
 	require.NoError(t, err)
 	require.NotNil(t, subcommand)
