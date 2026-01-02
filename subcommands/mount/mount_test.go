@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -40,7 +41,6 @@ func TestExecuteCmdMountDefault(t *testing.T) {
 	defer os.RemoveAll(tmpMountPoint)
 
 	args := []string{}
-
 	subcommand := &Mount{
 		Mountpoint: tmpMountPoint,
 	}
@@ -69,10 +69,11 @@ func TestExecuteCmdMountDefault(t *testing.T) {
 	require.Contains(t, output, fmt.Sprintf("mounted repository %s at", location))
 
 	indexId := snap.Header.GetIndexID()
-	snapshotPath := fmt.Sprintf("%s", hex.EncodeToString(indexId[:]))
+	snapshotPath := fmt.Sprintf("%s", hex.EncodeToString(indexId[:4]))
 	backupDir := snap.Header.GetSource(0).Importer.Directory
 
-	dummyMountedPath := fmt.Sprintf("%s/%s/%s/subdir/dummy.txt", tmpMountPoint, snapshotPath, backupDir)
+	dummyMountedPath := filepath.Join(tmpMountPoint, snapshotPath, backupDir, "/subdir/dummy.txt")
+
 	file, err = os.Stat(dummyMountedPath)
 	require.NoError(t, err)
 	require.NotNil(t, file)
