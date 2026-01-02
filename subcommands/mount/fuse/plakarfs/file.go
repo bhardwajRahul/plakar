@@ -5,68 +5,82 @@ package plakarfs
 import (
 	"context"
 	"io"
+	"io/fs"
 	"syscall"
-	"time"
 
-	"github.com/PlakarKorp/kloset/repository"
-	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/anacrolix/fuse"
-	"github.com/anacrolix/fuse/fs"
+	fusefs "github.com/anacrolix/fuse/fs"
 )
 
-var _ fs.Node = (*File)(nil)
-var _ fs.NodeOpener = (*File)(nil)
+var _ fusefs.Node = (*File)(nil)
+var _ fusefs.NodeOpener = (*File)(nil)
 
 type fileHandle struct {
 	f io.ReadCloser
 }
 
-var _ fs.Handle = (*fileHandle)(nil)
-var _ fs.HandleReader = (*fileHandle)(nil)
+var _ fusefs.Handle = (*fileHandle)(nil)
+var _ fusefs.HandleReader = (*fileHandle)(nil)
 
 type File struct {
-	fs     *FS
-	parent *Dir
-	name   string
+	pfs *plakarFS
+	vfs fs.FS
 
-	fullpath string
-	repo     *repository.Repository
-	snap     *snapshot.Snapshot
-	vfs      *vfs.Filesystem
+	path string
 
-	ino uint64
+	cacheKey string
+	attr     *fuse.Attr
 }
 
-func (f *File) Forget() { f.fs.RemoveFile(f.ino) }
+func NewFile(pfs *plakarFS, vfs fs.FS, parent *Dir, path string) (*File, error) {
+	key := stableKey("file", parent.snapKey, path)
+	if f, ok := pfs.inodeCache.getFile(key); ok {
+		return f, nil
+	} else {
+		st, err := fs.Stat(vfs, path)
+		if err != nil {
+			return nil, syscall.ENOENT
+		}
+
+		f := &File{
+			pfs:      pfs,
+			vfs:      vfs,
+			path:     path,
+			cacheKey: key,
+			attr: &fuse.Attr{
+				Valid: pfs.kernelCacheTTL,
+				Mode:  st.Mode(),
+				//Uid:   uint32(entry.Stat().Uid()),
+				//Gid:   uint32(entry.Stat().Gid()),
+				Ctime: st.ModTime(),
+				Mtime: st.ModTime(),
+				Atime: st.ModTime(),
+				Size:  uint64(st.Size()),
+				//Nlink: uint32(st.Nlink()),
+			},
+		}
+		pfs.inodeCache.setFile(f.cacheKey, f)
+		return f, nil
+	}
+}
+
+func (f *File) Forget() {
+	f.pfs.inodeCache.removeFile(f.cacheKey)
+}
 
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
-	entry, err := f.vfs.GetEntry(f.fullpath)
-	if err != nil {
-		return syscall.ENOENT
-	}
-	if entry.Stat().IsDir() {
+	*a = *f.attr
+	if a.Mode.IsDir() {
 		return syscall.EISDIR
 	}
-
-	a.Valid = time.Minute
-	a.Inode = f.ino
-	a.Mode = entry.Stat().Mode()
-	a.Uid = uint32(entry.Stat().Uid())
-	a.Gid = uint32(entry.Stat().Gid())
-	a.Ctime = entry.Stat().ModTime()
-	a.Mtime = entry.Stat().ModTime()
-	a.Atime = entry.Stat().ModTime()
-	a.Size = uint64(entry.Stat().Size())
-	a.Nlink = uint32(entry.Stat().Nlink())
 	return nil
 }
 
-func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fs.Handle, error) {
+func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fusefs.Handle, error) {
 	resp.Flags |= fuse.OpenDirectIO
 	resp.Flags |= fuse.OpenKeepCache
 
-	rd, err := f.snap.NewReader(f.fullpath)
+	rd, err := f.vfs.Open(f.path)
 	if err != nil {
 		return nil, err
 	}

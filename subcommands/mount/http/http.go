@@ -42,7 +42,7 @@ import (
 type ListFn func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 type OpenFn func(ctx context.Context, snapshot string) (fs.FS, error)
 
-func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions) (int, error) {
+func ExecuteHTTP(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions, chrootfs fs.FS) (int, error) {
 	addr := strings.TrimPrefix(mountpoint, "http://")
 
 	handler := NewDynamicSnapshotHandler(

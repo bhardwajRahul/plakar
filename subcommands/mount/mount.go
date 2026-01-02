@@ -19,6 +19,7 @@ package mount
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"strings"
 
 	"github.com/PlakarKorp/kloset/locate"
@@ -34,6 +35,10 @@ type Mount struct {
 
 	Mountpoint    string
 	LocateOptions *locate.LocateOptions
+
+	SnapshotPath string
+
+	fs fs.FS
 }
 
 func init() {
@@ -47,22 +52,44 @@ func (cmd *Mount) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "Usage: %s PATH\n", flags.Name())
 	}
+	flags.StringVar(&cmd.Mountpoint, "to", "", "mount point")
 	cmd.LocateOptions.InstallLocateFlags(flags)
 	flags.Parse(args)
 
-	if flags.NArg() != 1 {
-		return fmt.Errorf("need mountpoint")
-	}
-
 	cmd.RepositorySecret = ctx.GetSecret()
-	cmd.Mountpoint = flags.Arg(0)
+
+	if flags.NArg() == 1 {
+		// snapshot(s) level, reset LocateOptions
+		cmd.LocateOptions = locate.NewDefaultLocateOptions()
+		cmd.SnapshotPath = flags.Arg(0)
+	}
 
 	return nil
 }
 
 func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
-	if strings.HasPrefix(cmd.Mountpoint, "http://") {
-		return http.ExecuteHTTP(ctx, repo, cmd.Mountpoint, cmd.LocateOptions)
+	var chrootFS fs.FS
+
+	if cmd.SnapshotPath != "" {
+		snap, path, err := locate.OpenSnapshotByPath(repo, cmd.SnapshotPath)
+		if err != nil {
+			return 1, err
+		}
+
+		pvfs, err := snap.Filesystem()
+		if err != nil {
+			return 1, err
+		}
+
+		subFS, err := fs.Sub(pvfs, path[1:])
+		if err != nil {
+			return 1, err
+		}
+		chrootFS = subFS
 	}
-	return fuse.ExecuteFUSE(ctx, repo, cmd.Mountpoint, cmd.LocateOptions)
+
+	if strings.HasPrefix(cmd.Mountpoint, "http://") {
+		return http.ExecuteHTTP(ctx, repo, cmd.Mountpoint, cmd.LocateOptions, chrootFS)
+	}
+	return fuse.ExecuteFUSE(ctx, repo, cmd.Mountpoint, cmd.LocateOptions, chrootFS)
 }
