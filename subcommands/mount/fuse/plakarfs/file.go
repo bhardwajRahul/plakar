@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"io/fs"
+	"os"
 	"path"
 	"syscall"
 
@@ -53,6 +54,8 @@ func NewFile(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*File, err
 				Mode:  st.Mode(),
 				//Uid:   uint32(entry.Stat().Uid()),
 				//Gid:   uint32(entry.Stat().Gid()),
+				Uid:   uint32(os.Geteuid()),
+				Gid:   uint32(os.Getgid()),
 				Ctime: st.ModTime(),
 				Mtime: st.ModTime(),
 				Atime: st.ModTime(),
