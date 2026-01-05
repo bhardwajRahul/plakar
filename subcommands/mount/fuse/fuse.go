@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"syscall"
 
 	"path/filepath"
 
@@ -42,6 +43,19 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 			return 1, err
 		}
 		defer os.Remove(mountpoint)
+	} else {
+		mp, err := looksLikeMountpoint(mountpoint)
+		if err != nil {
+			return 1, err
+		}
+		if mp {
+			return 1, fmt.Errorf("%s already looks like a mountpoint; refusing to mount over it", mountpoint)
+		}
+	}
+
+	loc, err := repo.Location()
+	if err != nil {
+		return 1, fmt.Errorf("mount: %v", err)
 	}
 
 	c, err := fuse.Mount(
@@ -53,17 +67,17 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 	if err != nil {
 		return 1, fmt.Errorf("mount: %v", err)
 	}
-
-	loc, err := repo.Location()
-	if err != nil {
-		return 1, fmt.Errorf("mount: %v", err)
-	}
+	defer c.Close()
 
 	ctx.GetLogger().Info("mounted repository %s at %s", loc, mountpoint)
 
 	go func() {
 		<-ctx.Done()
-		fuse.Unmount(mountpoint)
+
+		err := fuse.Unmount(mountpoint)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s is still in use; run `umount -f %s` to force\n", mountpoint, mountpoint)
+		}
 	}()
 
 	err = fusefs.Serve(c, plakarfs.NewFS(ctx, repo, locateOptions, chrootfs))
@@ -75,4 +89,28 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 		return 1, err
 	}
 	return 0, nil
+}
+
+func looksLikeMountpoint(p string) (bool, error) {
+	p = filepath.Clean(p)
+
+	parent := filepath.Dir(p)
+	if parent == p {
+		return true, nil
+	}
+
+	var stP, stParent syscall.Stat_t
+	if err := syscall.Lstat(p, &stP); err != nil {
+		return false, err
+	}
+	if err := syscall.Lstat(parent, &stParent); err != nil {
+		return false, err
+	}
+
+	if stP.Dev != stParent.Dev {
+		return true, nil
+	}
+
+	// could still be a bind mount; we can’t detect that portably.
+	return false, nil
 }
