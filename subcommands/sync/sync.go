@@ -353,7 +353,7 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 	dstSnapshot.Header = srcSnapshot.Header
 
 	StateRefresher := func(mac objects.MAC) error {
-		_, err := cached.RebuildStateFromStateFile(ctx, mac, srcRepository.Configuration().RepositoryID, srcStoreConfig)
+		_, err := cached.RebuildStateFromStateFile(ctx, mac, dstRepository.Configuration().RepositoryID, srcStoreConfig)
 		return err
 	}
 
