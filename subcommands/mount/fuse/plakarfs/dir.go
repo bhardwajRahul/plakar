@@ -36,6 +36,7 @@ type Dir struct {
 	readDirMutex           sync.Mutex
 	readDirSnapshotMapping map[string]objects.MAC
 	readDirLast            time.Time
+	readDirEntries         []fs.DirEntry
 	readDirChildren        []fuse.Dirent
 }
 
@@ -100,7 +101,7 @@ func NewDirectory(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*Dir,
 				dir.attr.Ctime, dir.attr.Mtime, dir.attr.Atime = ts, ts, ts
 				dir.attr.Size = snap.Header.GetSource(0).Summary.Directory.Size + snap.Header.GetSource(0).Summary.Below.Size
 			} else {
-				st, err := fs.Stat(vfs, pathname)
+				st, err := parent.Stat(path.Base(pathname))
 				if err != nil {
 					return nil, err
 				}
@@ -145,12 +146,12 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fusefs.Node, error) {
 		return NewDirectory(d.pfs, nil, d, name)
 	}
 
-	pathname := path.Clean(path.Join(d.path, name))
-	st, err := fs.Stat(d.vfs, pathname)
+	st, err := d.Stat(name)
 	if err != nil {
 		return nil, syscall.ENOENT
 	}
 
+	pathname := path.Clean(path.Join(d.path, name))
 	if st.IsDir() {
 		return NewDirectory(d.pfs, d.vfs, d, pathname)
 	} else {
@@ -196,6 +197,7 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 		if err != nil {
 			return nil, err
 		}
+		d.readDirEntries = children
 
 		d.readDirLast = now
 		out := make([]fuse.Dirent, 0)
@@ -209,4 +211,19 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 		d.readDirChildren = out
 	}
 	return d.readDirChildren, nil
+}
+
+func (d *Dir) Stat(name string) (fs.FileInfo, error) {
+	if d.readDirEntries != nil {
+		for _, de := range d.readDirEntries {
+			if de.Name() == name {
+				st, err := de.Info()
+				if err != nil {
+					return nil, err
+				}
+				return st, nil
+			}
+		}
+	}
+	return nil, fs.ErrNotExist
 }

@@ -6,6 +6,8 @@ import (
 	"context"
 	"io"
 	"io/fs"
+	"os"
+	"path"
 	"syscall"
 
 	"github.com/anacrolix/fuse"
@@ -32,12 +34,12 @@ type File struct {
 	attr     *fuse.Attr
 }
 
-func NewFile(pfs *plakarFS, vfs fs.FS, parent *Dir, path string) (*File, error) {
-	key := stableKey("file", parent.snapKey, path)
+func NewFile(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*File, error) {
+	key := stableKey("file", parent.snapKey, pathname)
 	if f, ok := pfs.inodeCache.getFile(key); ok {
 		return f, nil
 	} else {
-		st, err := fs.Stat(vfs, path)
+		st, err := parent.Stat(path.Base(pathname))
 		if err != nil {
 			return nil, syscall.ENOENT
 		}
@@ -45,13 +47,15 @@ func NewFile(pfs *plakarFS, vfs fs.FS, parent *Dir, path string) (*File, error) 
 		f := &File{
 			pfs:      pfs,
 			vfs:      vfs,
-			path:     path,
+			path:     pathname,
 			cacheKey: key,
 			attr: &fuse.Attr{
 				Valid: pfs.kernelCacheTTL,
 				Mode:  st.Mode(),
 				//Uid:   uint32(entry.Stat().Uid()),
 				//Gid:   uint32(entry.Stat().Gid()),
+				Uid:   uint32(os.Geteuid()),
+				Gid:   uint32(os.Getgid()),
 				Ctime: st.ModTime(),
 				Mtime: st.ModTime(),
 				Atime: st.ModTime(),
