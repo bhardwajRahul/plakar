@@ -163,7 +163,7 @@ func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
 		}
 
 		peerCtx := appcontext.NewAppContextFrom(ctx)
-		_, err = repository.NewNoRebuild(peerCtx.GetInner(), peerSecret, peerStore, peerStoreSerializedConfig)
+		_, err = repository.NewNoRebuild(peerCtx.GetInner(), peerSecret, peerStore, peerStoreSerializedConfig, true)
 		if err != nil {
 			return err
 		}
