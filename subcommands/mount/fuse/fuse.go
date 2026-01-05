@@ -53,6 +53,11 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 		}
 	}
 
+	loc, err := repo.Location()
+	if err != nil {
+		return 1, fmt.Errorf("mount: %v", err)
+	}
+
 	c, err := fuse.Mount(
 		mountpoint,
 		fuse.FSName("plakar"),
@@ -62,17 +67,17 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 	if err != nil {
 		return 1, fmt.Errorf("mount: %v", err)
 	}
-
-	loc, err := repo.Location()
-	if err != nil {
-		return 1, fmt.Errorf("mount: %v", err)
-	}
+	defer c.Close()
 
 	ctx.GetLogger().Info("mounted repository %s at %s", loc, mountpoint)
 
 	go func() {
 		<-ctx.Done()
-		fuse.Unmount(mountpoint)
+
+		err := fuse.Unmount(mountpoint)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s is still in use; run `umount -f %s` to force\n", mountpoint, mountpoint)
+		}
 	}()
 
 	err = fusefs.Serve(c, plakarfs.NewFS(ctx, repo, locateOptions, chrootfs))
