@@ -219,9 +219,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		cmd.Opts["location"] = scanDir
 	}
 
-	emitter := repo.Emitter("backup")
-	defer emitter.Close()
-
 	excludes := exclude.NewRuleSet()
 	if err := excludes.AddRulesFromArray(cmd.Excludes); err != nil {
 		return 1, fmt.Errorf("failed to setup exclude rules: %w", err), objects.MAC{}, nil
@@ -242,6 +239,9 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 		return 0, nil, objects.MAC{}, nil
 	}
+
+	emitter := repo.Emitter("backup")
+	defer emitter.Close()
 
 	if !cmd.NoProgress && (flags&location.FLAG_STREAM) == 0 {
 		scanner, err := imp.Scan(ctx)
