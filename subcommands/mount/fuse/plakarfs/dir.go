@@ -169,7 +169,7 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 			return d.readDirChildren, nil
 		}
 
-		_, err := cached.RebuildStateFromStore(d.pfs.ctx, d.pfs.repo.Configuration().RepositoryID, d.pfs.ctx.StoreConfig)
+		_, err := cached.RebuildStateFromStore(d.pfs.ctx, d.pfs.repo.Configuration().RepositoryID, d.pfs.ctx.StoreConfig, false)
 		if err != nil {
 			return nil, err
 		}

@@ -256,22 +256,27 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 	var err error
 	cmd.jobMtx.Lock()
 	if jq, ok = cmd.jobQueue[pkt.RepoID]; !ok {
-		cmd.jobQueue[pkt.RepoID] = make(chan jobReq, 1)
+		cmd.jobQueue[pkt.RepoID] = make(chan jobReq, 1024)
 		jq = cmd.jobQueue[pkt.RepoID]
 
 		err = cmd.rebuildJob(ctx, jq, pkt.RepoID, pkt.Secret, pkt.StoreConfig)
 	}
-
 	cmd.jobMtx.Unlock()
 
 	if err == nil {
 		j := jobReq{
-			ch:      make(chan error, 1),
 			stateID: pkt.StateID,
 		}
 
+		if !pkt.FireAndForget {
+			j.ch = make(chan error, 1)
+		}
+
 		jq <- j
-		err = <-j.ch
+
+		if !pkt.FireAndForget {
+			err = <-j.ch
+		}
 	}
 
 	errStr := ""
@@ -330,8 +335,11 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 				}
 
 				// Notify that we ended
-				job.ch <- err
-				close(job.ch)
+
+				if job.ch != nil {
+					job.ch <- err
+					close(job.ch)
+				}
 
 			// Debounce a bit to avoid halting and creating too many jobs.
 			case <-ctx.Done():

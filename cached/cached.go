@@ -23,6 +23,9 @@ type RequestPkt struct {
 	RepoID      uuid.UUID
 	StoreConfig map[string]string
 
+	// Push the request but don't wait for the actual execution.
+	FireAndForget bool
+
 	// If empty do a full rebuild otherwise ingest that file from disk.
 	StateID objects.MAC
 }
@@ -42,31 +45,33 @@ var (
 	ErrWrongVersion = errors.New("cached is running with a different version of plakar")
 )
 
-func RebuildStateFromStateFile(ctx *appcontext.AppContext, stateID objects.MAC, repoID uuid.UUID, storeConfig map[string]string) (int, error) {
+func RebuildStateFromStateFile(ctx *appcontext.AppContext, stateID objects.MAC, repoID uuid.UUID, storeConfig map[string]string, fireAndForget bool) (int, error) {
 	t0 := time.Now()
 	defer func() {
 		ctx.GetLogger().Trace("cached", "rebuild from local statefile (file=%x, store=%s): %s", stateID, repoID, time.Since(t0))
 	}()
 
 	req := &RequestPkt{
-		Secret:      ctx.GetSecret(),
-		RepoID:      repoID,
-		StoreConfig: storeConfig,
-		StateID:     stateID,
+		Secret:        ctx.GetSecret(),
+		RepoID:        repoID,
+		StoreConfig:   storeConfig,
+		StateID:       stateID,
+		FireAndForget: fireAndForget,
 	}
 
 	return rebuildStateRequest(ctx, req)
 }
 
-func RebuildStateFromStore(ctx *appcontext.AppContext, repoID uuid.UUID, storeConfig map[string]string) (int, error) {
+func RebuildStateFromStore(ctx *appcontext.AppContext, repoID uuid.UUID, storeConfig map[string]string, fireAndForget bool) (int, error) {
 	t0 := time.Now()
 	defer func() {
 		ctx.GetLogger().Trace("cached", "rebuild from store (store=%s): %s", repoID, time.Since(t0))
 	}()
 	req := &RequestPkt{
-		Secret:      ctx.GetSecret(),
-		RepoID:      repoID,
-		StoreConfig: storeConfig,
+		Secret:        ctx.GetSecret(),
+		RepoID:        repoID,
+		StoreConfig:   storeConfig,
+		FireAndForget: fireAndForget,
 	}
 
 	return rebuildStateRequest(ctx, req)

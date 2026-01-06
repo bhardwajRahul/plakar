@@ -352,8 +352,8 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 	// overwrite the header, we want to keep the original snapshot info
 	dstSnapshot.Header = srcSnapshot.Header
 
-	StateRefresher := func(mac objects.MAC) error {
-		_, err := cached.RebuildStateFromStateFile(ctx, mac, dstRepository.Configuration().RepositoryID, srcStoreConfig)
+	StateRefresher := func(mac objects.MAC, lastRefresh bool) error {
+		_, err := cached.RebuildStateFromStateFile(ctx, mac, dstRepository.Configuration().RepositoryID, srcStoreConfig, lastRefresh)
 		return err
 	}
 
