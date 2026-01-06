@@ -163,7 +163,6 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.snapshotID = fmt.Sprintf("%x", e.Snapshot[0:4])
 
 		case "workflow.end":
-			//m.phase = "done !"
 
 		case "directory":
 			m.countDirs++
