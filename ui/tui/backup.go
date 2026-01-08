@@ -45,6 +45,15 @@ type backupModel struct {
 	countDirsOk     uint64
 	countDirsErrors uint64
 
+	// timers
+	timerResourcesDone    bool
+	timerResourcesBegin   time.Time
+	timerResourcesElapsed time.Duration
+
+	timerStructureDone    bool
+	timerStructureBegin   time.Time
+	timerStructureElapsed time.Duration
+
 	// UI
 	ressourcesProgress progress.Model
 	structureProgress  progress.Model
@@ -93,6 +102,13 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spin, cmd = m.spin.Update(msg)
 
 		now := time.Now()
+		if !m.timerResourcesBegin.IsZero() && !m.timerResourcesDone {
+			m.timerResourcesElapsed = time.Since(m.timerResourcesBegin)
+		}
+		if !m.timerStructureBegin.IsZero() && !m.timerStructureDone {
+			m.timerStructureElapsed = time.Since(m.timerStructureBegin)
+		}
+
 		if m.lastETAAt.IsZero() {
 			m.lastETAAt = now
 			m.lastResDone = m.countFilesOk + m.countFilesErrors + m.countSymlinksOk + m.countSymlinksErrors + m.countXattrsOk + m.countXattrsErrors
@@ -147,7 +163,6 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.snapshotID = fmt.Sprintf("%x", e.Snapshot[0:4])
 
 		case "workflow.end":
-			m.phase = "done !"
 
 		case "directory":
 			m.countDirs++
@@ -170,7 +185,6 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.countDirsErrors++
 
 		case "path.error":
-			m.countFilesErrors++
 
 		case "fs.summary":
 			m.foundSummary = true
@@ -182,17 +196,21 @@ func (m backupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "snapshot.import.start":
 			m.phase = "processing resources"
+			m.timerResourcesBegin = time.Now()
 
-		case "snapshot.import.end":
+		case "snapshot.import.done":
 			m.phase = "done importing resources"
 			m.detail = ""
+			m.timerResourcesDone = true
 
 		case "snapshot.vfs.start":
 			m.phase = "building virtual filesystem"
+			m.timerStructureBegin = time.Now()
 
 		case "snapshot.vfs.end":
 			m.phase = "done building virtual filesystem"
 			m.detail = ""
+			m.timerStructureDone = true
 
 		case "snapshot.index.start":
 			m.phase = "indexing resources"
@@ -265,17 +283,17 @@ func (m backupModel) View() string {
 			etaDur := time.Duration(remaining / m.resRateEMA * float64(time.Second))
 			etaValue := fmtETA(etaDur)
 			if etaValue != "" {
-				eta = " ETA " + etaValue
+				eta = "ETA " + etaValue
 			}
 		}
 
-		fmt.Fprintf(&s, "resources: %s%s [%d/%d]", m.ressourcesProgress.ViewAs(ratio), eta, done, total)
+		fmt.Fprintf(&s, "resources: %s %s [%d/%d] %s", m.ressourcesProgress.ViewAs(ratio), humanDuration(m.timerResourcesElapsed), done, total, eta)
 		if m.countFilesErrors+m.countSymlinksErrors+m.countXattrsErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors+m.countSymlinksErrors+m.countXattrsErrors)
 		}
 		fmt.Fprintf(&s, "\n")
 	} else {
-		fmt.Fprintf(&s, "resources: %s %s %d", m.spin.View(), checkMark, m.countFilesOk)
+		fmt.Fprintf(&s, "resources: %s %s %s %d", m.spin.View(), humanDuration(m.timerResourcesElapsed), checkMark, m.countFilesOk)
 		if m.countFilesErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors)
 		}
@@ -300,18 +318,18 @@ func (m backupModel) View() string {
 			etaDur := time.Duration(remaining / m.structRateEMA * float64(time.Second))
 			etaValue := fmtETA(etaDur)
 			if etaValue != "" {
-				eta = " ETA " + etaValue
+				eta = "ETA " + etaValue
 			}
 		}
 
-		fmt.Fprintf(&s, "structure: %s%s [%d/%d]", m.structureProgress.ViewAs(ratio), eta, done, total)
+		fmt.Fprintf(&s, "structure: %s %s [%d/%d] %s", m.structureProgress.ViewAs(ratio), humanDuration(m.timerStructureElapsed), done, total, eta)
 		if m.countDirsErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
 		}
 		fmt.Fprintf(&s, "\n")
 
 	} else {
-		fmt.Fprintf(&s, "structure: %s %s %d", m.spin.View(), checkMark, m.countDirsOk)
+		fmt.Fprintf(&s, "structure: %s %s %s %d", m.spin.View(), humanDuration(m.timerStructureElapsed), checkMark, m.countDirsOk)
 		if m.countDirsErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
 		}

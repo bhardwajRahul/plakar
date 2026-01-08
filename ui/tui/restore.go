@@ -45,6 +45,15 @@ type restoreModel struct {
 	countDirsOk     uint64
 	countDirsErrors uint64
 
+	// timers
+	timerResourcesDone    bool
+	timerResourcesBegin   time.Time
+	timerResourcesElapsed time.Duration
+
+	timerStructureDone    bool
+	timerStructureBegin   time.Time
+	timerStructureElapsed time.Duration
+
 	// UI
 	ressourcesProgress progress.Model
 	structureProgress  progress.Model
@@ -91,6 +100,13 @@ func (m restoreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spin, cmd = m.spin.Update(msg)
 
 		now := time.Now()
+		if !m.timerResourcesBegin.IsZero() && !m.timerResourcesDone {
+			m.timerResourcesElapsed = time.Since(m.timerResourcesBegin)
+		}
+		if !m.timerStructureBegin.IsZero() && !m.timerStructureDone {
+			m.timerStructureElapsed = time.Since(m.timerStructureBegin)
+		}
+
 		if m.lastETAAt.IsZero() {
 			m.lastETAAt = now
 			m.lastResDone = m.countFilesOk + m.countFilesErrors + m.countSymlinksOk + m.countSymlinksErrors + m.countXattrsOk + m.countXattrsErrors
@@ -142,9 +158,12 @@ func (m restoreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.startTime = time.Now()
 			m.phase = "restoring"
 			m.snapshotID = fmt.Sprintf("%x", e.Snapshot[0:4])
+			m.timerResourcesBegin = m.startTime
+			m.timerStructureBegin = m.startTime
 
 		case "workflow.end":
-			m.phase = "done !"
+			m.timerResourcesDone = true
+			m.timerStructureDone = true
 
 		// If you can emit this during restore too, you get real progress/ETA.
 		// Otherwise keep it and it will simply never switch from spinner to bars.
@@ -236,17 +255,17 @@ func (m restoreModel) View() string {
 			remaining := float64(total - done)
 			etaDur := time.Duration(remaining / m.resRateEMA * float64(time.Second))
 			if v := fmtETA(etaDur); v != "" {
-				eta = " ETA " + v
+				eta = "ETA " + v
 			}
 		}
 
-		fmt.Fprintf(&s, "resources: %s%s [%d/%d]", m.ressourcesProgress.ViewAs(ratio), eta, done, total)
+		fmt.Fprintf(&s, "resources: %s %s [%d/%d] %s", m.ressourcesProgress.ViewAs(ratio), humanDuration(m.timerResourcesElapsed), done, total, eta)
 		if m.countFilesErrors+m.countSymlinksErrors+m.countXattrsErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors+m.countSymlinksErrors+m.countXattrsErrors)
 		}
 		fmt.Fprintf(&s, "\n")
 	} else {
-		fmt.Fprintf(&s, "resources: %s %s %d", m.spin.View(), checkMark, m.countFilesOk)
+		fmt.Fprintf(&s, "resources: %s %s %s %d", m.spin.View(), humanDuration(m.timerResourcesElapsed), checkMark, m.countFilesOk)
 		if m.countFilesErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countFilesErrors)
 		}
@@ -270,17 +289,17 @@ func (m restoreModel) View() string {
 			remaining := float64(total - done)
 			etaDur := time.Duration(remaining / m.structRateEMA * float64(time.Second))
 			if v := fmtETA(etaDur); v != "" {
-				eta = " ETA " + v
+				eta = "ETA " + v
 			}
 		}
 
-		fmt.Fprintf(&s, "structure: %s%s [%d/%d]", m.structureProgress.ViewAs(ratio), eta, done, total)
+		fmt.Fprintf(&s, "structure: %s %s [%d/%d] %s", m.structureProgress.ViewAs(ratio), humanDuration(m.timerStructureElapsed), done, total, eta)
 		if m.countDirsErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
 		}
 		fmt.Fprintf(&s, "\n")
 	} else {
-		fmt.Fprintf(&s, "structure: %s %s %d", m.spin.View(), checkMark, m.countDirsOk)
+		fmt.Fprintf(&s, "structure: %s %s %s %d", m.spin.View(), humanDuration(m.timerStructureElapsed), checkMark, m.countDirsOk)
 		if m.countDirsErrors > 0 {
 			fmt.Fprintf(&s, "  %s %d", crossMark, m.countDirsErrors)
 		}
