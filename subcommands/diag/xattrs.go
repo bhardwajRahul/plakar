@@ -81,7 +81,7 @@ func (cmd *DiagXattr) Execute(ctx *appcontext.AppContext, repo *repository.Repos
 			return 1, err
 		}
 
-		rd := vfs.NewObjectReader(repo, xattr.ResolvedObject, xattr.Size)
+		rd := vfs.NewObjectReader(repo, xattr.ResolvedObject, xattr.Size, -1)
 		value, err := io.ReadAll(rd)
 		if err != nil {
 			return 1, err

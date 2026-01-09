@@ -94,7 +94,7 @@ func (cmd *DiagDirPack) Execute(ctx *appcontext.AppContext, repo *repository.Rep
 			size += int64(c.Length)
 		}
 
-		rd := vfs.NewObjectReader(repo, obj, size)
+		rd := vfs.NewObjectReader(repo, obj, size, -1)
 
 		for {
 			typ, siz, err := readDirPackHdr(rd)

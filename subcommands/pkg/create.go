@@ -137,20 +137,29 @@ func (cmd *PkgCreate) Execute(ctx *appcontext.AppContext, _ *repository.Reposito
 		cwd:          cmd.Base,
 	}
 
-	snap, err := snapshot.CreateWithRepositoryWriter(repoWriter)
+	source, err := snapshot.NewSource(ctx, imp)
 	if err != nil {
-		return 1, fmt.Errorf("failed to create snapshot: %w", err)
+		return 1, err
 	}
 
-	backupOptions := &snapshot.BackupOptions{
+	backupOptions := &snapshot.BuilderOptions{
 		NoCheckpoint: true,
 		NoCommit:     true,
 	}
 
-	err = snap.Backup(imp, backupOptions)
+	snap, err := snapshot.CreateWithRepositoryWriter(repoWriter, backupOptions, objects.NilMac)
+	if err != nil {
+		return 1, fmt.Errorf("failed to create snapshot: %w", err)
+	}
 
+	err = snap.Backup(source)
 	if err != nil {
 		return 1, fmt.Errorf("failed to populate the snapshot: %w", err)
+	}
+
+	_, err = snap.PutSnapshot()
+	if err != nil {
+		return 1, fmt.Errorf("failed to commit snapshot: %w", err)
 	}
 
 	// We are done with everything we can now stop the backup routines.

@@ -173,11 +173,10 @@ func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 }
 
 func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Repository) (int, error, objects.MAC, error) {
-	opts := &snapshot.BackupOptions{
-		Name:     "default",
-		Tags:     cmd.Tags,
-		Excludes: cmd.Excludes,
-		NoXattr:  cmd.NoXattr,
+	opts := &snapshot.BuilderOptions{
+		Name:    "default",
+		Tags:    cmd.Tags,
+		NoXattr: cmd.NoXattr,
 		StateRefresher: func(mac objects.MAC, finalRefresh bool) error {
 			// If we are in the final refresh, turn this request into a fire and
 			// forget one, to improve the UX.
@@ -232,6 +231,15 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
 	}
 	defer imp.Close(ctx)
+
+	source, err := snapshot.NewSource(ctx, imp)
+	if err != nil {
+		return 1, err, objects.MAC{}, nil
+	}
+
+	if err := source.SetExcludes(cmd.Excludes); err != nil {
+		return 1, err, objects.MAC{}, nil
+	}
 
 	if cmd.DryRun {
 		if err := dryrun(ctx, imp, excludes); err != nil {
@@ -321,7 +329,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 	}
 
-	snap, err := snapshot.Create(repo, repository.DefaultType, cmd.PackfileTempStorage, objects.NilMac)
+	snap, err := snapshot.Create(repo, repository.DefaultType, cmd.PackfileTempStorage, objects.NilMac, opts)
 	if err != nil {
 		ctx.GetLogger().Error("%s", err)
 		return 1, err, objects.MAC{}, nil
@@ -334,11 +342,18 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		snap.Header.Job = cmd.Job
 	}
 
-	if err := snap.Backup(imp, opts); err != nil {
+	if err := snap.Backup(source); err != nil {
 		if err := executeHook(ctx, cmd.FailHook); err != nil {
 			ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
 		}
-		return 1, fmt.Errorf("failed to create snapshot: %w", err), objects.MAC{}, nil
+		return 1, fmt.Errorf("failed to backup source: %w", err), objects.MAC{}, nil
+	}
+
+	if err := snap.Commit(); err != nil {
+		if err := executeHook(ctx, cmd.FailHook); err != nil {
+			ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
+		}
+		return 1, fmt.Errorf("failed to commit snapshot: %w", err), objects.MAC{}, nil
 	}
 
 	if cmd.OptCheck {
