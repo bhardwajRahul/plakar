@@ -147,7 +147,7 @@ func (cmd *PkgCreate) Execute(ctx *appcontext.AppContext, _ *repository.Reposito
 		NoCommit:     true,
 	}
 
-	snap, err := snapshot.CreateWithRepositoryWriter(repoWriter, backupOptions)
+	snap, err := snapshot.CreateWithRepositoryWriter(repoWriter, backupOptions, objects.NilMac)
 	if err != nil {
 		return 1, fmt.Errorf("failed to create snapshot: %w", err)
 	}

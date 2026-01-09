@@ -174,10 +174,9 @@ func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 
 func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Repository) (int, error, objects.MAC, error) {
 	opts := &snapshot.BuilderOptions{
-		Name:     "default",
-		Tags:     cmd.Tags,
-		Excludes: cmd.Excludes,
-		NoXattr:  cmd.NoXattr,
+		Name:    "default",
+		Tags:    cmd.Tags,
+		NoXattr: cmd.NoXattr,
 		StateRefresher: func(mac objects.MAC, finalRefresh bool) error {
 			// If we are in the final refresh, turn this request into a fire and
 			// forget one, to improve the UX.
@@ -235,6 +234,10 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 
 	source, err := snapshot.NewSource(ctx, imp)
 	if err != nil {
+		return 1, err, objects.MAC{}, nil
+	}
+
+	if err := source.SetExcludes(cmd.Excludes); err != nil {
 		return 1, err, objects.MAC{}, nil
 	}
 

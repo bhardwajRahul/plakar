@@ -348,7 +348,7 @@ func (cmd *Ptar) backup(ctx *appcontext.AppContext, repo *repository.RepositoryW
 			return err
 		}
 
-		snap, err := snapshot.CreateWithRepositoryWriter(repo, backupOptions)
+		snap, err := snapshot.CreateWithRepositoryWriter(repo, backupOptions, objects.NilMac)
 		if err != nil {
 			return err
 		}
@@ -393,7 +393,7 @@ func (cmd *Ptar) synchronize(ctx *appcontext.AppContext, srcRepository *reposito
 		dstSnapshot, err := snapshot.CreateWithRepositoryWriter(dstRepository, &snapshot.BuilderOptions{
 			NoCheckpoint: true,
 			NoCommit:     true,
-		})
+		}, srcSnapshot.Header.Identifier)
 		if err != nil {
 			return err
 		}
