@@ -149,7 +149,14 @@ func GenerateSnapshot(t *testing.T, repo *repository.Repository, files []MockFil
 		imp.(*MockImporter).SetFiles(files)
 	}
 
-	builder.Backup(imp)
+	s, err := snapshot.NewSource(repo.AppContext(), imp)
+	require.NoError(t, err)
+
+	err = builder.Backup(s)
+	require.NoError(t, err)
+
+	err = builder.Commit()
+	require.NoError(t, err)
 
 	err = builder.Repository().RebuildState()
 	require.NoError(t, err)
