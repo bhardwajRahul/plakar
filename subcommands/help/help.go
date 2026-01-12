@@ -46,7 +46,7 @@ func (cmd *Help) Parse(ctx *appcontext.AppContext, args []string) error {
 		flags.PrintDefaults()
 		fmt.Fprint(flags.Output(), "\nTo view the man page for a specific command, run 'plakar help SUBCOMMAND'.\n")
 	}
-	flags.StringVar(&cmd.Style, "style", "dracula", "style to use")
+	flags.StringVar(&cmd.Style, "style", "auto", "style to use")
 	flags.Parse(args)
 
 	cmd.Command = strings.Join(flags.Args(), "-")
