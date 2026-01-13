@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	_ "github.com/PlakarKorp/integration-fs/exporter"
+	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -23,6 +24,10 @@ func init() {
 }
 
 func generateSnapshot(t *testing.T, bufOut *bytes.Buffer, bufErr *bytes.Buffer) (*repository.Repository, *snapshot.Snapshot, *appcontext.AppContext) {
+	stateRefresher = func(*appcontext.AppContext, *repository.Repository) func(objects.MAC, bool) error {
+		return nil
+	}
+
 	repo, ctx := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
 	snap := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
 		ptesting.NewMockDir("subdir"),

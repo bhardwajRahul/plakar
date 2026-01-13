@@ -14,6 +14,7 @@ import (
 	"github.com/PlakarKorp/kloset/caching/pebble"
 	"github.com/PlakarKorp/kloset/hashing"
 	"github.com/PlakarKorp/kloset/logging"
+	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/resources"
 	"github.com/PlakarKorp/kloset/storage"
@@ -28,7 +29,11 @@ func init() {
 }
 
 func generateFixtures(t *testing.T, bufOut *bytes.Buffer, bufErr *bytes.Buffer) (*repository.Repository, string, *appcontext.AppContext) {
-	// init temporary directories
+	// See comment in backup.go
+	stateRefresher = func(*appcontext.AppContext, *repository.Repository) func(objects.MAC, bool) error {
+		return nil
+	}
+
 	tmpRepoDirRoot, err := os.MkdirTemp("", "tmp_repo")
 	require.NoError(t, err)
 	tmpRepoDir := fmt.Sprintf("%s/repo", tmpRepoDirRoot)
@@ -83,6 +88,7 @@ func generateFixtures(t *testing.T, bufOut *bytes.Buffer, bufErr *bytes.Buffer) 
 	// create a repository
 	cache := caching.NewManager(pebble.Constructor(tmpCacheDir))
 	ctx.SetCache(cache)
+	ctx.CacheDir = tmpCacheDir
 	ctx.Client = "plakar-test/1.0.0"
 
 	// Create a new logger
