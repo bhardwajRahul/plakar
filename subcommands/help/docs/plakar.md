@@ -106,11 +106,6 @@ The following commands are available:
 > Check data integrity in a Kloset store, documented in
 > plakar-check(1).
 
-**clone**
-
-> Clone a Kloset store to a new location, documented in
-> plakar-clone(1).
-
 **create**
 
 > Create a new Kloset store, documented in
@@ -258,7 +253,7 @@ The following commands are available:
 
 # FILES
 
-*~/.cache/plakar* and *~/.cache/plakar-agentless*
+*~/.cache/plakar*
 
 > Plakar cache directories.
 
