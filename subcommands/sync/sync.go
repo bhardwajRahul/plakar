@@ -344,12 +344,9 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 	defer srcSnapshot.Close()
 
 	dstSnapshot, err := snapshot.Create(dstRepository, repository.DefaultType, packfileDir, srcSnapshot.Header.Identifier, &snapshot.BuilderOptions{
-		NoCommit:     false,
-		NoCheckpoint: false,
-		StateRefresher: func(mac objects.MAC, lastRefresh bool) error {
-			_, err := cached.RebuildStateFromStateFile(ctx, mac, dstRepository.Configuration().RepositoryID, srcStoreConfig, lastRefresh)
-			return err
-		},
+		NoCommit:       false,
+		NoCheckpoint:   false,
+		StateRefresher: stateRefresher(ctx, dstRepository),
 	})
 	if err != nil {
 		return err
@@ -365,4 +362,15 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 
 	ctx.GetLogger().Info("Synchronization of %x finished", snapshotID)
 	return err
+}
+
+// We don't want to go through cached, if we need to refresh the state call
+// Repository.RebuildState
+var stateRefresher = func(ctx *appcontext.AppContext, repo *repository.Repository) func(mac objects.MAC, finalRefresh bool) error {
+	return func(mac objects.MAC, finalRefresh bool) error {
+		// If we are in the final refresh, turn this request into a fire and
+		// forget one, to improve the UX.
+		_, err := cached.RebuildStateFromStateFile(ctx, mac, repo.Configuration().RepositoryID, ctx.StoreConfig, finalRefresh)
+		return err
+	}
 }

@@ -174,15 +174,10 @@ func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 
 func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Repository) (int, error, objects.MAC, error) {
 	opts := &snapshot.BuilderOptions{
-		Name:    "default",
-		Tags:    cmd.Tags,
-		NoXattr: cmd.NoXattr,
-		StateRefresher: func(mac objects.MAC, finalRefresh bool) error {
-			// If we are in the final refresh, turn this request into a fire and
-			// forget one, to improve the UX.
-			_, err := cached.RebuildStateFromStateFile(ctx, mac, repo.Configuration().RepositoryID, ctx.StoreConfig, finalRefresh)
-			return err
-		},
+		Name:           "default",
+		Tags:           cmd.Tags,
+		NoXattr:        cmd.NoXattr,
+		StateRefresher: stateRefresher(ctx, repo),
 	}
 
 	if !cmd.ForcedTimestamp.IsZero() {
@@ -497,6 +492,17 @@ func dryrun(ctx *appcontext.AppContext, imp importer.Importer, excludes *exclude
 		return fmt.Errorf("failed to scan some files")
 	}
 	return nil
+}
+
+// We don't want to go through cached, if we need to refresh the state call
+// Repository.RebuildState
+var stateRefresher = func(ctx *appcontext.AppContext, repo *repository.Repository) func(mac objects.MAC, finalRefresh bool) error {
+	return func(mac objects.MAC, finalRefresh bool) error {
+		// If we are in the final refresh, turn this request into a fire and
+		// forget one, to improve the UX.
+		_, err := cached.RebuildStateFromStateFile(ctx, mac, repo.Configuration().RepositoryID, ctx.StoreConfig, finalRefresh)
+		return err
+	}
 }
 
 type FilesystemSummary struct {
