@@ -314,7 +314,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		var parentVFS *vfs.Filesystem
 
 		if !cmd.NoVFSCache {
-			fmt.Printf("In backup => %s\n", source.Root())
 			parentID, _, err := locate.Match(repo, &locate.LocateOptions{
 				Filters: locate.LocateFilters{
 					Latest: true,
@@ -334,7 +333,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 			}
 
 			if len(parentID) != 0 {
-				fmt.Printf("Found parent vfs %x\n", parentID[0])
 				parent, err := snapshot.Load(repo, parentID[0])
 				if err != nil {
 					return 1, nil, objects.MAC{}, err
