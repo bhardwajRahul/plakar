@@ -343,7 +343,7 @@ func (cmd *Ptar) backup(ctx *appcontext.AppContext, repo *repository.RepositoryW
 			NoCommit:     true,
 		}
 
-		source, err := snapshot.NewSource(ctx, imp, flags)
+		source, err := snapshot.NewSource(ctx, flags, imp)
 		if err != nil {
 			return err
 		}

@@ -34,6 +34,7 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/importer"
+	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -182,7 +183,13 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		opts.ForcedTimestamp = cmd.ForcedTimestamp
 	}
 
-	sourcesPerOrig := make(map[string]*snapshot.Source)
+	// This is fugly, but in the following days Flags will be part of the
+	// Importer API so this will get folded. Keeping it ugly so that we get rid
+	// of it ASAP! Where is std::tuple when you need it.
+	sourcesPerOrig := make(map[string]*struct {
+		f    location.Flags
+		imps []importer.Importer
+	})
 
 	for _, source := range cmd.Sources {
 		scanDir := "fs:" + ctx.CWD
@@ -226,7 +233,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		importerOpts := ctx.ImporterOpts()
 		importerOpts.Excludes = cmd.Excludes
 
-		fmt.Printf("1- Going to instantiate an importer with scanDir %s and otps %+v\n", scanDir, importerOpts)
 		imp, flags, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
 		if err != nil {
 			return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
@@ -244,20 +250,14 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 
 		importerKey := typ + ":" + orig
-		fmt.Printf("Going to instantiate an importer with scanDir %s and otps %+v\n", scanDir, importerOpts)
 		if _, exists := sourcesPerOrig[importerKey]; !exists {
-			sourcesPerOrig[importerKey], err = snapshot.NewSource(ctx, imp, flags)
-			if err != nil {
-				return 1, fmt.Errorf("failed to fetch importer origin for %s: %s", scanDir, err), objects.MAC{}, nil
-			}
+			sourcesPerOrig[importerKey] = &struct {
+				f    location.Flags
+				imps []importer.Importer
+			}{f: flags, imps: []importer.Importer{imp}}
 
-			if err := sourcesPerOrig[importerKey].SetExcludes(cmd.Excludes); err != nil {
-				return 1, err, objects.MAC{}, nil
-			}
 		} else {
-			if err := sourcesPerOrig[importerKey].AddImporter(ctx, imp); err != nil {
-				return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
-			}
+			sourcesPerOrig[importerKey].imps = append(sourcesPerOrig[importerKey].imps, imp)
 		}
 	}
 
@@ -277,53 +277,6 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		cmd.PackfileTempStorage = ""
 	}
 
-	/*
-		var parentVFS *vfs.Filesystem
-
-			if !cmd.NoVFSCache {
-				importerType, err := imp.Type(ctx)
-				if err != nil {
-					return 1, fmt.Errorf("failed to get importer type: %w", err), objects.MAC{}, nil
-				}
-
-				importerOrigin, err := imp.Origin(ctx)
-				if err != nil {
-					return 1, fmt.Errorf("failed to get importer origin: %w", err), objects.MAC{}, nil
-				}
-
-				parentID, _, err := locate.Match(repo, &locate.LocateOptions{
-					Filters: locate.LocateFilters{
-						Latest: true,
-						Roots: []string{
-							cmd.Path,
-						},
-						Types: []string{
-							importerType,
-						},
-						Origins: []string{
-							importerOrigin,
-						},
-					},
-				})
-				if err != nil {
-					return 1, nil, objects.MAC{}, err
-				}
-
-				if len(parentID) != 0 {
-					parent, err := snapshot.Load(repo, parentID[0])
-					if err != nil {
-						return 1, nil, objects.MAC{}, err
-					}
-					defer parent.Close()
-
-					parentVFS, err = parent.Filesystem()
-					if err != nil {
-						return 1, nil, objects.MAC{}, err
-					}
-				}
-			}
-	*/
-
 	// Execute pre-backup hook
 	if err := executeHook(ctx, cmd.PreHook); err != nil {
 		return 1, fmt.Errorf("pre-backup hook failed: %w", err), objects.MAC{}, nil
@@ -336,14 +289,21 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 	defer snap.Close()
 
-	//snap.WithVFSCache(parentVFS)
-
 	if cmd.Job != "" {
 		snap.Header.Job = cmd.Job
 	}
 
 	// Actual import of sources.
-	for _, source := range sourcesPerOrig {
+	for _, sourceImporters := range sourcesPerOrig {
+		source, err := snapshot.NewSource(repo.AppContext(), sourceImporters.f, sourceImporters.imps...)
+		if err != nil {
+			return 1, err, objects.NilMac, nil
+		}
+
+		if err := source.SetExcludes(cmd.Excludes); err != nil {
+			return 1, err, objects.MAC{}, nil
+		}
+
 		if cmd.DryRun {
 			if err := dryrun(ctx, source); err != nil {
 				return 1, err, objects.MAC{}, nil
@@ -351,7 +311,45 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 			return 0, nil, objects.MAC{}, nil
 		}
 
-		if !cmd.NoProgress && (source.GetFlags()&location.FLAG_STREAM) == 0 {
+		var parentVFS *vfs.Filesystem
+
+		if !cmd.NoVFSCache {
+			fmt.Printf("In backup => %s\n", source.Root())
+			parentID, _, err := locate.Match(repo, &locate.LocateOptions{
+				Filters: locate.LocateFilters{
+					Latest: true,
+					Roots: []string{
+						source.Root(),
+					},
+					Types: []string{
+						source.Type(),
+					},
+					Origins: []string{
+						source.Origin(),
+					},
+				},
+			})
+			if err != nil {
+				return 1, nil, objects.MAC{}, err
+			}
+
+			if len(parentID) != 0 {
+				fmt.Printf("Found parent vfs %x\n", parentID[0])
+				parent, err := snapshot.Load(repo, parentID[0])
+				if err != nil {
+					return 1, nil, objects.MAC{}, err
+				}
+				defer parent.Close()
+
+				parentVFS, err = parent.Filesystem()
+				if err != nil {
+					return 1, nil, objects.MAC{}, err
+				}
+			}
+		}
+		snap.WithVFSCache(parentVFS)
+
+		if !cmd.NoProgress && (source.Flags()&location.FLAG_STREAM) == 0 {
 			scanner, err := source.GetScanner()
 			if err != nil {
 				return 1, fmt.Errorf("failed to scan: %w", err), objects.MAC{}, nil
