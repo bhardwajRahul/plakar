@@ -158,10 +158,11 @@ func GenerateSnapshot(t *testing.T, repo *repository.Repository, files []MockFil
 	err = builder.Commit()
 	require.NoError(t, err)
 
-	err = builder.Repository().RebuildState()
+	err = builder.Close()
 	require.NoError(t, err)
 
-	builder.Close()
+	err = builder.Repository().RebuildState()
+	require.NoError(t, err)
 
 	// reopen it
 	snap, err := snapshot.Load(repo, builder.Header.Identifier)
