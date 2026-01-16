@@ -13,13 +13,14 @@ import (
 	grpc_exporter "github.com/PlakarKorp/integration-grpc/exporter"
 	grpc_importer "github.com/PlakarKorp/integration-grpc/importer"
 	grpc_storage "github.com/PlakarKorp/integration-grpc/storage"
+	"github.com/PlakarKorp/kloset/connectors"
+	"github.com/PlakarKorp/kloset/connectors/exporter"
+	"github.com/PlakarKorp/kloset/connectors/importer"
 	"github.com/PlakarKorp/kloset/kcontext"
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/location"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/snapshot/exporter"
-	"github.com/PlakarKorp/kloset/snapshot/importer"
 	"github.com/PlakarKorp/kloset/storage"
 )
 
@@ -112,7 +113,7 @@ func (plugin *Plugin) registerStorage(proto string, flags location.Flags, exe st
 }
 
 func (plugin *Plugin) registerImporter(proto string, flags location.Flags, exe string, args []string) error {
-	err := importer.Register(proto, flags, func(ctx context.Context, o *importer.Options, s string, config map[string]string) (importer.Importer, error) {
+	err := importer.Register(proto, flags, func(ctx context.Context, o *connectors.Options, s string, config map[string]string) (importer.Importer, error) {
 		client, err := connectPlugin(ctx, exe, args)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to plugin: %w", err)
@@ -127,7 +128,7 @@ func (plugin *Plugin) registerImporter(proto string, flags location.Flags, exe s
 }
 
 func (plugin *Plugin) registerExporter(proto string, flags location.Flags, exe string, args []string) error {
-	err := exporter.Register(proto, flags, func(ctx context.Context, o *exporter.Options, s string, config map[string]string) (exporter.Exporter, error) {
+	err := exporter.Register(proto, flags, func(ctx context.Context, o *connectors.Options, s string, config map[string]string) (exporter.Exporter, error) {
 		client, err := connectPlugin(ctx, exe, args)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to plugin: %w", err)
@@ -143,11 +144,9 @@ func (plugin *Plugin) registerExporter(proto string, flags location.Flags, exe s
 }
 
 func extractPlugin(ctx *kcontext.KContext, pluginFile, destDir string) error {
-	opts := map[string]string{
+	store, serializedConfig, err := storage.Open(ctx, map[string]string{
 		"location": "ptar://" + pluginFile,
-	}
-
-	store, serializedConfig, err := storage.Open(ctx, opts)
+	})
 	if err != nil {
 		return err
 	}
@@ -170,21 +169,23 @@ func extractPlugin(ctx *kcontext.KContext, pluginFile, destDir string) error {
 		return err
 	}
 
-	fsexp, err := fsexporter.NewFSExporter(ctx, &exporter.Options{
-		MaxConcurrency: 1,
-	}, "fs", opts)
-	if err != nil {
-		return err
-	}
-
 	tmpdir, err := os.MkdirTemp(filepath.Dir(destDir), "plugin-extract-*")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmpdir)
 
+	fsexp, err := fsexporter.NewFSExporter(ctx, &connectors.Options{
+		MaxConcurrency: 1,
+	}, "fs", map[string]string{
+		"location": "fs://" + tmpdir,
+	})
+	if err != nil {
+		return err
+	}
+
 	base := snap.Header.GetSource(0).Importer.Directory
-	err = snap.Restore(fsexp, tmpdir, base, &snapshot.RestoreOptions{
+	err = snap.Export(fsexp, base, &snapshot.ExportOptions{
 		Strip: base,
 	})
 	if err != nil {

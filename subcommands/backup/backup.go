@@ -27,13 +27,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PlakarKorp/kloset/connectors"
+	"github.com/PlakarKorp/kloset/connectors/importer"
 	"github.com/PlakarKorp/kloset/exclude"
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/location"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/snapshot/importer"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
@@ -233,28 +234,23 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		importerOpts := ctx.ImporterOpts()
 		importerOpts.Excludes = cmd.Excludes
 
-		imp, flags, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
+		imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
 		if err != nil {
 			return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
 		}
 		defer imp.Close(ctx)
 
-		typ, err := imp.Type(ctx)
-		if err != nil {
-			return 1, fmt.Errorf("failed to fetch importer type for %s: %s", scanDir, err), objects.MAC{}, nil
-		}
-
-		orig, err := imp.Origin(ctx)
-		if err != nil {
-			return 1, fmt.Errorf("failed to fetch importer origin for %s: %s", scanDir, err), objects.MAC{}, nil
-		}
+		var (
+			typ  = imp.Type()
+			orig = imp.Origin()
+		)
 
 		importerKey := typ + ":" + orig
 		if _, exists := sourcesPerOrig[importerKey]; !exists {
 			sourcesPerOrig[importerKey] = &struct {
 				f    location.Flags
 				imps []importer.Importer
-			}{f: flags, imps: []importer.Importer{imp}}
+			}{f: imp.Flags(), imps: []importer.Importer{imp}}
 
 		} else {
 			sourcesPerOrig[importerKey].imps = append(sourcesPerOrig[importerKey].imps, imp)
@@ -348,13 +344,8 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		snap.WithVFSCache(parentVFS)
 
 		if !cmd.NoProgress && (source.Flags()&location.FLAG_STREAM) == 0 {
-			scanner, err := source.GetScanner()
-			if err != nil {
-				return 1, fmt.Errorf("failed to scan: %w", err), objects.MAC{}, nil
-			}
-
 			go func() {
-				fsSummary := statistics(ctx, scanner, source.GetExcludes())
+				fsSummary := statistics(ctx, source)
 				emitter.FilesystemSummary(
 					fsSummary.FileCount,
 					fsSummary.DirCount,
@@ -473,50 +464,66 @@ func executeHook(ctx *appcontext.AppContext, hook string) error {
 	return cmd.Run()
 }
 
+func ack(record *connectors.Record, results chan<- *connectors.Result) {
+	if results == nil {
+		record.Close()
+	} else {
+		results <- record.Ok()
+	}
+}
+
+func progress(ctx *appcontext.AppContext, imp importer.Importer, fn func(<-chan *connectors.Record, chan<- *connectors.Result)) error {
+	var (
+		size    = ctx.MaxConcurrency
+		records = make(chan *connectors.Record, size)
+		retch   = make(chan struct{}, 1)
+	)
+
+	var results chan *connectors.Result
+	if (imp.Flags() & location.FLAG_NEEDACK) != 0 {
+		results = make(chan *connectors.Result, size)
+	}
+
+	go func() { fn(records, results); close(retch) }()
+
+	err := imp.Import(ctx, records, results)
+	<-retch
+	return err
+}
+
 func dryrun(ctx *appcontext.AppContext, source *snapshot.Source) error {
-	scanner, err := source.GetScanner()
-	if err != nil {
-		return fmt.Errorf("failed to scan: %w", err)
-	}
+	var errors bool
+	for _, imp := range source.Importers() {
+		err := progress(ctx, imp, func(records <-chan *connectors.Record, results chan<- *connectors.Result) {
+			for record := range records {
+				ack(record, results)
 
-	errors := false
-	i := 0
-	for record := range scanner {
+				var (
+					pathname = record.Pathname
+					isDir    = false
+				)
 
-		if i%1000 == 0 && ctx.Err() != nil {
-			return ctx.Err()
-		}
-		i++
+				if record.Err == nil && record.FileInfo.Lmode.IsDir() {
+					isDir = true
+				}
 
-		var pathname string
-		var isDir bool
-		switch {
-		case record.Record != nil:
-			pathname = record.Record.Pathname
-			isDir = record.Record.FileInfo.IsDir()
-		case record.Error != nil:
-			pathname = record.Error.Pathname
-			isDir = false
-		}
+				if source.GetExcludes().IsExcluded(pathname, isDir) {
+					continue
+				}
 
-		if source.GetExcludes().IsExcluded(pathname, isDir) {
-			if record.Record != nil {
-				record.Record.Close()
+				switch {
+				case record.Err != nil:
+					errors = true
+					fmt.Fprintf(ctx.Stderr, "%s: %s\n", pathname, record.Err)
+				default:
+					fmt.Fprintln(ctx.Stdout, pathname)
+				}
 			}
-			continue
-		}
-
-		switch {
-		case record.Error != nil:
-			errors = true
-			fmt.Fprintf(ctx.Stderr, "%s: %s\n",
-				record.Error.Pathname, record.Error.Err)
-		case record.Record != nil:
-			fmt.Fprintln(ctx.Stdout, record.Record.Pathname)
-			record.Record.Close()
+		})
+		if err != nil {
+			return err
 		}
 	}
-
 	if errors {
 		return fmt.Errorf("failed to scan some files")
 	}
@@ -542,7 +549,7 @@ type FilesystemSummary struct {
 	TotalSize    uint64
 }
 
-func statistics(ctx *appcontext.AppContext, scanner <-chan *importer.ScanResult, excludes *exclude.RuleSet) FilesystemSummary {
+func statistics(ctx *appcontext.AppContext, source *snapshot.Source) FilesystemSummary {
 	errorCount := uint64(0)
 	directoryCount := uint64(0)
 	fileCount := uint64(0)
@@ -550,53 +557,41 @@ func statistics(ctx *appcontext.AppContext, scanner <-chan *importer.ScanResult,
 	xattrCount := uint64(0)
 	totalSize := uint64(0)
 
-	i := 0
-	for record := range scanner {
+	for _, imp := range source.Importers() {
+		progress(ctx, imp, func(records <-chan *connectors.Record, results chan<- *connectors.Result) {
+			for record := range records {
+				ack(record, results)
 
-		if i%1000 == 0 && ctx.Err() != nil {
-			break
-		}
-		i++
+				var (
+					pathname = record.Pathname
+					isDir    = false
+				)
 
-		var pathname string
-		var isDir bool
-		switch {
-		case record.Record != nil:
-			pathname = record.Record.Pathname
-			isDir = record.Record.FileInfo.IsDir()
-		case record.Error != nil:
-			pathname = record.Error.Pathname
-			isDir = false
-		}
+				if record.Err == nil && record.FileInfo.Lmode.IsDir() {
+					isDir = true
+				}
 
-		if excludes.IsExcluded(pathname, isDir) {
-			if record.Record != nil {
-				record.Record.Close()
+				if source.GetExcludes().IsExcluded(pathname, isDir) {
+					continue
+				}
+
+				switch {
+				case record.Err != nil:
+					errorCount++
+				case record.IsXattr:
+					xattrCount++
+				case record.FileInfo.Lmode.IsDir():
+					directoryCount++
+				case record.FileInfo.Mode()&os.ModeSymlink != 0:
+					symlinkCount++
+				default:
+					fileCount++
+					totalSize += uint64(record.FileInfo.Size())
+				}
 			}
-			continue
-		}
-
-		switch {
-		case record.Error != nil:
-			errorCount++
-		case record.Record != nil:
-			if record.Record.IsXattr {
-				xattrCount++
-				record.Record.Close()
-				continue
-			}
-
-			if record.Record.FileInfo.IsDir() {
-				directoryCount++
-			} else if record.Record.FileInfo.Mode()&os.ModeSymlink != 0 {
-				symlinkCount++
-			} else if record.Record.FileInfo.Mode().IsRegular() {
-				fileCount++
-				totalSize += uint64(record.Record.FileInfo.Size())
-			}
-			record.Record.Close()
-		}
+		})
 	}
+
 	return FilesystemSummary{
 		FileCount:    fileCount,
 		DirCount:     directoryCount,
