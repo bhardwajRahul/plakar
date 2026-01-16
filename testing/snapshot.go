@@ -6,15 +6,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	_ "github.com/PlakarKorp/integration-fs/importer"
 
+	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/snapshot/importer"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,19 +40,17 @@ func NewMockFile(path string, mode os.FileMode, content string) MockFile {
 	}
 }
 
-func (m *MockFile) ScanResult() *importer.ScanResult {
+func (m *MockFile) ScanResult() *connectors.Record {
 	switch {
 	case m.IsDir:
-		return &importer.ScanResult{
-			Record: &importer.ScanRecord{
-				Pathname: m.Path,
-				FileInfo: objects.FileInfo{
-					Lname:      path.Base(m.Path),
-					Lmode:      os.ModeDir | 0755,
-					Lnlink:     1,
-					Lusername:  "flan",
-					Lgroupname: "hacker",
-				},
+		return &connectors.Record{
+			Pathname: m.Path,
+			FileInfo: objects.FileInfo{
+				Lname:      path.Base(m.Path),
+				Lmode:      os.ModeDir | 0755,
+				Lnlink:     1,
+				Lusername:  "flan",
+				Lgroupname: "hacker",
 			},
 		}
 	default:
@@ -65,7 +62,10 @@ func (m *MockFile) ScanResult() *importer.ScanResult {
 			Lusername:  "flan",
 			Lgroupname: "hacker",
 		}
-		return importer.NewScanRecord(m.Path, "", info, nil, func() (io.ReadCloser, error) {
+		return connectors.NewRecord(m.Path, "", info, nil, func() (io.ReadCloser, error) {
+			if m.IsDir {
+				return nil, os.ErrNotExist
+			}
 			if m.Mode&0400 == 0 {
 				return nil, os.ErrPermission
 			}
@@ -75,8 +75,9 @@ func (m *MockFile) ScanResult() *importer.ScanResult {
 }
 
 type testingOptions struct {
-	name string
-	gen  func(chan<- *importer.ScanResult)
+	name     string
+	excludes []string
+	gen      func(chan<- *connectors.Record)
 }
 
 func newTestingOptions() *testingOptions {
@@ -90,6 +91,12 @@ type TestingOptions func(o *testingOptions)
 func WithName(name string) TestingOptions {
 	return func(o *testingOptions) {
 		o.name = name
+	}
+}
+
+func WithExcludes(excludes []string) TestingOptions {
+	return func(o *testingOptions) {
+		o.excludes = excludes
 	}
 }
 
@@ -112,7 +119,7 @@ func GenerateFiles(t *testing.T, files []MockFile) string {
 	return tmpBackupDir
 }
 
-func WithGenerator(gen func(chan<- *importer.ScanResult)) TestingOptions {
+func WithGenerator(gen func(chan<- *connectors.Record)) TestingOptions {
 	return func(o *testingOptions) {
 		o.gen = gen
 	}
@@ -125,21 +132,14 @@ func GenerateSnapshot(t *testing.T, repo *repository.Repository, files []MockFil
 	}
 
 	// create a snapshot
-	builder, err := snapshot.Create(repo, repository.DefaultType, "", objects.NilMac, &snapshot.BuilderOptions{Name: o.name})
+	builder, err := snapshot.Create(repo, repository.DefaultType, "", objects.NilMac, &snapshot.BuilderOptions{
+		Name: o.name,
+	})
 	require.NoError(t, err)
 	require.NotNil(t, builder)
 
-	impopts := &importer.Options{
-		Hostname:        "localhost",
-		OperatingSystem: runtime.GOOS,
-		Architecture:    runtime.GOARCH,
-		CWD:             "/",
-		MaxConcurrency:  1,
-		Stdout:          os.Stdout,
-		Stderr:          os.Stderr,
-	}
-
-	imp, err := NewMockImporter(repo.AppContext(), impopts, "mock", map[string]string{"location": "mock://place"})
+	imp, err := NewMockImporter(repo.AppContext(), &connectors.Options{},
+		"mock", map[string]string{"location": "mock://place"})
 	require.NoError(t, err)
 	require.NotNil(t, imp)
 
@@ -150,6 +150,9 @@ func GenerateSnapshot(t *testing.T, repo *repository.Repository, files []MockFil
 	}
 
 	s, err := snapshot.NewSource(repo.AppContext(), 0, imp)
+	require.NoError(t, err)
+
+	err = s.SetExcludes(o.excludes)
 	require.NoError(t, err)
 
 	err = builder.Backup(s)

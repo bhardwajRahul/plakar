@@ -26,8 +26,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/PlakarKorp/kloset/snapshot/exporter"
-	"github.com/PlakarKorp/kloset/snapshot/importer"
+	"github.com/PlakarKorp/kloset/connectors/exporter"
+	"github.com/PlakarKorp/kloset/connectors/importer"
 	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -141,7 +141,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 			if !ok {
 				return fmt.Errorf("failed to retrieve configuration for source %q", name)
 			}
-			imp, _, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cfg)
+			imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cfg)
 			if err != nil {
 				return err
 			}
@@ -152,7 +152,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 			if !ok {
 				return fmt.Errorf("failed to retrieve configuration for destination %q", name)
 			}
-			exp, err := exporter.NewExporter(ctx.GetInner(), cfg)
+			exp, err := exporter.NewExporter(ctx.GetInner(), ctx.ExporterOpts(), cfg)
 			if err != nil {
 				return err
 			}
