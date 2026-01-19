@@ -17,6 +17,7 @@ import (
 	"github.com/PlakarKorp/kloset/caching/lru"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
+	"github.com/PlakarKorp/kloset/resources"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/header"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
@@ -396,8 +397,34 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
+	summary := fsinfo.Summary
+	if summary == nil && fsinfo.IsDir() {
+		tree, err := snap.SummariesIdx()
+		if err != nil {
+			return err
+		}
+
+		key, found, err := tree.Find(fsinfo.Path())
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("could not resolve pathname: %s", fsinfo.Path())
+		}
+
+		serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
+		if err != nil {
+			return err
+		}
+
+		summary, err = vfs.SummaryFromBytes(serializedSummary)
+		if err != nil {
+			return err
+		}
+	}
+
 	items := Items[*vfs.Entry]{
-		Total: int(fsinfo.Summary.Directory.Children),
+		Total: int(summary.Directory.Children),
 		Items: make([]*vfs.Entry, 0),
 	}
 	iter, err := fsinfo.Getdents(fs)
@@ -425,7 +452,7 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if limit == 0 {
-		limit = int64(fsinfo.Summary.Directory.Children)
+		limit = int64(summary.Directory.Children)
 	}
 
 	var i int64
@@ -632,10 +659,36 @@ func (ui *uiserver) snapshotVFSErrors(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
+	summary := dir.Summary
+	if summary == nil && dir.IsDir() {
+		tree, err := snap.SummariesIdx()
+		if err != nil {
+			return err
+		}
+
+		key, found, err := tree.Find(dir.Path())
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("could not resolve pathname: %s", dir.Path())
+		}
+
+		serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
+		if err != nil {
+			return err
+		}
+
+		summary, err = vfs.SummaryFromBytes(serializedSummary)
+		if err != nil {
+			return err
+		}
+	}
+
 	var i int64
 	items := Items[*vfs.ErrorItem]{
 		Items: []*vfs.ErrorItem{},
-		Total: int(dir.Summary.Directory.Errors + dir.Summary.Below.Errors),
+		Total: int(summary.Directory.Errors + summary.Below.Errors),
 	}
 	for errorEntry := range errorList {
 		if i >= offset && i < offset+limit {
