@@ -399,7 +399,7 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 
 	summary := fsinfo.Summary
 	if summary == nil && fsinfo.IsDir() {
-		tree, err := snap.SummariesIdx()
+		tree, err := snap.SummaryIdx()
 		if err != nil {
 			return err
 		}
@@ -661,7 +661,7 @@ func (ui *uiserver) snapshotVFSErrors(w http.ResponseWriter, r *http.Request) er
 
 	summary := dir.Summary
 	if summary == nil && dir.IsDir() {
-		tree, err := snap.SummariesIdx()
+		tree, err := snap.SummaryIdx()
 		if err != nil {
 			return err
 		}

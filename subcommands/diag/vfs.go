@@ -90,7 +90,7 @@ func (cmd *DiagVFS) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 
 	summary := entry.Summary
 	if summary == nil && entry.IsDir() {
-		tree, err := snap1.SummariesIdx()
+		tree, err := snap1.SummaryIdx()
 		if err != nil {
 			return 1, err
 		}
