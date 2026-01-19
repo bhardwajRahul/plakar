@@ -8,6 +8,8 @@ import (
 
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
+	"github.com/PlakarKorp/kloset/resources"
+	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/dustin/go-humanize"
@@ -86,63 +88,89 @@ func (cmd *DiagVFS) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 	fmt.Fprintf(ctx.Stdout, "Tags: %s\n", entry.Tags)
 	fmt.Fprintf(ctx.Stdout, "ExtendedAttributes: %v\n", entry.ExtendedAttributes)
 
-	if entry.Summary != nil {
-		fmt.Fprintf(ctx.Stdout, "Below.Directories: %d\n", entry.Summary.Below.Directories)
-		fmt.Fprintf(ctx.Stdout, "Below.Files: %d\n", entry.Summary.Below.Files)
-		fmt.Fprintf(ctx.Stdout, "Below.Symlinks: %d\n", entry.Summary.Below.Symlinks)
-		fmt.Fprintf(ctx.Stdout, "Below.Devices: %d\n", entry.Summary.Below.Devices)
-		fmt.Fprintf(ctx.Stdout, "Below.Pipes: %d\n", entry.Summary.Below.Pipes)
-		fmt.Fprintf(ctx.Stdout, "Below.Sockets: %d\n", entry.Summary.Below.Sockets)
-		fmt.Fprintf(ctx.Stdout, "Below.Setuid: %d\n", entry.Summary.Below.Setuid)
-		fmt.Fprintf(ctx.Stdout, "Below.Setgid: %d\n", entry.Summary.Below.Setgid)
-		fmt.Fprintf(ctx.Stdout, "Below.Sticky: %d\n", entry.Summary.Below.Sticky)
-		fmt.Fprintf(ctx.Stdout, "Below.Objects: %d\n", entry.Summary.Below.Objects)
-		fmt.Fprintf(ctx.Stdout, "Below.Chunks: %d\n", entry.Summary.Below.Chunks)
-		fmt.Fprintf(ctx.Stdout, "Below.MinSize: %s (%d bytes)\n", humanize.IBytes(uint64(entry.Summary.Below.MinSize)), entry.Summary.Below.MinSize)
-		fmt.Fprintf(ctx.Stdout, "Below.MaxSize: %s (%d bytes)\n", humanize.IBytes(uint64(entry.Summary.Below.MaxSize)), entry.Summary.Below.MaxSize)
-		fmt.Fprintf(ctx.Stdout, "Below.Size: %s (%d bytes)\n", humanize.IBytes(uint64(entry.Summary.Below.Size)), entry.Summary.Below.Size)
-		fmt.Fprintf(ctx.Stdout, "Below.MinModTime: %s\n", time.Unix(entry.Summary.Below.MinModTime, 0))
-		fmt.Fprintf(ctx.Stdout, "Below.MaxModTime: %s\n", time.Unix(entry.Summary.Below.MaxModTime, 0))
-		fmt.Fprintf(ctx.Stdout, "Below.MinEntropy: %f\n", entry.Summary.Below.MinEntropy)
-		fmt.Fprintf(ctx.Stdout, "Below.MaxEntropy: %f\n", entry.Summary.Below.MaxEntropy)
-		fmt.Fprintf(ctx.Stdout, "Below.HiEntropy: %d\n", entry.Summary.Below.HiEntropy)
-		fmt.Fprintf(ctx.Stdout, "Below.LoEntropy: %d\n", entry.Summary.Below.LoEntropy)
-		fmt.Fprintf(ctx.Stdout, "Below.MIMEAudio: %d\n", entry.Summary.Below.MIMEAudio)
-		fmt.Fprintf(ctx.Stdout, "Below.MIMEVideo: %d\n", entry.Summary.Below.MIMEVideo)
-		fmt.Fprintf(ctx.Stdout, "Below.MIMEImage: %d\n", entry.Summary.Below.MIMEImage)
-		fmt.Fprintf(ctx.Stdout, "Below.MIMEText: %d\n", entry.Summary.Below.MIMEText)
-		fmt.Fprintf(ctx.Stdout, "Below.MIMEApplication: %d\n", entry.Summary.Below.MIMEApplication)
-		fmt.Fprintf(ctx.Stdout, "Below.MIMEOther: %d\n", entry.Summary.Below.MIMEOther)
-		fmt.Fprintf(ctx.Stdout, "Below.Errors: %d\n", entry.Summary.Below.Errors)
-		fmt.Fprintf(ctx.Stdout, "Directory.Directories: %d\n", entry.Summary.Directory.Directories)
-		fmt.Fprintf(ctx.Stdout, "Directory.Files: %d\n", entry.Summary.Directory.Files)
-		fmt.Fprintf(ctx.Stdout, "Directory.Symlinks: %d\n", entry.Summary.Directory.Symlinks)
-		fmt.Fprintf(ctx.Stdout, "Directory.Devices: %d\n", entry.Summary.Directory.Devices)
-		fmt.Fprintf(ctx.Stdout, "Directory.Pipes: %d\n", entry.Summary.Directory.Pipes)
-		fmt.Fprintf(ctx.Stdout, "Directory.Sockets: %d\n", entry.Summary.Directory.Sockets)
-		fmt.Fprintf(ctx.Stdout, "Directory.Setuid: %d\n", entry.Summary.Directory.Setuid)
-		fmt.Fprintf(ctx.Stdout, "Directory.Setgid: %d\n", entry.Summary.Directory.Setgid)
-		fmt.Fprintf(ctx.Stdout, "Directory.Sticky: %d\n", entry.Summary.Directory.Sticky)
-		fmt.Fprintf(ctx.Stdout, "Directory.Objects: %d\n", entry.Summary.Directory.Objects)
-		fmt.Fprintf(ctx.Stdout, "Directory.Chunks: %d\n", entry.Summary.Directory.Chunks)
-		fmt.Fprintf(ctx.Stdout, "Directory.MinSize: %s (%d bytes)\n", humanize.IBytes(uint64(entry.Summary.Directory.MinSize)), entry.Summary.Directory.MinSize)
-		fmt.Fprintf(ctx.Stdout, "Directory.MaxSize: %s (%d bytes)\n", humanize.IBytes(uint64(entry.Summary.Directory.MaxSize)), entry.Summary.Directory.MaxSize)
-		fmt.Fprintf(ctx.Stdout, "Directory.Size: %s (%d bytes)\n", humanize.IBytes(uint64(entry.Summary.Directory.Size)), entry.Summary.Directory.Size)
-		fmt.Fprintf(ctx.Stdout, "Directory.MinModTime: %s\n", time.Unix(entry.Summary.Directory.MinModTime, 0))
-		fmt.Fprintf(ctx.Stdout, "Directory.MaxModTime: %s\n", time.Unix(entry.Summary.Directory.MaxModTime, 0))
-		fmt.Fprintf(ctx.Stdout, "Directory.MinEntropy: %f\n", entry.Summary.Directory.MinEntropy)
-		fmt.Fprintf(ctx.Stdout, "Directory.MaxEntropy: %f\n", entry.Summary.Directory.MaxEntropy)
-		fmt.Fprintf(ctx.Stdout, "Directory.AvgEntropy: %f\n", entry.Summary.Directory.AvgEntropy)
-		fmt.Fprintf(ctx.Stdout, "Directory.HiEntropy: %d\n", entry.Summary.Directory.HiEntropy)
-		fmt.Fprintf(ctx.Stdout, "Directory.LoEntropy: %d\n", entry.Summary.Directory.LoEntropy)
-		fmt.Fprintf(ctx.Stdout, "Directory.MIMEAudio: %d\n", entry.Summary.Directory.MIMEAudio)
-		fmt.Fprintf(ctx.Stdout, "Directory.MIMEVideo: %d\n", entry.Summary.Directory.MIMEVideo)
-		fmt.Fprintf(ctx.Stdout, "Directory.MIMEImage: %d\n", entry.Summary.Directory.MIMEImage)
-		fmt.Fprintf(ctx.Stdout, "Directory.MIMEText: %d\n", entry.Summary.Directory.MIMEText)
-		fmt.Fprintf(ctx.Stdout, "Directory.MIMEApplication: %d\n", entry.Summary.Directory.MIMEApplication)
-		fmt.Fprintf(ctx.Stdout, "Directory.MIMEOther: %d\n", entry.Summary.Directory.MIMEOther)
-		fmt.Fprintf(ctx.Stdout, "Directory.Errors: %d\n", entry.Summary.Directory.Errors)
-		fmt.Fprintf(ctx.Stdout, "Directory.Children: %d\n", entry.Summary.Directory.Children)
+	summary := entry.Summary
+	if summary == nil && entry.IsDir() {
+		tree, err := snap1.SummaryIdx()
+		if err != nil {
+			return 1, err
+		}
+
+		key, found, err := tree.Find(pathname)
+		if err != nil {
+			return 1, err
+		}
+		if !found {
+			return 1, fmt.Errorf("could not resolve pathname: %s", pathname)
+		}
+
+		serializedSummary, err := repo.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
+		if err != nil {
+			return 1, err
+		}
+
+		summary, err = vfs.SummaryFromBytes(serializedSummary)
+		if err != nil {
+			return 1, err
+		}
+	}
+
+	if summary != nil {
+		fmt.Fprintf(ctx.Stdout, "Below.Directories: %d\n", summary.Below.Directories)
+		fmt.Fprintf(ctx.Stdout, "Below.Files: %d\n", summary.Below.Files)
+		fmt.Fprintf(ctx.Stdout, "Below.Symlinks: %d\n", summary.Below.Symlinks)
+		fmt.Fprintf(ctx.Stdout, "Below.Devices: %d\n", summary.Below.Devices)
+		fmt.Fprintf(ctx.Stdout, "Below.Pipes: %d\n", summary.Below.Pipes)
+		fmt.Fprintf(ctx.Stdout, "Below.Sockets: %d\n", summary.Below.Sockets)
+		fmt.Fprintf(ctx.Stdout, "Below.Setuid: %d\n", summary.Below.Setuid)
+		fmt.Fprintf(ctx.Stdout, "Below.Setgid: %d\n", summary.Below.Setgid)
+		fmt.Fprintf(ctx.Stdout, "Below.Sticky: %d\n", summary.Below.Sticky)
+		fmt.Fprintf(ctx.Stdout, "Below.Objects: %d\n", summary.Below.Objects)
+		fmt.Fprintf(ctx.Stdout, "Below.Chunks: %d\n", summary.Below.Chunks)
+		fmt.Fprintf(ctx.Stdout, "Below.MinSize: %s (%d bytes)\n", humanize.IBytes(uint64(summary.Below.MinSize)), summary.Below.MinSize)
+		fmt.Fprintf(ctx.Stdout, "Below.MaxSize: %s (%d bytes)\n", humanize.IBytes(uint64(summary.Below.MaxSize)), summary.Below.MaxSize)
+		fmt.Fprintf(ctx.Stdout, "Below.Size: %s (%d bytes)\n", humanize.IBytes(uint64(summary.Below.Size)), summary.Below.Size)
+		fmt.Fprintf(ctx.Stdout, "Below.MinModTime: %s\n", time.Unix(summary.Below.MinModTime, 0))
+		fmt.Fprintf(ctx.Stdout, "Below.MaxModTime: %s\n", time.Unix(summary.Below.MaxModTime, 0))
+		fmt.Fprintf(ctx.Stdout, "Below.MinEntropy: %f\n", summary.Below.MinEntropy)
+		fmt.Fprintf(ctx.Stdout, "Below.MaxEntropy: %f\n", summary.Below.MaxEntropy)
+		fmt.Fprintf(ctx.Stdout, "Below.HiEntropy: %d\n", summary.Below.HiEntropy)
+		fmt.Fprintf(ctx.Stdout, "Below.LoEntropy: %d\n", summary.Below.LoEntropy)
+		fmt.Fprintf(ctx.Stdout, "Below.MIMEAudio: %d\n", summary.Below.MIMEAudio)
+		fmt.Fprintf(ctx.Stdout, "Below.MIMEVideo: %d\n", summary.Below.MIMEVideo)
+		fmt.Fprintf(ctx.Stdout, "Below.MIMEImage: %d\n", summary.Below.MIMEImage)
+		fmt.Fprintf(ctx.Stdout, "Below.MIMEText: %d\n", summary.Below.MIMEText)
+		fmt.Fprintf(ctx.Stdout, "Below.MIMEApplication: %d\n", summary.Below.MIMEApplication)
+		fmt.Fprintf(ctx.Stdout, "Below.MIMEOther: %d\n", summary.Below.MIMEOther)
+		fmt.Fprintf(ctx.Stdout, "Below.Errors: %d\n", summary.Below.Errors)
+		fmt.Fprintf(ctx.Stdout, "Directory.Directories: %d\n", summary.Directory.Directories)
+		fmt.Fprintf(ctx.Stdout, "Directory.Files: %d\n", summary.Directory.Files)
+		fmt.Fprintf(ctx.Stdout, "Directory.Symlinks: %d\n", summary.Directory.Symlinks)
+		fmt.Fprintf(ctx.Stdout, "Directory.Devices: %d\n", summary.Directory.Devices)
+		fmt.Fprintf(ctx.Stdout, "Directory.Pipes: %d\n", summary.Directory.Pipes)
+		fmt.Fprintf(ctx.Stdout, "Directory.Sockets: %d\n", summary.Directory.Sockets)
+		fmt.Fprintf(ctx.Stdout, "Directory.Setuid: %d\n", summary.Directory.Setuid)
+		fmt.Fprintf(ctx.Stdout, "Directory.Setgid: %d\n", summary.Directory.Setgid)
+		fmt.Fprintf(ctx.Stdout, "Directory.Sticky: %d\n", summary.Directory.Sticky)
+		fmt.Fprintf(ctx.Stdout, "Directory.Objects: %d\n", summary.Directory.Objects)
+		fmt.Fprintf(ctx.Stdout, "Directory.Chunks: %d\n", summary.Directory.Chunks)
+		fmt.Fprintf(ctx.Stdout, "Directory.MinSize: %s (%d bytes)\n", humanize.IBytes(uint64(summary.Directory.MinSize)), summary.Directory.MinSize)
+		fmt.Fprintf(ctx.Stdout, "Directory.MaxSize: %s (%d bytes)\n", humanize.IBytes(uint64(summary.Directory.MaxSize)), summary.Directory.MaxSize)
+		fmt.Fprintf(ctx.Stdout, "Directory.Size: %s (%d bytes)\n", humanize.IBytes(uint64(summary.Directory.Size)), summary.Directory.Size)
+		fmt.Fprintf(ctx.Stdout, "Directory.MinModTime: %s\n", time.Unix(summary.Directory.MinModTime, 0))
+		fmt.Fprintf(ctx.Stdout, "Directory.MaxModTime: %s\n", time.Unix(summary.Directory.MaxModTime, 0))
+		fmt.Fprintf(ctx.Stdout, "Directory.MinEntropy: %f\n", summary.Directory.MinEntropy)
+		fmt.Fprintf(ctx.Stdout, "Directory.MaxEntropy: %f\n", summary.Directory.MaxEntropy)
+		fmt.Fprintf(ctx.Stdout, "Directory.AvgEntropy: %f\n", summary.Directory.AvgEntropy)
+		fmt.Fprintf(ctx.Stdout, "Directory.HiEntropy: %d\n", summary.Directory.HiEntropy)
+		fmt.Fprintf(ctx.Stdout, "Directory.LoEntropy: %d\n", summary.Directory.LoEntropy)
+		fmt.Fprintf(ctx.Stdout, "Directory.MIMEAudio: %d\n", summary.Directory.MIMEAudio)
+		fmt.Fprintf(ctx.Stdout, "Directory.MIMEVideo: %d\n", summary.Directory.MIMEVideo)
+		fmt.Fprintf(ctx.Stdout, "Directory.MIMEImage: %d\n", summary.Directory.MIMEImage)
+		fmt.Fprintf(ctx.Stdout, "Directory.MIMEText: %d\n", summary.Directory.MIMEText)
+		fmt.Fprintf(ctx.Stdout, "Directory.MIMEApplication: %d\n", summary.Directory.MIMEApplication)
+		fmt.Fprintf(ctx.Stdout, "Directory.MIMEOther: %d\n", summary.Directory.MIMEOther)
+		fmt.Fprintf(ctx.Stdout, "Directory.Errors: %d\n", summary.Directory.Errors)
+		fmt.Fprintf(ctx.Stdout, "Directory.Children: %d\n", summary.Directory.Children)
 	}
 
 	if entry.IsDir() {
