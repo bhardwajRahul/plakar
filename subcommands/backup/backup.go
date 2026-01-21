@@ -484,7 +484,13 @@ func progress(ctx *appcontext.AppContext, imp importer.Importer, fn func(<-chan 
 		results = make(chan *connectors.Result, size)
 	}
 
-	go func() { fn(records, results); close(retch) }()
+	go func() {
+		fn(records, results)
+		if results != nil {
+			close(results)
+		}
+		close(retch)
+	}()
 
 	err := imp.Import(ctx, records, results)
 	<-retch
