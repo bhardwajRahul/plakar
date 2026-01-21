@@ -13,11 +13,13 @@ import (
 )
 
 var (
-	checkMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).SetString("✓")
-	crossMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).SetString("✘")
-	okStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("2")) // green
-	errStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("1")) // red
-	dimStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("8")) // gray (optional)
+	checkMark  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).SetString("✓")
+	crossMark  = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).SetString("✘")
+	okStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))             // green
+	errStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))             // red
+	dimStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))             // gray (optional)
+	reuseStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true) // bright green
+	newStyle   = okStyle
 )
 
 func ok(n uint64) string  { return okStyle.Render(fmt.Sprintf("%d", n)) }
@@ -102,6 +104,42 @@ func formatThroughput(bps float64) string {
 	return fmt.Sprintf("%s/s", humanize.IBytes(uint64(bps)))
 }
 
+func fmtCountCached(ok, errc, total, cached uint64) string {
+	base := fmtCount(ok, errc, total) // your existing "ok/total" (or however it prints)
+	if cached == 0 {
+		return base
+	}
+	return fmt.Sprintf("%s (%s cached)", base, tot(cached))
+}
+
+func pct(num, den uint64) string {
+	if den == 0 {
+		return "0%"
+	}
+	return fmt.Sprintf("%.0f%%", (float64(num)*100)/float64(den))
+}
+
+func fmtNewReuse(okCount, cached, errc, total uint64) string {
+	okS := okStyle.Render(fmt.Sprintf("%d", okCount))
+	totalS := dimStyle.Render(fmt.Sprintf("%d", total))
+
+	var base string
+	if errc == 0 {
+		base = fmt.Sprintf("%s/%s", okS, totalS)
+	} else {
+		errS := errStyle.Render(fmt.Sprintf("%d", errc))
+		base = fmt.Sprintf("%s/%s/%s", okS, errS, totalS)
+	}
+
+	if cached == 0 {
+		return base
+	}
+
+	// cache counter displayed AFTER the total
+	cachedS := reuseStyle.Render(fmt.Sprintf("(%d reused)", cached))
+	return fmt.Sprintf("%s %s", base, cachedS)
+}
+
 func (m appModel) View() string {
 	if !m.dirty {
 		return ""
@@ -123,29 +161,57 @@ func (m appModel) View() string {
 		if m.lastNPaths <= 0 {
 			return
 		}
+
+		fmt.Fprintf(&s, "\n")
 		for i := 0; i < m.lastNPaths; i++ {
 			if i < len(m.lastPaths) {
-				fmt.Fprintf(&s, "  %s\n", m.lastPaths[i])
+				fmt.Fprintf(&s, "%s\n", m.lastPaths[i])
 			} else {
 				fmt.Fprintf(&s, "\n")
 			}
 		}
 	}
 
-	writeSummary := func() {
-		fmt.Fprintf(&s, "%s   processing:", strings.Repeat(" ", len(humanDuration(time.Since(m.startTime)))))
-		fmt.Fprintf(&s, " nodes=%s", fmtCount(m.countDirOk, m.countDirError, m.countDir))
-		fmt.Fprintf(&s, ", leaves=%s", fmtCount(m.countFileOk, m.countFileError, m.countFile))
-		if m.countSymlink != 0 {
-			fmt.Fprintf(&s, ", links=%s", fmtCount(m.countSymlinkOk, m.countSymlinkError, m.countSymlink))
+	writeProcessedSummary := func() {
+		nodesTotal := m.countDir
+		leavesTotal := m.countFile
+		symlinksTotal := m.countSymlink
+		xattrsTotal := m.countXattr
+		sizeTotal := uint64(m.countFileSize)
+		if m.foundSummary && m.summaryPathTotal > 0 {
+			leavesTotal = m.fileCountTotal
+			nodesTotal = m.directoryCountTotal
+			symlinksTotal = m.symlinkCountTotal
+			xattrsTotal = m.xattrCountTotal
+			sizeTotal = m.totalSize
 		}
-		if m.xattrCountTotal != 0 {
-			fmt.Fprintf(&s, ", attrs=%s", fmtCount(m.countXattrOk, m.countXattrError, m.countXattr))
+
+		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
+		fmt.Fprintf(&s, "%s   %s:", indent, m.appName)
+
+		fmt.Fprintf(&s, " nodes=%s", fmtNewReuse(m.countDirOk, m.countDirCached, m.countDirError, nodesTotal))
+		fmt.Fprintf(&s, ", leaves=%s", fmtNewReuse(m.countFileOk, m.countFileCached, m.countFileError, leavesTotal))
+
+		if symlinksTotal != 0 {
+			fmt.Fprintf(&s, ", links=%s",
+				fmtNewReuse(m.countSymlinkOk, m.countSymlinkCached, m.countSymlinkError, symlinksTotal),
+			)
 		}
+		if xattrsTotal != 0 {
+			fmt.Fprintf(&s, ", attrs=%s",
+				fmtNewReuse(m.countXattrOk, m.countXattrCached, m.countXattrError, xattrsTotal),
+			)
+		}
+		fmt.Fprintf(&s, ", size=%s/%s", okSize(uint64(m.countFileSize)), totSize(sizeTotal))
+
 		if m.countPathError != 0 {
-			fmt.Fprintf(&s, ", errors=%s/%s", err(m.countPathError), tot(m.countPath))
+			// If you want total paths from summary when available, swap denominator accordingly
+			pathsTotal := m.countPath
+			if m.foundSummary && m.summaryPathTotal > 0 {
+				pathsTotal = m.summaryPathTotal
+			}
+			fmt.Fprintf(&s, ", errors=%s/%s", err(m.countPathError), tot(pathsTotal))
 		}
-		fmt.Fprintf(&s, ", size=%s/%s", okSize(uint64(m.countFileSize)), totSize(m.totalSize))
 
 		fmt.Fprintf(&s, "\n")
 	}
@@ -158,7 +224,7 @@ func (m appModel) View() string {
 		w := ioStats.Write.Stats()
 		fmt.Fprintf(
 			&s,
-			"%s   store: in=%s (%s)  out=%s (%s)\n",
+			"%s   kloset: read=%s (%s), write=%s (%s)\n",
 			indent,
 			formatBytes(r.TotalBytes), formatThroughput(r.Avg),
 			formatBytes(w.TotalBytes), formatThroughput(w.Avg),
@@ -237,8 +303,9 @@ func (m appModel) View() string {
 			fmt.Fprintf(&s, "%s %s %s\n", prefix, bar, tail)
 		}
 
-		writeSummary()
+		writeProcessedSummary()
 		writeStoreSummary()
+
 		writeLastPaths()
 		return s.String()
 	}
@@ -249,7 +316,7 @@ func (m appModel) View() string {
 	}
 	fmt.Fprintf(&s, "\n")
 
-	writeSummary()
+	writeProcessedSummary()
 	writeStoreSummary()
 	writeLastPaths()
 	return s.String()

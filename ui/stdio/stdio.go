@@ -22,12 +22,17 @@ var (
 type stdio struct {
 	ctx  *appcontext.AppContext
 	repo *repository.Repository
+	done chan error
 }
 
 func New(ctx *appcontext.AppContext) ui.UI {
 	return &stdio{
 		ctx: ctx,
 	}
+}
+
+func (stdio *stdio) Wait() error {
+	return <-stdio.done
 }
 
 func HandleEvent(ctx *appcontext.AppContext, e *Event) {
@@ -91,12 +96,12 @@ func HandleEvent(ctx *appcontext.AppContext, e *Event) {
 	}
 }
 
-func (stdio *stdio) Run() func() {
+func (stdio *stdio) Run() error {
 	events := stdio.ctx.Events().Listen()
-	done := make(chan error, 1)
+	stdio.done = make(chan error, 1)
 
 	go func() {
-		defer close(done)
+		defer close(stdio.done)
 
 		for e := range events {
 			HandleEvent(stdio.ctx, e)
@@ -104,9 +109,7 @@ func (stdio *stdio) Run() func() {
 	}()
 
 	// wait function, as before
-	return func() {
-		<-done
-	}
+	return nil
 }
 
 func (stdio *stdio) SetRepository(repo *repository.Repository) {

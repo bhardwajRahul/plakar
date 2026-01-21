@@ -157,6 +157,7 @@ func entryPoint() int {
 	flag.Parse()
 
 	ctx := appcontext.NewAppContext()
+	defer ctx.Close()
 
 	var renderer ui.UI
 	if opt_stdio || opt_quiet || opt_silent || opt_trace != "" || !term.IsTerminal(1) {
@@ -164,10 +165,16 @@ func entryPoint() int {
 	} else {
 		renderer = tui.New(ctx)
 	}
-	uiDone := renderer.Run()
-	defer uiDone()
-
-	defer ctx.Close()
+	if err := renderer.Run(); err != nil {
+		return 1
+	}
+	go func() {
+		if err := renderer.Wait(); err != nil {
+			if errors.Is(err, ui.ErrUserAbort) {
+				ctx.Cancel(err)
+			}
+		}
+	}()
 
 	ctx.Quiet = opt_quiet
 	ctx.Silent = opt_silent
@@ -414,10 +421,15 @@ func entryPoint() int {
 	c := make(chan os.Signal, 1)
 	go func() {
 		<-c
-		fmt.Fprintf(os.Stderr, "%s: Interrupting, it might take a while...\n", flag.CommandLine.Name())
 		ctx.Cancel(fmt.Errorf("interrupted"))
 	}()
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-ctx.Done()
+		fmt.Fprintf(os.Stderr, "%s: received interrupt signal, stopping gracefully...\n", flag.CommandLine.Name())
+
+	}()
 
 	var status int
 

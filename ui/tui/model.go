@@ -22,22 +22,41 @@ func tick() tea.Cmd {
 
 type eventsClosedMsg struct{}
 
-func waitForDoneEvent(ch <-chan Event) tea.Cmd {
-	return func() tea.Msg {
-		e, ok := <-ch
-		if !ok {
-			return eventsClosedMsg{}
-		}
-		return appMsg(e)
-	}
-}
-
 type cancelledMsg struct{ err error }
 
 func waitForCancel(ctx *appcontext.AppContext) tea.Cmd {
 	return func() tea.Msg {
 		<-ctx.Done() // adapt if your AppContext exposes Done() differently
 		return cancelledMsg{err: ctx.Err()}
+	}
+}
+
+type appBatchMsg struct {
+	events []Event
+}
+
+func waitForBatch(ch <-chan Event, max int) tea.Cmd {
+	return func() tea.Msg {
+		e, ok := <-ch
+		if !ok {
+			return eventsClosedMsg{}
+		}
+		batch := make([]Event, 0, max)
+		batch = append(batch, e)
+
+		// drain without blocking
+		for len(batch) < max {
+			select {
+			case e2, ok := <-ch:
+				if !ok {
+					return eventsClosedMsg{}
+				}
+				batch = append(batch, e2)
+			default:
+				return appBatchMsg{events: batch}
+			}
+		}
+		return appBatchMsg{events: batch}
 	}
 }
 
@@ -69,29 +88,35 @@ type appModel struct {
 	totalSize           uint64
 
 	// counts (event-driven, no per-path memory)
-	countPath      uint64
-	countPathOk    uint64
-	countPathError uint64
+	countPath       uint64
+	countPathOk     uint64
+	countPathError  uint64
+	countPathCached uint64
 
-	countDir      uint64
-	countDirOk    uint64
-	countDirError uint64
+	countDir       uint64
+	countDirOk     uint64
+	countDirError  uint64
+	countDirCached uint64
 
-	countFile      uint64
-	countFileOk    uint64
-	countFileError uint64
+	countFile       uint64
+	countFileOk     uint64
+	countFileError  uint64
+	countFileCached uint64
 
-	countXattr      uint64
-	countXattrOk    uint64
-	countXattrError uint64
+	countXattr       uint64
+	countXattrOk     uint64
+	countXattrError  uint64
+	countXattrCached uint64
 
-	countSymlink      uint64
-	countSymlinkOk    uint64
-	countSymlinkError uint64
+	countSymlink       uint64
+	countSymlinkOk     uint64
+	countSymlinkError  uint64
+	countSymlinkCached uint64
 
 	countFileSize      int64
 	countDirectorySize int64
 	countXattrSize     int64
+	countCachedSize    uint64
 
 	// timers
 	timerResourcesDone    bool
@@ -101,9 +126,6 @@ type appModel struct {
 	timerStructureDone    bool
 	timerStructureBegin   time.Time
 	timerStructureElapsed time.Duration
-
-	// last pathname
-	lastPathname string
 
 	// UI
 	barPrefix          string
@@ -120,10 +142,8 @@ type appModel struct {
 	spin spinner.Model
 
 	// buffer view
-	lastNPaths  int
-	lastPaths   []string
-	lastNErrors int
-	lastErrors  []string
+	lastNPaths int
+	lastPaths  []string
 }
 
 func newGenericModel(ctx *appcontext.AppContext, appName string, events <-chan Event, repo *repository.Repository) tea.Model {
@@ -143,17 +163,17 @@ func newGenericModel(ctx *appcontext.AppContext, appName string, events <-chan E
 		structureProgress:  spr,
 		spin:               sp,
 		lastNPaths:         ctx.MaxConcurrency,
-		lastNErrors:        ctx.MaxConcurrency,
 		lastPaths:          make([]string, 0, ctx.MaxConcurrency),
-		lastErrors:         make([]string, 0, ctx.MaxConcurrency),
 	}
 }
 
 func (m appModel) Init() tea.Cmd {
+	const batchMax = 1024 // tune: 128/256/512/1024 depending on workload
+
 	return tea.Batch(
 		m.spin.Tick,
 		tick(),
-		waitForDoneEvent(m.events), // exactly one waiter in flight
+		waitForBatch(m.events, batchMax), // exactly one batch waiter in flight
 		waitForCancel(m.appContext),
 	)
 }
