@@ -30,6 +30,7 @@ import (
 	"github.com/PlakarKorp/plakar/plugins"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/task"
+	"github.com/PlakarKorp/plakar/ui"
 	"github.com/PlakarKorp/plakar/ui/stdio"
 	"github.com/PlakarKorp/plakar/ui/tui"
 	"github.com/PlakarKorp/plakar/utils"
@@ -156,13 +157,15 @@ func entryPoint() int {
 	flag.Parse()
 
 	ctx := appcontext.NewAppContext()
+
+	var renderer ui.UI
 	if opt_stdio || opt_quiet || opt_silent || opt_trace != "" || !term.IsTerminal(1) {
-		uiDone := stdio.Run(ctx)
-		defer uiDone()
+		renderer = stdio.New(ctx)
 	} else {
-		uiDone := tui.Run(ctx)
-		defer uiDone()
+		renderer = tui.New(ctx)
 	}
+	uiDone := renderer.Run()
+	defer uiDone()
 
 	defer ctx.Close()
 
@@ -398,6 +401,7 @@ func entryPoint() int {
 			return 1
 		}
 	}
+	renderer.SetRepository(repo)
 
 	ctx.StoreConfig = storeConfig
 
