@@ -19,10 +19,7 @@ func RunCommand(ctx *appcontext.AppContext, cmd subcommands.Subcommand, repo *re
 	var err error
 
 	if repo != nil {
-		location, err = repo.Location()
-		if err != nil {
-			return 1, err
-		}
+		location = repo.Origin()
 	}
 
 	reporter := reporting.NewReporter(ctx)

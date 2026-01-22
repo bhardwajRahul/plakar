@@ -53,11 +53,6 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 		}
 	}
 
-	loc, err := repo.Location()
-	if err != nil {
-		return 1, fmt.Errorf("mount: %v", err)
-	}
-
 	c, err := fuse.Mount(
 		mountpoint,
 		fuse.FSName("plakar"),
@@ -69,7 +64,7 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 	}
 	defer c.Close()
 
-	ctx.GetLogger().Info("mounted repository %s at %s", loc, mountpoint)
+	ctx.GetLogger().Info("mounted repository %s at %s", repo.Origin(), mountpoint)
 
 	go func() {
 		<-ctx.Done()

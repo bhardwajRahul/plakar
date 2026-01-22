@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -215,15 +215,8 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 		return 1, fmt.Errorf("could not synchronize %s: invalid direction, must be to, from or with", cmd.PeerRepositoryLocation)
 	}
 
-	srcLocation, err := srcRepository.Location()
-	if err != nil {
-		return 1, fmt.Errorf("could not get source location: %w", err)
-	}
-
-	dstLocation, err := dstRepository.Location()
-	if err != nil {
-		return 1, fmt.Errorf("could not get destination location: %w", err)
-	}
+	srcLocation := srcRepository.Origin()
+	dstLocation := dstRepository.Origin()
 
 	srcSnapshots, err := srcRepository.GetSnapshots()
 	if err != nil {
@@ -326,15 +319,8 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 }
 
 func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC, packfileDir string) error {
-	srcLocation, err := srcRepository.Location()
-	if err != nil {
-		return err
-	}
-
-	dstLocation, err := dstRepository.Location()
-	if err != nil {
-		return err
-	}
+	srcLocation := srcRepository.Origin()
+	dstLocation := dstRepository.Origin()
 
 	ctx.GetLogger().Info("Synchronizing snapshot %x from %s to %s", snapshotID, srcLocation, dstLocation)
 	srcSnapshot, err := snapshot.Load(srcRepository, snapshotID)
