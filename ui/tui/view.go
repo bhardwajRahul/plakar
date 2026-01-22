@@ -136,8 +136,9 @@ func fmtNewReuse(okCount, cached, errc, total uint64) string {
 	}
 
 	// cache counter displayed AFTER the total
-	cachedS := reuseStyle.Render(fmt.Sprintf("(%d reused)", cached))
-	return fmt.Sprintf("%s %s", base, cachedS)
+	//cachedS := reuseStyle.Render(fmt.Sprintf("(%d reused)", cached))
+	//return fmt.Sprintf("%s %s", base, cachedS)
+	return fmt.Sprintf("%s", base)
 }
 
 func (m appModel) View() string {
@@ -222,14 +223,12 @@ func (m appModel) View() string {
 		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
 		r := ioStats.Read.Stats()
 		w := ioStats.Write.Stats()
-		fmt.Fprintf(
-			&s,
-			"%s   kloset: read=%s (%s), write=%s (%s)\n",
+		fmt.Fprintf(&s,
+			"%s   kloset: read=%s, write=%s\n",
 			indent,
-			formatBytes(r.TotalBytes), formatThroughput(r.Avg),
-			formatBytes(w.TotalBytes), formatThroughput(w.Avg),
+			formatBytes(r.TotalBytes),
+			formatBytes(w.TotalBytes),
 		)
-
 	}
 
 	m.barPrefix = fmt.Sprintf("[%s] %s %s", humanDuration(time.Since(m.startTime)), m.snapshotID, m.phase)
@@ -271,9 +270,6 @@ func (m appModel) View() string {
 			humanize.IBytes(uint64(m.countFileSize)),
 			etaField,
 		)
-		if errs := m.countFileError + m.countSymlinkError + m.countXattrError; errs > 0 {
-			tail += fmt.Sprintf("  %s %d", crossMark, errs)
-		}
 
 		// ---- bar: full-width (fills remaining space) ----
 		if m.width > 0 {
@@ -311,9 +307,6 @@ func (m appModel) View() string {
 	}
 
 	fmt.Fprintf(&s, "[%s] %s %s", humanDuration(m.timerResourcesElapsed), m.snapshotID, m.phase)
-	if errs := m.countFileError + m.countSymlinkError + m.countXattrError; errs > 0 {
-		fmt.Fprintf(&s, "  %s %d", crossMark, errs)
-	}
 	fmt.Fprintf(&s, "\n")
 
 	writeProcessedSummary()
