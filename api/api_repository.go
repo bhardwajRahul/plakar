@@ -14,7 +14,7 @@ import (
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/header"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
-	"github.com/PlakarKorp/kloset/storage"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/plakar/cached"
 )
 

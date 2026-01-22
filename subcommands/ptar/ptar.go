@@ -35,7 +35,7 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/resources"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/storage"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
