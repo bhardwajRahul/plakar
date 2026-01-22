@@ -20,9 +20,8 @@ type commandApp struct {
 }
 
 var apps = map[string]func(*appcontext.AppContext, string, <-chan Event, *repository.Repository) tea.Model{
-	"backup": newGenericModel,
+	"import": newGenericModel,
 	"export": newGenericModel,
-	//"check":  newGenericModel,
 }
 
 type tui struct {
