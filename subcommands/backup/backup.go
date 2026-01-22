@@ -121,7 +121,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Var(&opt_tags, "tag", "comma-separated list of tags to apply to the snapshot")
 	flags.StringVar(&opt_ignore_file, "ignore-file", "", "path to a file containing newline-separated gitignore patterns, treated as -ignore")
 	flags.Var(&opt_ignore, "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
-	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "memory", "memory or a path to a directory to store temporary packfiles")
+	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
 	flags.BoolVar(&cmd.OptCheck, "check", false, "check the snapshot after creating it")
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
 	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
@@ -262,15 +262,15 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		return 1, fmt.Errorf("multi-source backup not supported yet"), objects.MAC{}, nil
 	}
 
-	if cmd.PackfileTempStorage != "memory" {
+	if cmd.PackfileTempStorage == "memory" {
+		cmd.PackfileTempStorage = ""
+	} else {
 		tmpDir, err := os.MkdirTemp(cmd.PackfileTempStorage, "plakar-backup-"+repo.Configuration().RepositoryID.String()+"-*")
 		if err != nil {
 			return 1, err, objects.NilMac, nil
 		}
 		cmd.PackfileTempStorage = tmpDir
 		defer os.RemoveAll(cmd.PackfileTempStorage)
-	} else {
-		cmd.PackfileTempStorage = ""
 	}
 
 	// Execute pre-backup hook
