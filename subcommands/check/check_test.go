@@ -41,7 +41,9 @@ func TestExecuteCmdCheckDefault(t *testing.T) {
 	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
 	defer snap.Close()
 
-	defer stdio.New(ctx).Run()()
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	defer renderer.Wait()
 	defer ctx.Close()
 
 	args := []string{}
@@ -82,7 +84,9 @@ func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
 	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
 	defer snap.Close()
 
-	defer stdio.New(ctx).Run()()
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	defer renderer.Wait()
 	defer ctx.Close()
 
 	indexId := snap.Header.GetIndexID()
