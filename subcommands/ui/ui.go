@@ -22,6 +22,7 @@ package ui
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -74,7 +75,11 @@ func (cmd *Ui) Execute(ctx *appcontext.AppContext, repo *repository.Repository) 
 	}
 
 	if !cmd.NoAuth {
-		ui_opts.Token = uuid.NewString()
+		if uiToken := os.Getenv("PLAKAR_UI_TOKEN"); uiToken != "" {
+			ui_opts.Token = uiToken
+		} else {
+			ui_opts.Token = uuid.NewString()
+		}
 	}
 
 	err := v2.Ui(repo, ctx, cmd.Addr, &ui_opts)
