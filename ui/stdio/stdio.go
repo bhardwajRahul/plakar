@@ -5,7 +5,9 @@ import (
 
 	"github.com/PlakarKorp/kloset/events"
 	"github.com/PlakarKorp/kloset/objects"
+	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/ui"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
 )
@@ -16,6 +18,22 @@ var (
 	checkMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).SetString("✓")
 	crossMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).SetString("✘")
 )
+
+type stdio struct {
+	ctx  *appcontext.AppContext
+	repo *repository.Repository
+	done chan error
+}
+
+func New(ctx *appcontext.AppContext) ui.UI {
+	return &stdio{
+		ctx: ctx,
+	}
+}
+
+func (stdio *stdio) Wait() error {
+	return <-stdio.done
+}
 
 func HandleEvent(ctx *appcontext.AppContext, e *Event) {
 	if ctx.Silent {
@@ -78,20 +96,22 @@ func HandleEvent(ctx *appcontext.AppContext, e *Event) {
 	}
 }
 
-func Run(ctx *appcontext.AppContext) func() {
-	events := ctx.Events().Listen()
-	done := make(chan error, 1)
+func (stdio *stdio) Run() error {
+	events := stdio.ctx.Events().Listen()
+	stdio.done = make(chan error, 1)
 
 	go func() {
-		defer close(done)
+		defer close(stdio.done)
 
 		for e := range events {
-			HandleEvent(ctx, e)
+			HandleEvent(stdio.ctx, e)
 		}
 	}()
 
 	// wait function, as before
-	return func() {
-		<-done
-	}
+	return nil
+}
+
+func (stdio *stdio) SetRepository(repo *repository.Repository) {
+	stdio.repo = repo
 }

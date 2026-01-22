@@ -109,7 +109,10 @@ func TestExecuteCmdCreateDefault(t *testing.T) {
 
 	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
 
-	defer stdio.Run(ctx)()
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	defer renderer.Wait()
+
 	defer ctx.Close()
 
 	ctx.MaxConcurrency = 1
@@ -151,7 +154,9 @@ func TestExecuteCmdCreateWithHooks(t *testing.T) {
 
 	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
 
-	defer stdio.Run(ctx)()
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	defer renderer.Wait()
 	defer ctx.Close()
 
 	ctx.MaxConcurrency = 1
