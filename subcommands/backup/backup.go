@@ -170,7 +170,7 @@ func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 }
 
 func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Repository) (int, error, objects.MAC, error) {
-	emitter := repo.Emitter("backup")
+	emitter := repo.Emitter("import")
 	defer emitter.Close()
 
 	opts := &snapshot.BuilderOptions{
