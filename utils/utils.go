@@ -92,7 +92,7 @@ func CheckUpdate(cachedir string) (update ReleaseUpdateSummary, err error) {
 		return
 	}
 
-	req, err := http.NewRequest("GET", "https://plakar.io/api/releases.atom", nil)
+	req, err := http.NewRequest("GET", "https://plakar.io/releases/plakar/feed.atom", nil)
 	if err != nil {
 		return
 	}
