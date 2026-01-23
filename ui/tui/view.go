@@ -218,6 +218,9 @@ func (m appModel) View() string {
 	}
 
 	writeStoreSummary := func() {
+		if m.repo == nil {
+			return
+		}
 		ioStats := m.repo.IOStats()
 
 		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
