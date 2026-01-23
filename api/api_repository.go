@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/kloset/snapshot/header"
 	"github.com/PlakarKorp/kloset/snapshot/vfs"
-	"github.com/PlakarKorp/kloset/storage"
 	"github.com/PlakarKorp/plakar/cached"
 )
 
@@ -88,15 +88,8 @@ func (ui *uiserver) repositoryInfo(w http.ResponseWriter, r *http.Request) error
 		}
 	}
 
-	location, err := ui.repository.Location()
-	if err != nil {
-		return fmt.Errorf("unable to get storage location: %w", err)
-	}
-
-	mode, err := ui.repository.Store().Mode(r.Context())
-	if err != nil {
-		return fmt.Errorf("unable to get storage mode: %w", err)
-	}
+	location := ui.repository.Origin()
+	mode := ui.repository.Store().Mode()
 
 	return json.NewEncoder(w).Encode(Item[RepositoryInfoResponse]{Item: RepositoryInfoResponse{
 		Location: location,

@@ -4,13 +4,13 @@ go 1.24.0
 
 require (
 	github.com/PlakarKorp/go-human2duration v0.1.6
-	github.com/PlakarKorp/integration-fs v1.0.15-0.20260115153221-79b61b951e1b
-	github.com/PlakarKorp/integration-grpc v1.0.19-0.20260115145806-1fd3ce31686d
-	github.com/PlakarKorp/integration-ptar v1.0.6-0.20251129124308-5ede9e09abfc
+	github.com/PlakarKorp/integration-fs v1.0.15-0.20260123132718-bac1cb5d195f
+	github.com/PlakarKorp/integration-grpc v1.0.19-0.20260123132439-5909c4989594
+	github.com/PlakarKorp/integration-ptar v1.0.6-0.20260123133621-43f212ae4ad2
 	github.com/PlakarKorp/integration-stdio v1.0.5-0.20260115153145-4c4e247d2c13
 	github.com/PlakarKorp/integration-tar v1.0.0-beta.7.0.20260115153106-47718979f565
-	github.com/PlakarKorp/kloset v1.0.13-0.20260123102719-6cd6a9ed1621
-	github.com/PlakarKorp/pkg v0.0.0-20260123103416-25f80dda8e56
+	github.com/PlakarKorp/kloset v1.0.13-0.20260123115935-11d26a52e819
+	github.com/PlakarKorp/pkg v0.0.0-20260123134034-0e5d7163207c
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.1
 	github.com/charmbracelet/bubbles v0.21.0
@@ -70,7 +70,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/getsentry/sentry-go v0.35.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.6.2 // indirect
+	github.com/go-git/go-billy/v5 v5.7.0 // indirect
 	github.com/go-git/go-git/v5 v5.16.4 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -124,7 +124,7 @@ require (
 	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/genproto v0.0.0-20250728155136-f173205681a0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
-	google.golang.org/protobuf v1.36.10 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
