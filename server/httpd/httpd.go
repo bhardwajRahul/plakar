@@ -50,7 +50,7 @@ func (s *server) getStates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var resGetStates network.ResGetStates
-	indexes, err := s.store.List(r.Context(), storage.StorageResourceStatefile)
+	indexes, err := s.store.List(r.Context(), storage.StorageResourceState)
 	if err != nil {
 		resGetStates.Err = err.Error()
 	} else {
@@ -89,7 +89,7 @@ func (s *server) getState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var resGetState network.ResGetState
-	rd, err := s.store.Get(r.Context(), storage.StorageResourceStatefile, reqGetState.MAC, nil)
+	rd, err := s.store.Get(r.Context(), storage.StorageResourceState, reqGetState.MAC, nil)
 	if err != nil {
 		resGetState.Err = err.Error()
 	} else {
@@ -121,7 +121,7 @@ func (s *server) deleteState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var resDeleteState network.ResDeleteState
-	err := s.store.Delete(r.Context(), storage.StorageResourceStatefile, reqDeleteState.MAC)
+	err := s.store.Delete(r.Context(), storage.StorageResourceState, reqDeleteState.MAC)
 	if err != nil {
 		resDeleteState.Err = err.Error()
 	}
@@ -253,7 +253,7 @@ func (s *server) getLocks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locks, err := s.store.List(r.Context(), storage.StorageResourceLockfile)
+	locks, err := s.store.List(r.Context(), storage.StorageResourceLock)
 	res := network.ResGetLocks{
 		Locks: locks,
 	}
@@ -274,7 +274,7 @@ func (s *server) putLock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var res network.ResPutLock
-	if _, err := s.store.Put(r.Context(), storage.StorageResourceLockfile, req.Mac, bytes.NewReader(req.Data)); err != nil {
+	if _, err := s.store.Put(r.Context(), storage.StorageResourceLock, req.Mac, bytes.NewReader(req.Data)); err != nil {
 		res.Err = err.Error()
 	}
 
@@ -292,7 +292,7 @@ func (s *server) getLock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var res network.ResGetLock
-	rd, err := s.store.Get(r.Context(), storage.StorageResourceLockfile, req.Mac, nil)
+	rd, err := s.store.Get(r.Context(), storage.StorageResourceLock, req.Mac, nil)
 	if err != nil {
 		res.Err = err.Error()
 	} else {
@@ -319,7 +319,7 @@ func (s *server) deleteLock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var res network.ResDeleteLock
-	if err := s.store.Delete(r.Context(), storage.StorageResourceLockfile, req.Mac); err != nil {
+	if err := s.store.Delete(r.Context(), storage.StorageResourceLock, req.Mac); err != nil {
 		res.Err = err.Error()
 	}
 
