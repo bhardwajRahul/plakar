@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/PlakarKorp/plakar/plugins"
+	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/services"
 )
 
@@ -175,29 +175,24 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	var res Items[plugins.Integration]
-	res.Items = make([]plugins.Integration, 0)
+	var res Items[pkg.Integration]
+	res.Items = make([]pkg.Integration, 0)
 
 	var i int64
-	filter := plugins.IntegrationFilter{
+	integrations, err := ui.ctx.GetPkgManager().Query(&pkg.QueryOptions{
 		Type:   filterType,
 		Tag:    filterTag,
 		Status: filterStatus,
-	}
+	})
+	for _, int := range integrations {
+		if err != nil {
+			return err
+		}
 
-	ui.reloadPlugins()
-
-	ints, err := ui.ctx.GetPlugins().ListIntegrations(filter)
-	if err != nil {
-		return err
-	}
-	for _, int := range ints {
-		res.Total += 1
-		i += 1
-		if i > offset {
-			if i <= offset+limit {
-				res.Items = append(res.Items, int)
-			}
+		res.Total++
+		i++
+		if i > offset && i < offset+limit {
+			res.Items = append(res.Items, *int)
 		}
 	}
 
@@ -207,15 +202,12 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 func (ui *uiserver) servicesGetIntegrationId(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 
-	ui.reloadPlugins()
-
-	var filter plugins.IntegrationFilter
-	ints, err := ui.ctx.GetPlugins().ListIntegrations(filter)
+	integrations, err := ui.ctx.GetPkgManager().Query(nil)
 	if err != nil {
 		return err
 	}
 
-	for _, int := range ints {
+	for _, int := range integrations {
 		if int.Id == id {
 			return json.NewEncoder(w).Encode(int)
 		}
