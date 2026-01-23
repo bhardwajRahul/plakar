@@ -64,8 +64,7 @@ func _TestExecuteCmdMountDefault(t *testing.T) {
 	// output should look like this
 	// 2025-03-19T23:04:15Z info: mounted repository /tmp/tmp_repo2787767309/repo at /tmp/tmp_mount_point2239236580
 	output := bufOut.String()
-	location, err := repo.Location()
-	require.NoError(t, err)
+	location := repo.Origin()
 	require.Contains(t, output, fmt.Sprintf("mounted repository %s at", location))
 
 	indexId := snap.Header.GetIndexID()

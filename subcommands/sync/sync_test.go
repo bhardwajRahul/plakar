@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -50,10 +49,10 @@ func TestExecuteCmdSyncTo(t *testing.T) {
 	peerRepo, _ := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
 
 	indexId := snap.Header.GetIndexID()
-	peerLocation, _ := peerRepo.Location()
-	args := []string{fmt.Sprintf("%s", hex.EncodeToString(indexId[:])), "to", peerLocation}
+	args := []string{fmt.Sprintf("%s", hex.EncodeToString(indexId[:])), "to", peerRepo.Root()}
 
 	subcommand := &Sync{}
+	fmt.Println(args)
 	err := subcommand.Parse(lctx, args)
 	require.NoError(t, err)
 	require.NotNil(t, subcommand)
@@ -65,8 +64,7 @@ func TestExecuteCmdSyncTo(t *testing.T) {
 	// output should look like this
 	// 2025-03-26T21:17:28Z info: sync: synchronization from /tmp/tmp_repo1957539148/repo to /tmp/tmp_repo2470692775/repo completed: 1 snapshots synchronized
 	output := bufOut.String()
-	localLocation, _ := localRepo.Location()
-	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization from %s to %s completed: 1 snapshots synchronized", localLocation, peerLocation))
+	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization from %s to %s completed: 1 snapshots synchronized", localRepo.Origin(), peerRepo.Origin()))
 }
 
 func TestExecuteCmdSyncWith(t *testing.T) {
@@ -79,8 +77,7 @@ func TestExecuteCmdSyncWith(t *testing.T) {
 	peerRepo, _ := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
 
 	indexId := snap.Header.GetIndexID()
-	peerLocation, _ := peerRepo.Location()
-	args := []string{fmt.Sprintf("%s", hex.EncodeToString(indexId[:])), "with", peerLocation}
+	args := []string{fmt.Sprintf("%s", hex.EncodeToString(indexId[:])), "with", peerRepo.Root()}
 
 	subcommand := &Sync{}
 	err := subcommand.Parse(lctx, args)
@@ -94,8 +91,7 @@ func TestExecuteCmdSyncWith(t *testing.T) {
 	// output should look like this
 	// 2025-03-26T21:28:23Z info: sync: synchronization between /tmp/tmp_repo3863826583/repo and /tmp/tmp_repo327669581/repo completed: 1 snapshots synchronized
 	output := bufOut.String()
-	localLocation, _ := localRepo.Location()
-	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization between %s and %s completed: 1 snapshots synchronized", localLocation, peerLocation))
+	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization between %s and %s completed: 1 snapshots synchronized", localRepo.Origin(), peerRepo.Origin()))
 }
 
 func TestExecuteCmdSyncWithEncryption(t *testing.T) {
@@ -109,15 +105,14 @@ func TestExecuteCmdSyncWithEncryption(t *testing.T) {
 	peerRepo, _ := ptesting.GenerateRepository(t, bufOut, bufErr, &passphrase)
 
 	// need to recreate configuration to store passphrase on peer repo
-	peerLocation, _ := peerRepo.Location()
-	opt_configfile := filepath.Join(strings.TrimPrefix(peerLocation, "fs://"))
+	opt_configfile := strings.TrimPrefix(peerRepo.Root(), "fs://")
 
 	cfg, err := utils.LoadConfig(opt_configfile)
 	require.NoError(t, err)
 	lctx.Config = cfg
 	lctx.Config.Repositories["peerRepo"] = make(map[string]string)
 	lctx.Config.Repositories["peerRepo"]["passphrase"] = string(passphrase)
-	lctx.Config.Repositories["peerRepo"]["location"] = string(peerLocation)
+	lctx.Config.Repositories["peerRepo"]["location"] = peerRepo.Root()
 	err = utils.SaveConfig(opt_configfile, lctx.Config)
 	require.NoError(t, err)
 
@@ -136,6 +131,5 @@ func TestExecuteCmdSyncWithEncryption(t *testing.T) {
 	// output should look like this
 	// 2025-03-26T21:28:23Z info: sync: synchronization between /tmp/tmp_repo3863826583/repo and /tmp/tmp_repo327669581/repo completed: 1 snapshots synchronized
 	output := bufOut.String()
-	localLocation, _ := localRepo.Location()
-	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization between %s and %s completed: 1 snapshots synchronized", localLocation, peerLocation))
+	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization between %s and %s completed: 1 snapshots synchronized", localRepo.Origin(), peerRepo.Origin()))
 }
