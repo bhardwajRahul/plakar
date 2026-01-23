@@ -48,13 +48,13 @@ func HandleEvent(ctx *appcontext.AppContext, e *Event) {
 	case "path", "directory", "file", "symlink":
 		// ignore, displayed as either success or failure
 
-	case "path.error", "directory.error", "file.error", "symlink.error":
+	case "path.error":
 		snapshotID := e.Snapshot
 		pathname := e.Data["path"].(string)
 		errorMessage := e.Data["error"].(error)
 		ctx.GetLogger().Stderr("%x: KO %s %s: %s", snapshotID[:4], crossMark, pathname, errorMessage)
 
-	case "path.ok", "directory.ok", "file.ok", "symlink.ok":
+	case "path.ok":
 		snapshotID := e.Snapshot
 		pathname := e.Data["path"].(string)
 		ctx.GetLogger().Stdout("%x: OK %s %s", snapshotID[:4], checkMark, pathname)
