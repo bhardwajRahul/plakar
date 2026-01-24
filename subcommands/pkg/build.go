@@ -99,7 +99,7 @@ func (cmd *PkgBuild) Execute(ctx *appcontext.AppContext, repo *repository.Reposi
 	// a bit hacky, needed until we move the plugin routines from
 	// commands to a lib:
 	create := PkgCreate{}
-	if err := create.Parse(ctx, []string{manifest}); err != nil {
+	if err := create.Parse(ctx, []string{manifest, recipe.Version}); err != nil {
 		return 1, err
 	}
 	create.Out = recipe.PkgName()

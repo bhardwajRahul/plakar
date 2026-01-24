@@ -2,10 +2,8 @@ package pkg
 
 import (
 	"fmt"
-	"io"
-	"net/url"
+	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -13,41 +11,35 @@ import (
 	"github.com/PlakarKorp/plakar/appcontext"
 )
 
-func isRemote(name string) bool {
-	return strings.HasPrefix(name, "https://") || strings.HasPrefix(name, "http://")
-}
-
-func isBase(name string) bool {
-	return !filepath.IsAbs(name) && !strings.Contains(name, string(os.PathSeparator))
-}
-
 func getRecipe(ctx *appcontext.AppContext, name string, recipe *pkg.Recipe) error {
-	var rd io.ReadCloser
-	var err error
-
-	fullpath := name
-
-	remote := isRemote(fullpath)
-	if !remote && isBase(fullpath) {
-		//u := *plugins.RecipeURL
-		var u url.URL
-		u.Path = path.Join(u.Path, fullpath)
-		if !strings.HasPrefix(name, ".yaml") {
-			u.Path += ".yaml"
+	switch {
+	case strings.HasPrefix(name, "https://") || strings.HasPrefix(name, "http://"):
+		res, err := http.Get(name)
+		if err != nil {
+			return err
 		}
-		fullpath = u.String()
-		remote = true
-	}
+		if res.StatusCode != 200 {
+			res.Body.Close()
+			return fmt.Errorf("couldn't fetch recipe: serve failed with %s",
+				res.Status)
+		}
+		defer res.Body.Close()
+		return recipe.Parse(res.Body)
 
-	if remote {
-		//rd, err = openURL(ctx, fullpath)
-	} else {
-		rd, err = os.Open(fullpath)
-	}
-	if err != nil {
-		return fmt.Errorf("can't open %s: %w", name, err)
-	}
+	case filepath.IsAbs(name) || strings.Contains(name, string(os.PathSeparator)):
+		fp, err := os.Open(name)
+		if err != nil {
+			return fmt.Errorf("coludn't open %s: %w", name, err)
+		}
+		defer fp.Close()
+		return recipe.Parse(fp)
 
-	defer rd.Close()
-	return recipe.Parse(rd)
+	default:
+		r, err := ctx.GetPkgManager().FetchRecipe(name)
+		if err != nil {
+			return err
+		}
+		*recipe = *r
+		return nil
+	}
 }
