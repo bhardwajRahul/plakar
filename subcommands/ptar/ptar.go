@@ -24,10 +24,12 @@ import (
 	"io"
 	"math"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/PlakarKorp/kloset/compression"
 	"github.com/PlakarKorp/kloset/connectors/importer"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/hashing"
 	"github.com/PlakarKorp/kloset/locate"
@@ -35,7 +37,6 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/resources"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -71,17 +72,14 @@ func (l *listFlag) String() string {
 }
 
 func (l *listFlag) Set(value string) error {
-	for _, v := range *l {
-		if v == value {
-			return nil
-		}
+	if slices.Contains(*l, value) {
+		return nil
 	}
 	*l = append(*l, value)
 	return nil
 }
 
 func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
-
 	cmd.KlosetUUID = uuid.Must(uuid.NewRandom())
 
 	flags := flag.NewFlagSet("ptar", flag.ExitOnError)
