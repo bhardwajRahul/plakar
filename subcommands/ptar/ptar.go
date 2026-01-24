@@ -84,7 +84,7 @@ func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	flags := flag.NewFlagSet("ptar", flag.ExitOnError)
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: plakar %s [OPTIONS] -o out.ptar path...\n", flags.Name())
+		fmt.Fprintf(flags.Output(), "Usage: plakar %s [OPTIONS] -o out.ptar [@location | path]...\n", flags.Name())
 		fmt.Fprintf(flags.Output(), "\nOPTIONS:\n")
 		flags.PrintDefaults()
 	}
@@ -331,7 +331,21 @@ func (cmd *Ptar) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 
 func (cmd *Ptar) backup(ctx *appcontext.AppContext, repo *repository.RepositoryWriter) error {
 	for _, loc := range cmd.BackupTargets {
-		imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), map[string]string{"location": loc})
+		opts := map[string]string{
+			"location": loc,
+		}
+		if strings.HasPrefix(loc, "@") {
+			remote, ok := ctx.Config.GetSource(loc[1:])
+			if !ok {
+				return fmt.Errorf("could not resolve importer: %s", loc)
+			}
+			if _, ok := remote["location"]; !ok {
+				return fmt.Errorf("could not resolve importer location: %s", loc)
+			}
+			opts = remote
+		}
+
+		imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), opts)
 		if err != nil {
 			return err
 		}
