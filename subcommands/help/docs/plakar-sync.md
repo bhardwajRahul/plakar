@@ -29,10 +29,11 @@ The options are as follows:
 
 **-packfiles** *path*
 
-> Path where to put the temporary packfiles instead of building them in memory.
+> Path where to put the temporary packfiles instead of building them in the default
+> temporary directory.
 > If the special value
 > 'memory'
-> is specified then the packfiles are build in memory (the default value)
+> is specified then the packfiles are build in memory.
 
 The arguments are as follows:
 
