@@ -6,14 +6,15 @@ PLAKAR-PKG-CREATE(1) - General Commands Manual
 
 # SYNOPSIS
 
-**plakar&nbsp;pkg&nbsp;build&nbsp;*manifest.yaml*&zwnj;**
+**plakar&nbsp;pkg&nbsp;build&nbsp;*manifest.yaml*&nbsp;*version*&zwnj;**
 
 # DESCRIPTION
 
 The
 **plakar pkg create**
 assembles a plugin using the provided
-plakar-pkg-manifest.yaml(5).
+plakar-pkg-manifest.yaml(5)
+and version.
 
 All the files needed for the plugin need to be already available,
 i.e. executables must be already be built.

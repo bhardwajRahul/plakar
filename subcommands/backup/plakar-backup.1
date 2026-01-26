@@ -10,13 +10,13 @@
 .Op Fl ignore Ar pattern
 .Op Fl ignore-file Ar file
 .Op Fl check
+.Op Fl dry-run
 .Op Fl no-xattr
 .Op Fl o Ar option Ns No = Ns Ar value
 .Op Fl packfiles Ar path
 .Op Fl quiet
 .Op Fl silent
 .Op Fl tag Ar tag
-.Op Fl scan
 .Op Ar place
 .Sh DESCRIPTION
 The
@@ -48,6 +48,11 @@ Specify a file containing gitignore exclusion patterns, one per line, to
 ignore files or directories in the backup.
 .It Fl check
 Perform a full check on the backup after success.
+.It Fl dry-run
+Do not write a snapshot; instead, perform a dry run by outputting the list of
+files and directories that would be included in the backup.
+Respects all exclude patterns and other options, but makes no changes to the
+Kloset store.
 .It Fl no-xattr
 Skip extended attributes (xattrs) when creating the backup.
 .It Fl o Ar option Ns No = Ns Ar value
@@ -67,11 +72,6 @@ is specified then the packfiles are built in memory.
 Suppress all output.
 .It Fl tag Ar tag
 Comma-separated list of tags to apply to the snapshot.
-.It Fl scan
-Do not write a snapshot; instead, perform a dry run by outputting the list of
-files and directories that would be included in the backup.
-Respects all exclude patterns and other options, but makes no changes to the
-Kloset store.
 .El
 .Sh EXAMPLES
 Create a snapshot of the current directory with two tags:
