@@ -29,6 +29,7 @@ import (
 
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/connectors/importer"
+	"github.com/PlakarKorp/kloset/events"
 	"github.com/PlakarKorp/kloset/exclude"
 	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/location"
@@ -301,7 +302,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 
 		if cmd.DryRun {
-			if err := dryrun(ctx, source); err != nil {
+			if err := dryrun(ctx, source, emitter); err != nil {
 				return 1, err, objects.MAC{}, nil
 			}
 			return 0, nil, objects.MAC{}, nil
@@ -497,7 +498,7 @@ func progress(ctx *appcontext.AppContext, imp importer.Importer, fn func(<-chan 
 	return err
 }
 
-func dryrun(ctx *appcontext.AppContext, source *snapshot.Source) error {
+func dryrun(ctx *appcontext.AppContext, source *snapshot.Source, emitter *events.Emitter) error {
 	var errors bool
 	for _, imp := range source.Importers() {
 		err := progress(ctx, imp, func(records <-chan *connectors.Record, results chan<- *connectors.Result) {
@@ -517,12 +518,39 @@ func dryrun(ctx *appcontext.AppContext, source *snapshot.Source) error {
 					continue
 				}
 
+				emitter.Path(pathname)
 				switch {
 				case record.Err != nil:
 					errors = true
-					fmt.Fprintf(ctx.Stderr, "%s: %s\n", pathname, record.Err)
+					if record.IsXattr {
+						emitter.Xattr(pathname)
+						emitter.XattrError(pathname, record.Err)
+					} else if record.Target != "" {
+						emitter.Symlink(pathname)
+						emitter.SymlinkError(pathname, record.Err)
+					} else if record.FileInfo.IsDir() {
+						emitter.Directory(pathname)
+						emitter.DirectoryError(pathname, record.Err)
+					} else {
+						emitter.File(pathname)
+						emitter.FileError(pathname, record.Err)
+					}
+					emitter.PathError(pathname, record.Err)
 				default:
-					fmt.Fprintln(ctx.Stdout, pathname)
+					if record.IsXattr {
+						emitter.Xattr(pathname)
+						emitter.XattrOk(pathname, -1)
+					} else if record.Target != "" {
+						emitter.Symlink(pathname)
+						emitter.SymlinkOk(pathname)
+					} else if record.FileInfo.IsDir() {
+						emitter.Directory(pathname)
+						emitter.DirectoryOk(pathname, record.FileInfo)
+					} else {
+						emitter.File(pathname)
+						emitter.FileOk(pathname, record.FileInfo)
+					}
+					emitter.PathOk(pathname)
 				}
 			}
 		})
