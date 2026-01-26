@@ -9,7 +9,7 @@ require (
 	github.com/PlakarKorp/integration-ptar v1.0.6-0.20260124104114-70e3946c0ffc
 	github.com/PlakarKorp/integration-stdio v1.0.5-0.20260115153145-4c4e247d2c13
 	github.com/PlakarKorp/integration-tar v1.0.0-beta.7.0.20260115153106-47718979f565
-	github.com/PlakarKorp/kloset v1.0.13-0.20260126092019-3116b47cfeea
+	github.com/PlakarKorp/kloset v1.0.13-0.20260126142743-3872419d3b67
 	github.com/PlakarKorp/pkg v0.0.0-20260124184248-1c75d48aecf3
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.1
