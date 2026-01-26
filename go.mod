@@ -4,9 +4,9 @@ go 1.24.0
 
 require (
 	github.com/PlakarKorp/go-human2duration v0.1.6
-	github.com/PlakarKorp/integration-fs v1.0.15-0.20260123132718-bac1cb5d195f
-	github.com/PlakarKorp/integration-grpc v1.0.19-0.20260123132439-5909c4989594
-	github.com/PlakarKorp/integration-ptar v1.0.6-0.20260123133621-43f212ae4ad2
+	github.com/PlakarKorp/integration-fs v1.0.15-0.20260124104155-139789d72879
+	github.com/PlakarKorp/integration-grpc v1.0.19-0.20260126083158-61c5d4901f8e
+	github.com/PlakarKorp/integration-ptar v1.0.6-0.20260124104114-70e3946c0ffc
 	github.com/PlakarKorp/integration-stdio v1.0.5-0.20260115153145-4c4e247d2c13
 	github.com/PlakarKorp/integration-tar v1.0.0-beta.7.0.20260115153106-47718979f565
 	github.com/PlakarKorp/kloset v1.0.13-0.20260126092019-3116b47cfeea
@@ -122,8 +122,8 @@ require (
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
-	google.golang.org/genproto v0.0.0-20250728155136-f173205681a0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
+	google.golang.org/genproto v0.0.0-20260114163908-3f89685c29c3 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
