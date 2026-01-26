@@ -19,10 +19,10 @@ import (
 
 	"github.com/PlakarKorp/kloset/caching"
 	"github.com/PlakarKorp/kloset/caching/pebble"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/logging"
 	"github.com/PlakarKorp/kloset/repository"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
@@ -155,6 +155,8 @@ func entryPoint() int {
 	}
 	flag.Parse()
 
+	var interrupted bool
+
 	ctx := appcontext.NewAppContext()
 	defer ctx.Close()
 
@@ -170,6 +172,7 @@ func entryPoint() int {
 	go func() {
 		if err := renderer.Wait(); err != nil {
 			if errors.Is(err, ui.ErrUserAbort) {
+				interrupted = true
 				ctx.Cancel(err)
 			}
 		}
@@ -419,13 +422,15 @@ func entryPoint() int {
 	go func() {
 		<-c
 		ctx.Cancel(fmt.Errorf("interrupted"))
+		interrupted = true
 	}()
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		<-ctx.Done()
-		fmt.Fprintf(os.Stderr, "%s: received interrupt signal, stopping gracefully...\n", flag.CommandLine.Name())
-
+		if interrupted {
+			fmt.Fprintf(os.Stderr, "%s: received interrupt signal, stopping gracefully...\n", flag.CommandLine.Name())
+		}
 	}()
 
 	var status int
