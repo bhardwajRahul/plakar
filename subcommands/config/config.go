@@ -243,7 +243,65 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		return utils.SaveConfig(ctx.ConfigDir, ctx.Config)
 
 	case "ping":
-		return fmt.Errorf("the ping subcomand is not yet implemented in this version of plakar")
+		p := flag.NewFlagSet("ping", flag.ExitOnError)
+		p.Usage = func() {
+			fmt.Fprintf(ctx.Stdout, "Usage: plakar %s %s <name>\n", cmd, p.Name())
+			p.PrintDefaults()
+		}
+		p.Parse(args)
+
+		if len(args) != 1 {
+			return fmt.Errorf("usage: plakar %s ping <name>", cmd)
+		}
+		name := normalizeName(args[0])
+		if !hasFunc(name) {
+			return fmt.Errorf("%s %q does not exists", cmd, name)
+		}
+
+		switch cmd {
+		case "store":
+			store, err := storage.New(ctx.GetInner(), cfgMap[name])
+			if err != nil {
+				return err
+			}
+			defer store.Close(ctx)
+			if err := store.Ping(ctx); err != nil {
+				return err
+			}
+			fmt.Println("configuration OK")
+
+		case "source":
+			cfg, ok := ctx.Config.GetSource(name)
+			if !ok {
+				return fmt.Errorf("failed to retrieve configuration for source %q", name)
+			}
+			imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), cfg)
+			if err != nil {
+				return err
+			}
+			defer imp.Close(ctx)
+			if err := imp.Ping(ctx); err != nil {
+				return err
+			}
+			fmt.Println("configuration OK")
+
+		case "destination":
+			cfg, ok := ctx.Config.GetDestination(name)
+			if !ok {
+				return fmt.Errorf("failed to retrieve configuration for destination %q", name)
+			}
+			exp, err := exporter.NewExporter(ctx.GetInner(), ctx.ExporterOpts(), cfg)
+			if err != nil {
+				return err
+			}
+			defer exp.Close(ctx)
+			if err := exp.Ping(ctx); err != nil {
+				return err
+			}
+			fmt.Println("configuration OK")
+		}
+
+		return nil
 
 	case "rm":
 		p := flag.NewFlagSet("rm", flag.ExitOnError)
