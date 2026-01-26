@@ -30,10 +30,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -246,10 +246,12 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 	var err error
 	cmd.jobMtx.Lock()
 	if jq, ok = cmd.jobQueue[pkt.RepoID]; !ok {
-		cmd.jobQueue[pkt.RepoID] = make(chan jobReq, 1024)
-		jq = cmd.jobQueue[pkt.RepoID]
-
+		jq = make(chan jobReq, 1024)
 		err = cmd.rebuildJob(ctx, jq, pkt.RepoID, pkt.Secret, pkt.StoreConfig)
+
+		if err == nil {
+			cmd.jobQueue[pkt.RepoID] = jq
+		}
 	}
 	cmd.jobMtx.Unlock()
 
