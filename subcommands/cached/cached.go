@@ -238,16 +238,6 @@ func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn)
 		return
 	}
 
-	// Attempt another decode to detect client disconnection during processing
-	go func() {
-		for {
-			var pkt cached.RequestPkt
-			if err := decoder.Decode(&pkt); err != nil {
-				return
-			}
-		}
-	}()
-
 	ctx.GetLogger().Info("cached rebuild request for %s", pkt.RepoID)
 
 	// Is there already a job goroutine running for this repo:
