@@ -181,6 +181,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 
 	peerCtx := appcontext.NewAppContextFrom(ctx)
 	peerCtx.SetSecret(cmd.PeerRepositorySecret)
+	peerCtx.StoreConfig = storeConfig
 	peerRepository, err := repository.New(peerCtx.GetInner(), peerCtx.GetSecret(), peerStore, peerStoreSerializedConfig)
 	if err != nil {
 		return 1, fmt.Errorf("could not open peer store %s: %s", cmd.PeerRepositoryLocation, err)
@@ -264,7 +265,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			return 1, err
 		}
 
-		err := synchronize(ctx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
+		err := synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
 		if err != nil {
 			ctx.GetLogger().Error("failed to synchronize snapshot %x from store %s: %s",
 				snapshotID[:4], srcLocation, err)
@@ -291,7 +292,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			if err := ctx.Err(); err != nil {
 				return 1, err
 			}
-			err := synchronize(ctx, dstRepository, srcRepository, storeConfig, snapshotID, cmd.PackfileTempStorage)
+			err := synchronize(ctx, peerCtx, dstRepository, srcRepository, storeConfig, snapshotID, cmd.PackfileTempStorage)
 			if err != nil {
 				ctx.GetLogger().Error("failed to synchronize snapshot %x from peer store %s: %s",
 					snapshotID[:4], dstLocation, err)
@@ -318,7 +319,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	return 0, nil
 }
 
-func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC, packfileDir string) error {
+func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC, packfileDir string) error {
 	srcLocation := srcRepository.Origin()
 	dstLocation := dstRepository.Origin()
 
@@ -332,7 +333,7 @@ func synchronize(ctx *appcontext.AppContext, srcRepository, dstRepository *repos
 	dstSnapshot, err := snapshot.Create(dstRepository, repository.DefaultType, packfileDir, srcSnapshot.Header.Identifier, &snapshot.BuilderOptions{
 		NoCommit:       false,
 		NoCheckpoint:   false,
-		StateRefresher: stateRefresher(ctx, dstRepository),
+		StateRefresher: stateRefresher(peerCtx, dstRepository),
 	})
 	if err != nil {
 		return err
