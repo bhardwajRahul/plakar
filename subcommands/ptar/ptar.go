@@ -24,10 +24,12 @@ import (
 	"io"
 	"math"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/PlakarKorp/kloset/compression"
 	"github.com/PlakarKorp/kloset/connectors/importer"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
 	"github.com/PlakarKorp/kloset/hashing"
 	"github.com/PlakarKorp/kloset/locate"
@@ -35,7 +37,6 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/resources"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -71,22 +72,19 @@ func (l *listFlag) String() string {
 }
 
 func (l *listFlag) Set(value string) error {
-	for _, v := range *l {
-		if v == value {
-			return nil
-		}
+	if slices.Contains(*l, value) {
+		return nil
 	}
 	*l = append(*l, value)
 	return nil
 }
 
 func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
-
 	cmd.KlosetUUID = uuid.Must(uuid.NewRandom())
 
 	flags := flag.NewFlagSet("ptar", flag.ExitOnError)
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: plakar %s [OPTIONS] -o out.ptar path...\n", flags.Name())
+		fmt.Fprintf(flags.Output(), "Usage: plakar %s [OPTIONS] -o out.ptar [@location | path]...\n", flags.Name())
 		fmt.Fprintf(flags.Output(), "\nOPTIONS:\n")
 		flags.PrintDefaults()
 	}
@@ -333,7 +331,21 @@ func (cmd *Ptar) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 
 func (cmd *Ptar) backup(ctx *appcontext.AppContext, repo *repository.RepositoryWriter) error {
 	for _, loc := range cmd.BackupTargets {
-		imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), map[string]string{"location": loc})
+		opts := map[string]string{
+			"location": loc,
+		}
+		if strings.HasPrefix(loc, "@") {
+			remote, ok := ctx.Config.GetSource(loc[1:])
+			if !ok {
+				return fmt.Errorf("could not resolve importer: %s", loc)
+			}
+			if _, ok := remote["location"]; !ok {
+				return fmt.Errorf("could not resolve importer location: %s", loc)
+			}
+			opts = remote
+		}
+
+		imp, err := importer.NewImporter(ctx.GetInner(), ctx.ImporterOpts(), opts)
 		if err != nil {
 			return err
 		}
