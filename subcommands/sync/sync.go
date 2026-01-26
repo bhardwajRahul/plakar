@@ -357,7 +357,7 @@ var stateRefresher = func(ctx *appcontext.AppContext, repo *repository.Repositor
 	return func(mac objects.MAC, finalRefresh bool) error {
 		// If we are in the final refresh, turn this request into a fire and
 		// forget one, to improve the UX.
-		_, err := cached.RebuildStateFromStateFile(ctx, mac, repo.Configuration().RepositoryID, ctx.StoreConfig, finalRefresh)
+		_, err := cached.RebuildStateFromStateFile(ctx, mac, repo.Configuration().RepositoryID, ctx.StoreConfig, false)
 		return err
 	}
 }
