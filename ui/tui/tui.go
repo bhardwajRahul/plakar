@@ -53,6 +53,7 @@ func (tui *tui) Run() error {
 
 		var app *commandApp
 
+		hasSeenStop := false
 		for e := range events {
 			// If app is running, forward event (non-blocking / cancel-safe)
 			if app != nil {
@@ -61,9 +62,15 @@ func (tui *tui) Run() error {
 				case <-app.done:
 					if app.err != nil {
 						if errors.Is(app.err, tea.ErrInterrupted) {
-							tui.done <- ui.ErrUserAbort
+							if !hasSeenStop {
+								hasSeenStop = true
+								tui.done <- ui.ErrUserAbort
+							}
 						} else {
-							tui.done <- app.err
+							if !hasSeenStop {
+								hasSeenStop = true
+								tui.done <- app.err
+							}
 						}
 					}
 				}
