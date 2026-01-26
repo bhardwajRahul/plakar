@@ -31,7 +31,7 @@ func setupPkgManager(ctx *appcontext.AppContext, dataDir, cacheDir string) error
 
 	token, _ := ctx.GetCookies().GetAuthToken()
 	manager, err := pkg.New(backend, &pkg.Options{
-		InstallURL:      "https://plugins.plakar.io/",
+		InstallURL:      "https://plakar.io/dist/plugins/kloset/community/",
 		ApiURL:          "https://api.plakar.io/",
 		BinaryNeedsAuth: true,
 		UserAgent:       "plakar/" + utils.VERSION,
