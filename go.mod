@@ -4,13 +4,13 @@ go 1.24.0
 
 require (
 	github.com/PlakarKorp/go-human2duration v0.1.6
-	github.com/PlakarKorp/integration-fs v1.0.15-0.20260124104155-139789d72879
-	github.com/PlakarKorp/integration-grpc v1.0.19-0.20260126083158-61c5d4901f8e
-	github.com/PlakarKorp/integration-ptar v1.0.6-0.20260124104114-70e3946c0ffc
-	github.com/PlakarKorp/integration-stdio v1.0.5-0.20260115153145-4c4e247d2c13
-	github.com/PlakarKorp/integration-tar v1.0.0-beta.7.0.20260115153106-47718979f565
-	github.com/PlakarKorp/kloset v1.0.13-0.20260126142743-3872419d3b67
-	github.com/PlakarKorp/pkg v0.0.0-20260124184248-1c75d48aecf3
+	github.com/PlakarKorp/integration-fs v1.1.0-beta.3
+	github.com/PlakarKorp/integration-grpc v1.1.0-beta.1
+	github.com/PlakarKorp/integration-ptar v1.1.0-beta.2
+	github.com/PlakarKorp/integration-stdio v1.1.0-beta.1
+	github.com/PlakarKorp/integration-tar v1.1.0-beta.1
+	github.com/PlakarKorp/kloset v1.1.0-beta.1
+	github.com/PlakarKorp/pkg v1.1.0-beta.1
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.1
 	github.com/charmbracelet/bubbles v0.21.0
