@@ -337,9 +337,37 @@ func (ui *uiserver) snapshotVFSBrowse(w http.ResponseWriter, r *http.Request) er
 	if path == "" {
 		path = "/"
 	}
+
 	entry, err := fs.GetEntry(path)
 	if err != nil {
 		return err
+	}
+
+	summary := entry.Summary
+	if summary == nil && entry.IsDir() {
+		tree, err := snap.SummaryIdx()
+		if err != nil {
+			return err
+		}
+
+		key, found, err := tree.Find(entry.Path())
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("could not resolve pathname: %s", entry.Path())
+		}
+
+		serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
+		if err != nil {
+			return err
+		}
+
+		summary, err = vfs.SummaryFromBytes(serializedSummary)
+		if err != nil {
+			return err
+		}
+		entry.Summary = summary
 	}
 
 	return json.NewEncoder(w).Encode(Item[*vfs.Entry]{Item: entry})
