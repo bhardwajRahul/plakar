@@ -125,7 +125,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
 	flags.BoolVar(&cmd.OptCheck, "check", false, "check the snapshot after creating it")
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
-	flags.BoolVar(&cmd.DryRun, "scan", false, "do not actually perform a backup, just list the files")
+	flags.BoolVar(&cmd.DryRun, "dry-run", false, "do not actually perform a backup")
 	flags.BoolVar(&cmd.NoXattr, "no-xattr", false, "do not back up extended attributes")
 	flags.BoolVar(&cmd.NoVFSCache, "no-vfs-cache", false, "do not use VFS cache for this backup")
 	flags.BoolVar(&cmd.NoProgress, "no-progress", false, "do not display progress")
