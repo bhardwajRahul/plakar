@@ -11,13 +11,13 @@ PLAKAR-BACKUP(1) - General Commands Manual
 \[**-ignore**&nbsp;*pattern*]
 \[**-ignore-file**&nbsp;*file*]
 \[**-check**]
+\[**-dry-run**]
 \[**-no-xattr**]
 \[**-o**&nbsp;*option*=*value*]
 \[**-packfiles**&nbsp;*path*]
 \[**-quiet**]
 \[**-silent**]
 \[**-tag**&nbsp;*tag*]
-\[**-scan**]
 \[*place*]
 
 # DESCRIPTION
@@ -59,6 +59,13 @@ The options are as follows:
 
 > Perform a full check on the backup after success.
 
+**-dry-run**
+
+> Do not write a snapshot; instead, perform a dry run by outputting the list of
+> files and directories that would be included in the backup.
+> Respects all exclude patterns and other options, but makes no changes to the
+> Kloset store.
+
 **-no-xattr**
 
 > Skip extended attributes (xattrs) when creating the backup.
@@ -76,10 +83,11 @@ The options are as follows:
 
 **-packfiles** *path*
 
-> Path where to put the temporary packfiles instead of building them in memory.
+> Path where to put the temporary packfiles instead of building them in the
+> default temporary directory.
 > If the special value
 > 'memory'
-> is specified then the packfiles are build in memory (the default value)
+> is specified then the packfiles are built in memory.
 
 **-silent**
 
@@ -88,13 +96,6 @@ The options are as follows:
 **-tag** *tag*
 
 > Comma-separated list of tags to apply to the snapshot.
-
-**-scan**
-
-> Do not write a snapshot; instead, perform a dry run by outputting the list of
-> files and directories that would be included in the backup.
-> Respects all exclude patterns and other options, but makes no changes to the
-> Kloset store.
 
 # EXAMPLES
 
