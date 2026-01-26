@@ -89,7 +89,10 @@ func (ui *uiserver) repositoryInfo(w http.ResponseWriter, r *http.Request) error
 	}
 
 	location := ui.repository.Origin()
-	mode := ui.repository.Store().Mode()
+	mode, err := ui.repository.Store().Mode(r.Context())
+	if err != nil {
+		return err
+	}
 
 	return json.NewEncoder(w).Encode(Item[RepositoryInfoResponse]{Item: RepositoryInfoResponse{
 		Location: location,
