@@ -2,9 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/PlakarKorp/plakar/cookies"
 	"github.com/PlakarKorp/plakar/login"
 )
 
@@ -80,5 +82,9 @@ func (ui *uiserver) servicesLoginEmail(w http.ResponseWriter, r *http.Request) e
 }
 
 func (ui *uiserver) servicesLogout(w http.ResponseWriter, r *http.Request) error {
-	return ui.ctx.GetCookies().DeleteAuthToken()
+	err := ui.ctx.GetCookies().DeleteAuthToken()
+	if errors.Is(err, cookies.ErrNotLoggedIn) {
+		return nil
+	}
+	return err
 }
