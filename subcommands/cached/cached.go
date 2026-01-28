@@ -27,7 +27,6 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/PlakarKorp/kloset/connectors/storage"
@@ -60,6 +59,8 @@ type Cached struct {
 
 	jobMtx   sync.Mutex
 	jobQueue map[uuid.UUID](chan jobReq)
+
+	inflight sync.WaitGroup
 }
 
 type jobReq struct {
@@ -170,8 +171,12 @@ func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 		listener.Close()
 	}()
 
-	var inflight atomic.Int64
-	var nextID atomic.Int64
+	go func() {
+		time.Sleep(cmd.teardown)
+		cmd.inflight.Wait()
+		listener.Close()
+	}()
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -187,27 +192,20 @@ func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 			return err
 		}
 
-		inflight.Add(1)
-
+		cmd.inflight.Add(1)
 		go func() {
-			myid := nextID.Add(1)
-			defer func() {
-				n := inflight.Add(-1)
-				if n == 0 {
-					time.Sleep(cmd.teardown)
-					if nextID.Load() == myid && inflight.Load() == 0 {
-						listener.Close()
-					}
-				}
-			}()
+			defer cmd.inflight.Done()
 
 			if err := ctx.ReloadConfig(); err != nil {
 				ctx.GetLogger().Warn("could not load configuration: %v", err)
 			}
 
 			cmd.handleCachedClient(ctx, conn)
+
+			time.Sleep(cmd.teardown)
 		}()
 	}
+
 }
 
 func (cmd *Cached) handleCachedClient(ctx *appcontext.AppContext, conn net.Conn) {
@@ -318,7 +316,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 		for {
 			select {
 			case job := <-jobChan:
-
+				cmd.inflight.Add(1)
 				var err error
 				if job.stateID == objects.NilMac {
 					err = repo.RebuildState()
@@ -327,11 +325,12 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 				}
 
 				// Notify that we ended
-
 				if job.ch != nil {
 					job.ch <- err
 					close(job.ch)
 				}
+
+				cmd.inflight.Done()
 
 			// Debounce a bit to avoid halting and creating too many jobs.
 			case <-ctx.Done():
