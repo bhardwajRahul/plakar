@@ -21,37 +21,38 @@
 
 ## 🔄 Latest Release
 
-### **V1.0.5 - Minor Release: Refinements, Hooks, Build Improvements** *(October 15, 2025)*
+[![Join Plakar v1.1.0 Beta](https://www.plakar.io/readme/plakar-v1.0.1-beta-video-cover.png)](https://www.youtube.com/watch?v=RK9RYNbjQUk)
 
-- **Build & Packaging Improvements**: Homebrew packaging fixed for macOS, added Windows builds, and multiple dependency updates for a more robust development environment.
-- **UI & Documentation Updates**: New social links, updated documentation, synced Plakar UI to latest revision, improved asset serving, and enhanced manual pages.
-- **Pipeline & Concurrency Tuning**: Adjusted backup pipeline concurrency for better stability and resource usage.
-- **Backup Hooks & Sync Enhancements**: Added pre-hook, post-hook, and fail-hook support for backup commands, including Windows compatibility. Introduced passphrase_cmd for sync operations.
-- **Maintenance & Internal Refinements**: Improved type safety, clearer messaging, better login clarifications, enhanced error handling, cache-mem-size parameter, and miscellaneous bug fixes.
-- **New Contributors**: Welcome to @pata27 for their first contribution!
+### **V1.1.0-beta.1 - Beta Release: Performance, UI, and Architecture** *(January 2026)*
 
-[📝 Release article](https://www.plakar.io/posts/2025-10-15/release-v1.0.5-refinements-hooks-build-improvements/)
+- **New Terminal UI**: Completely reworked terminal output with a new `tui` renderer for better visibility during long-running operations, alongside the classic `stdio` renderer for verbose output.
+- **Dramatic Performance Improvements**:
+  - Restore operations: ~95% faster (from ~60 minutes to ~3 minutes for 1M items)
+  - Backup operations: up to 33% faster with optimizations
+  - Sync operations: ~20% faster
+- **Significant RAM Reduction**:
+  - Backup: -43% (from ~3.0 GiB to ~1.3 GiB)
+  - Restore: -66% (from ~2.3 GiB to ~800 MiB)
+  - Sync: -30% (from ~3.6 GiB to ~2.5 GiB)
+  - Check: -40% (from ~1.3 GiB to ~800 MiB)
+- **Reduced Cache Footprint**: -55% on-disk cache usage (from 4 GiB to 1.8 GiB for 1M items) by removing VFS cache and trading bandwidth for disk space.
+- **Architecture Redesign**: Replaced the agent with `cached`, a lightweight process dedicated exclusively to cache maintenance and locking. Commands now execute directly in the CLI.
+- **Multi-directory Support**: Back up multiple directories in a single snapshot (e.g., `plakar backup /etc /home`).
+- **Improved FUSE Support**: Completely rewritten for better reliability on both Linux and macOS, including support for FUSE-T. New capabilities to mount specific snapshots, directories, or serve them over HTTP.
+- **New Package Manager**: Brand new package manager with simpler interface and support for integration updates.
+- **Redesigned Integration Interfaces**: Simpler and more explicit importer, exporter, and storage interfaces, lowering the barrier for third-party integrations.
 
-### **V1.0.4 - Major Release: Plugins, Windows, Packages, Performance** *(September 16, 2025)*
+[📝 Release article](https://www.plakar.io/posts/2026-01-26/plakar-v1.1.0-beta-the-foundation-for-whats-next/)
 
-- **Pre-packaged binaries** for easy installs: `.deb`, `.rpm`, `.apk`, plus static tarballs.  
-  Package repositories coming right after to install via `apt`, `yum`, or `apk`.
-- **Initial Windows support**: Plakar now runs natively on Windows, including CLI and UI.  
-  Current limitation: one concurrent operation per agent, as multi-agent support is coming next.
-- **Integrations as plugins** with `plakar pkg add <integration>`  
-  Example: `plakar pkg add s3`, `plakar pkg add sftp`, `plakar pkg add gcp`, `imap`, `ftp`, ...
-- **Smarter agent**: auto-spawn and auto-teardown after idle for frictionless concurrency.
-- **Cache improvements**: fewer disk hits, lower footprint, better accuracy on very large corpora.
-- **Performance boosts** across backup, check, restore: faster indexing, traversal, data access, and dedupe pipelines.  
-  From x2 to x10 depending on workloads.
-- **Policy-based lifecycle** via `plakar prune`  
-  Examples:  
-  `plakar prune -days 2 -per-day 3 -weeks 4 -per-week 5 -months 3 -per-month 2`  
-  `plakar prune -tags finance -per-day 5`
-- **UI refinements**: cleaner layouts, clearer hierarchy, better progress and error messages.  
-  Try the demo: https://demo.plakar.io
+### **V1.0.6 - Bugfix Release: State Synchronization and Memory Fixes** *(November 2025)*
 
-[📝 Release article](https://plakar.io/posts/2025-09-16/release-v1.0.4-a-new-milestone-for-plakar/)
+- **Critical Fix**: Resolved state-synchronization bug that could cause snapshots to appear correct on the backup machine but not on others. Introduced two-stage commit to guarantee remote state updates before local visibility.
+- **New Repair Tool**: Added `plakar repair` command to detect and fix state inconsistencies. Recommended for all users to run once after upgrading.
+- **Memory Leak Fixes**: Fixed storage API memory leak in go-kloset-sdk affecting all third-party integrations (SFTP, S3, etc.) during list, check, and restore operations.
+- **Improved Memory Usage**: Resolved large buffer retention issue during restore and check operations with external integrations, significantly reducing RAM usage for large snapshots on S3 and SFTP backends.
+- **Integration Updates**: Users should reinstall integrations (`plakar pkg rm`/`plakar pkg add`) to benefit from the corrected go-kloset-sdk.
+
+[📝 Release article](https://www.plakar.io/posts/2025-11-30/release-v1.0.6-bugfix-and-memory-usage-improvement/)
 
 ## 🧭 Introduction
 
@@ -68,7 +69,7 @@ Plakar's main strengths:
 - **Vertically scalable**: Backup and restore very large datasets with limited RAM usage.
 - **Horizontally scalable**: Support high concurrency and multiple backups type in a single Kloset.
 - **Browsable**: Browse, sort, search, and compare backups using the Plakar UI.
-- **Fast**: backup, check, sync and restore are  operations are optimized for large-scale data.
+- **Fast**: backup, check, sync and restore are operations optimized for large-scale data.
 - **Efficient**: more restore points, less storage, thanks to Kloset's unmatched [deduplication](https://www.plakar.io/posts/2025-07-11/introducing-go-cdc-chunkers-chunk-and-deduplicate-everything/) and compression.
 - **Open Source and actively maintained**: open source forever and now maintained by [Plakar Korp](https://www.plakar.io)
 
@@ -120,7 +121,7 @@ go install github.com/PlakarKorp/plakar@latest
 
 ## 🚀 Quickstart
 
-plakar quickstart: https://www.plakar.io/docs/v1.0.4/quickstart/
+plakar quickstart: https://www.plakar.io/docs/v1.0.6/quickstart/
 
 A taste of plakar (please follow the quickstart to begin):
 ```
@@ -155,7 +156,7 @@ For installation, usage examples, and full documentation, see the [Kapsul reposi
 ## 📚 Documentation
 
 For the latest information,
-you can read the documentation available at https://www.plakar.io/docs/v1.0.4/
+you can read the documentation available at https://www.plakar.io/docs/v1.0.6/
 
 ## 💬 Community
 
