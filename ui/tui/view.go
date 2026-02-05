@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"math"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -59,19 +59,14 @@ func humanDuration(d time.Duration) string {
 }
 
 func progressBar() progress.Model {
-	//	return progress.New(progress.WithDefaultGradient())
-
 	p := progress.New(
 		progress.WithColorProfile(termenv.Ascii),
 	)
+
 	// Make it ASCII-ish
 	p.Full = '*' // #
 	p.Empty = ' '
-	//	p.Left = '['
-	//	p.Right = ']'
-	//	p.Head = '>' // moving head, like many CLIs
 	p.ShowPercentage = true
-	//p.Width = 100
 
 	return p
 }
@@ -97,48 +92,144 @@ func formatBytes(b int64) string {
 	return humanize.IBytes(uint64(b))
 }
 
-func formatThroughput(bps float64) string {
-	if bps <= 0 || math.IsNaN(bps) || math.IsInf(bps, 0) {
-		return "0 B/s"
-	}
-	return fmt.Sprintf("%s/s", humanize.IBytes(uint64(bps)))
-}
-
-func fmtCountCached(ok, errc, total, cached uint64) string {
-	base := fmtCount(ok, errc, total) // your existing "ok/total" (or however it prints)
-	if cached == 0 {
-		return base
-	}
-	return fmt.Sprintf("%s (%s cached)", base, tot(cached))
-}
-
-func pct(num, den uint64) string {
-	if den == 0 {
-		return "0%"
-	}
-	return fmt.Sprintf("%.0f%%", (float64(num)*100)/float64(den))
-}
-
-func fmtNewReuse(okCount, cached, errc, total uint64) string {
+func fmtNewReuse(okCount, total uint64, progress bool) string {
 	okS := okStyle.Render(fmt.Sprintf("%d", okCount))
 	totalS := dimStyle.Render(fmt.Sprintf("%d", total))
 
-	var base string
-	if errc == 0 {
-		base = fmt.Sprintf("%s/%s", okS, totalS)
-	} else {
-		errS := errStyle.Render(fmt.Sprintf("%d", errc))
-		base = fmt.Sprintf("%s/%s/%s", okS, errS, totalS)
+	if !progress {
+		return fmt.Sprintf("%s", okS)
+	}
+	return fmt.Sprintf("%s/%s", okS, totalS)
+}
+
+// truncateLeft keeps the rightmost part of s, prefixing with "...".
+func truncateLeft(s string, maxW int) string {
+	if maxW <= 0 {
+		return ""
+	}
+	if lipgloss.Width(s) <= maxW {
+		return s
+	}
+	if maxW <= 3 {
+		return strings.Repeat(".", maxW)
 	}
 
-	if cached == 0 {
-		return base
+	rs := []rune(s)
+	// keep tail by width (reserve 3 for "...")
+	tail := make([]rune, 0, len(rs))
+	w := 0
+	for i := len(rs) - 1; i >= 0; i-- {
+		r := rs[i]
+		rw := lipgloss.Width(string(r))
+		if w+rw > maxW-3 {
+			break
+		}
+		tail = append(tail, r)
+		w += rw
+	}
+	// reverse tail
+	for i, j := 0, len(tail)-1; i < j; i, j = i+1, j-1 {
+		tail[i], tail[j] = tail[j], tail[i]
+	}
+	return "..." + string(tail)
+}
+
+// shortenPathTailMax keeps as many *whole* trailing path components as will fit.
+// - Never truncates directory names.
+// - If it must drop leading components, prefixes with ".../".
+// - If only the file fits, returns ".../file".
+// - If even that doesn't fit, truncates the file name (left-truncate), still prefixed with ".../".
+func shortenPathTailMax(path string, maxW int) string {
+	if maxW <= 0 || path == "" {
+		return ""
+	}
+	if lipgloss.Width(path) <= maxW {
+		return path
 	}
 
-	// cache counter displayed AFTER the total
-	//cachedS := reuseStyle.Render(fmt.Sprintf("(%d reused)", cached))
-	//return fmt.Sprintf("%s %s", base, cachedS)
-	return fmt.Sprintf("%s", base)
+	sep := string(filepath.Separator)
+
+	// Normalize separators (handles "/" and "\" inputs).
+	p := path
+	p = strings.ReplaceAll(p, "\\", sep)
+	p = strings.ReplaceAll(p, "/", sep)
+
+	// Extract & preserve Windows volume (e.g., "C:")
+	vol := filepath.VolumeName(p)
+	if vol != "" {
+		p = strings.TrimPrefix(p, vol)
+		p = strings.TrimPrefix(p, sep)
+	}
+
+	// Trim trailing separator (except root-ish)
+	if len(p) > 1 {
+		p = strings.TrimRight(p, sep)
+	}
+
+	parts := strings.FieldsFunc(p, func(r rune) bool { return string(r) == sep })
+	if len(parts) == 0 {
+		// could be just volume or weird root
+		out := vol
+		if out == "" {
+			out = path
+		}
+		return truncateLeft(out, maxW)
+	}
+
+	// Helper to join with volume
+	join := func(prefixDots bool, tail []string) string {
+		body := strings.Join(tail, sep)
+		if prefixDots {
+			if vol != "" {
+				return vol + sep + "..." + sep + body
+			}
+			return "..." + sep + body
+		}
+		if vol != "" {
+			return vol + sep + body
+		}
+		return body
+	}
+
+	// If not everything fits, we will prefix with ".../".
+	// But first: try to fit as many trailing *whole* components as possible.
+	// Start from the last component and grow backwards.
+	tail := []string{parts[len(parts)-1]}
+	// Candidate when we are dropping something is ".../<tail>"
+	best := join(true, tail)
+
+	// If even ".../file" doesn't fit, truncate the filename itself.
+	if lipgloss.Width(best) > maxW {
+		file := parts[len(parts)-1]
+		prefix := "..." + sep
+		avail := maxW - lipgloss.Width(prefix)
+		if avail <= 0 {
+			// Can't even show the prefix fully; fall back to raw truncation.
+			return truncateLeft(prefix+file, maxW)
+		}
+		return prefix + truncateLeft(file, avail)
+	}
+
+	// Add more directories as long as they fit
+	for i := len(parts) - 2; i >= 0; i-- {
+		candidateTail := append([]string{parts[i]}, tail...)
+		candidate := join(true, candidateTail)
+		if lipgloss.Width(candidate) <= maxW {
+			tail = candidateTail
+			best = candidate
+			continue
+		}
+		break
+	}
+
+	// If by chance all components fit without dots, show full tail without prefix
+	// (This can happen if original 'path' had vol/root stuff we normalized away, or width calc differs)
+	full := join(false, parts)
+	if lipgloss.Width(full) <= maxW {
+		return full
+	}
+
+	return best
 }
 
 func (m appModel) View() string {
@@ -147,71 +238,31 @@ func (m appModel) View() string {
 	}
 	m.dirty = false
 
+	// fast exit
 	if m.forceQuit {
 		return fmt.Sprintf("[%s] %s: aborted !\n", humanDuration(time.Since(m.startTime)), m.appName)
 	}
 
-	m.barPrefix = m.phase
-
 	var s strings.Builder
-
 	done := m.countPathOk + m.countPathError
 
-	// helpers
-	writeLastPaths := func() {
-		if m.lastNPaths <= 0 {
-			return
-		}
-
-		fmt.Fprintf(&s, "\n")
-		for i := 0; i < m.lastNPaths; i++ {
-			if i < len(m.lastPaths) {
-				fmt.Fprintf(&s, "%s\n", m.lastPaths[i])
-			} else {
-				fmt.Fprintf(&s, "\n")
-			}
-		}
-	}
-
+	// --- summaries (unchanged logic) ---
 	writeProcessedSummary := func() {
 		nodesTotal := m.countDir
-		leavesTotal := m.countFile
-		symlinksTotal := m.countSymlink
-		xattrsTotal := m.countXattr
-		sizeTotal := uint64(m.countFileSize)
+		leavesTotal := m.countFile + m.countSymlink + m.countXattr
 		if m.foundSummary && m.summaryPathTotal > 0 {
-			leavesTotal = m.fileCountTotal
-			nodesTotal = m.directoryCountTotal
-			symlinksTotal = m.symlinkCountTotal
-			xattrsTotal = m.xattrCountTotal
-			sizeTotal = m.totalSize
+			leavesTotal = max(leavesTotal, m.fileCountTotal+m.symlinkCountTotal+m.xattrCountTotal)
+			nodesTotal = max(m.countDir, m.directoryCountTotal)
 		}
 
 		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
 		fmt.Fprintf(&s, "%s   %s:", indent, m.appName)
 
-		fmt.Fprintf(&s, " nodes=%s", fmtNewReuse(m.countDirOk, m.countDirCached, m.countDirError, nodesTotal))
-		fmt.Fprintf(&s, ", leaves=%s", fmtNewReuse(m.countFileOk, m.countFileCached, m.countFileError, leavesTotal))
-
-		if symlinksTotal != 0 {
-			fmt.Fprintf(&s, ", links=%s",
-				fmtNewReuse(m.countSymlinkOk, m.countSymlinkCached, m.countSymlinkError, symlinksTotal),
-			)
-		}
-		if xattrsTotal != 0 {
-			fmt.Fprintf(&s, ", attrs=%s",
-				fmtNewReuse(m.countXattrOk, m.countXattrCached, m.countXattrError, xattrsTotal),
-			)
-		}
-		fmt.Fprintf(&s, ", size=%s/%s", okSize(uint64(m.countFileSize)), totSize(sizeTotal))
+		fmt.Fprintf(&s, " nodes=%s", fmtNewReuse(m.countDirOk, nodesTotal, m.foundSummary))
+		fmt.Fprintf(&s, ", objects=%s", fmtNewReuse(m.countFileOk+m.countSymlinkOk+m.countXattrOk, leavesTotal, m.foundSummary))
 
 		if m.countPathError != 0 {
-			// If you want total paths from summary when available, swap denominator accordingly
-			pathsTotal := m.countPath
-			if m.foundSummary && m.summaryPathTotal > 0 {
-				pathsTotal = m.summaryPathTotal
-			}
-			fmt.Fprintf(&s, ", errors=%s/%s", err(m.countPathError), tot(pathsTotal))
+			fmt.Fprintf(&s, ", errors=%s", err(m.countPathError))
 		}
 
 		fmt.Fprintf(&s, "\n")
@@ -222,32 +273,86 @@ func (m appModel) View() string {
 			return
 		}
 		ioStats := m.repo.IOStats()
-
 		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
 		r := ioStats.Read.Stats()
 		w := ioStats.Write.Stats()
+
 		fmt.Fprintf(&s,
-			"%s   kloset: read=%s, write=%s\n",
+			"%s    store: read=%s, write=%s\n",
 			indent,
 			formatBytes(r.TotalBytes),
 			formatBytes(w.TotalBytes),
 		)
 	}
 
-	m.barPrefix = fmt.Sprintf("[%s] %s %s", humanDuration(time.Since(m.startTime)), m.snapshotID, m.phase)
+	// --- shared line writer: prefix + item + right-aligned tail ---
+	writeLine := func(prefix, item, tail string) {
+		// If we don't know width yet, just print plainly.
+		if m.width <= 0 {
+			fmt.Fprintf(&s, "%s %s %s\n", prefix, item, tail)
+			return
+		}
 
+		availableW := m.width - lipgloss.Width(prefix) - lipgloss.Width(tail) - 2 // spaces around item
+		if availableW < 0 {
+			availableW = 0
+		}
+
+		item = shortenPathTailMax(item, availableW)
+
+		pad := availableW - lipgloss.Width(item)
+		if pad < 0 {
+			pad = 0
+		}
+
+		fmt.Fprintf(&s, "%s %s%s %s\n", prefix, item, strings.Repeat(" ", pad), tail)
+	}
+
+	// count visual lines (good enough if you don't have ANSI newlines in single lines)
+	countLines := func(str string) int {
+		if str == "" {
+			return 0
+		}
+		// number of '\n' == number of lines (since you always end lines with \n)
+		return strings.Count(str, "\n")
+	}
+
+	writeLastErrors := func(maxLines int) {
+		if maxLines <= 0 || len(m.errors) == 0 {
+			return
+		}
+		if maxLines > len(m.errors) {
+			maxLines = len(m.errors)
+		}
+		start := len(m.errors) - maxLines
+		for i := start; i < len(m.errors); i++ {
+			fmt.Fprintf(&s, "%s\n", m.errors[i])
+		}
+	}
+
+	// --- first line always shows last item + right-aligned size ---
+	sizeText := humanize.IBytes(uint64(m.countFileSize))
+
+	// Progress mode: we have a total and can show bar + ETA on bar line
 	if m.foundSummary && m.summaryPathTotal > 0 {
 		total := m.summaryPathTotal
 
-		// Clamp ratio to [0,1]
-		ratio := float64(done) / float64(total)
-		if ratio < 0 {
-			ratio = 0
-		} else if ratio > 1 {
-			ratio = 1
+		// ratio clamped to [0,1]
+		ratio := 0.0
+		if total > 0 {
+			ratio = float64(done) / float64(total)
+			if ratio < 0 {
+				ratio = 0
+			} else if ratio > 1 {
+				ratio = 1
+			}
 		}
 
-		// ---- ETA (fixed slot so layout doesn't jump) ----
+		// First line: prefix + last item + size (size right aligned)
+		prefix := fmt.Sprintf("[%s] %s %s", humanDuration(time.Since(m.startTime)), m.snapshotID, m.phase)
+		writeLine(prefix, m.lastItem, sizeText)
+
+		// ETA (to be printed on the progress bar line)
 		etaText := ""
 		if m.resRateEMA > 0 && done > 10 && time.Since(m.startTime) > 2*time.Second && total >= done {
 			remaining := float64(total - done)
@@ -256,64 +361,60 @@ func (m appModel) View() string {
 				etaText = "ETA " + v
 			}
 		}
-		const etaSlotWidth = 12
-		etaField := fmt.Sprintf("%-*s", etaSlotWidth, etaText)
 
-		// ---- elapsed (fixed slot too) ----
-		const elapsedSlotWidth = 8
-		elapsedField := fmt.Sprintf("%-*s", elapsedSlotWidth, humanDuration(m.timerResourcesElapsed))
-
-		// ---- prefix in front of the bar (fixed slot to avoid jumping) ----
-		const prefixSlotWidth = 14 // tune for your labels
-		prefix := fmt.Sprintf("%-*s", prefixSlotWidth, m.barPrefix)
-
-		// ---- tail (elapsed + bytes + ETA + errors) ----
-		tail := fmt.Sprintf("%s  %s  %s",
-			elapsedField,
-			humanize.IBytes(uint64(m.countFileSize)),
-			etaField,
-		)
-
-		// ---- bar: full-width (fills remaining space) ----
+		// Progress bar line: bar left, ETA right (ETA right-aligned)
+		p := m.ressourcesProgress
 		if m.width > 0 {
-			const gap = 1
-
-			prefixW := lipgloss.Width(prefix)
-			tailW := lipgloss.Width(tail)
-
-			barW := m.width - prefixW - gap - tailW - gap
-			if barW < 10 {
-				barW = 10
+			barW := m.width
+			if etaText != "" {
+				// " " between bar and ETA
+				barW = m.width - lipgloss.Width(etaText) - 1
+				if barW < 10 {
+					barW = 10
+				}
 			}
-
-			p := m.ressourcesProgress
 			p.Width = barW
-			bar := p.ViewAs(ratio)
+		}
+		bar := p.ViewAs(ratio)
 
-			fmt.Fprintf(&s, "%s%s%s%s%s\n",
-				prefix,
-				strings.Repeat(" ", gap),
-				bar,
-				strings.Repeat(" ", gap),
-				tail,
-			)
+		if m.width > 0 && etaText != "" {
+			// right-align ETA by padding between bar and ETA
+			pad := m.width - lipgloss.Width(bar) - lipgloss.Width(etaText) - 1
+			if pad < 0 {
+				pad = 0
+			}
+			fmt.Fprintf(&s, "%s%s %s\n", bar, strings.Repeat(" ", pad), etaText)
+		} else if etaText != "" {
+			fmt.Fprintf(&s, "%s %s\n", bar, etaText)
 		} else {
-			bar := m.ressourcesProgress.ViewAs(ratio)
-			fmt.Fprintf(&s, "%s %s %s\n", prefix, bar, tail)
+			fmt.Fprintf(&s, "%s\n", bar)
 		}
 
 		writeProcessedSummary()
 		writeStoreSummary()
 
-		writeLastPaths()
+		if len(m.errors) != 0 {
+			fmt.Fprintf(&s, "\n")
+
+			if m.height > 0 {
+				used := countLines(s.String()) + 1
+				remaining := m.height - used
+				// If you add a separator line above, subtract 1 more here.
+				writeLastErrors(remaining)
+			} else {
+				// fallback: show a small tail
+				writeLastErrors(5)
+			}
+		}
+
 		return s.String()
 	}
 
-	fmt.Fprintf(&s, "[%s] %s %s", humanDuration(m.timerResourcesElapsed), m.snapshotID, m.phase)
-	fmt.Fprintf(&s, "\n")
+	// Non-progress mode: same first line, no bar
+	prefix := fmt.Sprintf("[%s] %s %s", humanDuration(m.timerResourcesElapsed), m.snapshotID, m.phase)
+	writeLine(prefix, m.lastItem, sizeText)
 
 	writeProcessedSummary()
 	writeStoreSummary()
-	writeLastPaths()
 	return s.String()
 }

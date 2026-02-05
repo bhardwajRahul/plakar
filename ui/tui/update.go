@@ -14,6 +14,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch event := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = event.Width
+		m.height = event.Height
 		return m, nil
 
 	case eventsClosedMsg:
@@ -91,20 +92,19 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.snapshotID = fmt.Sprintf("%x", e.Snapshot[0:4])
 
 			case "workflow.end":
-				m.clearPathBuffer()
 
 			case "path":
+				if p, ok := e.Data["path"].(string); ok {
+					m.lastItem = p
+				}
 				m.countPath++
 
 			case "path.ok":
-				if p, ok := e.Data["path"].(string); ok {
-					m.pushPathLine(fmt.Sprintf("%s %s", checkMark, p))
-				}
 				m.countPathOk++
 
 			case "path.error":
 				if p, ok := e.Data["path"].(string); ok {
-					m.pushPathLine(fmt.Sprintf("%s %s", crossMark, p))
+					m.errors = append(m.errors, fmt.Sprintf("%s %s: %s", crossMark, p, e.Data["error"]))
 				}
 				m.countPathError++
 
@@ -185,26 +185,31 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.timerResourcesDone = true
 
 			case "snapshot.vfs.start":
+				m.lastItem = ""
 				m.phase = "building VFS"
 				m.timerStructureBegin = time.Now()
 
 			case "snapshot.vfs.end":
 				m.phase = ""
 				m.detail = ""
+				m.lastItem = ""
 				m.timerStructureDone = true
 
 			case "snapshot.index.start":
+				m.lastItem = ""
 				m.phase = "indexing"
 
 			case "snapshot.index.end":
+				m.lastItem = ""
 				m.phase = ""
 				m.detail = ""
 
 			case "snapshot.commit.start":
+				m.lastItem = ""
 				m.phase = "committing"
 
 			case "result":
-				m.clearPathBuffer()
+				m.lastItem = ""
 				m.phase = "completed"
 				m.detail = fmt.Sprintf(
 					"size=%s errors=%d duration=%s",
@@ -234,22 +239,4 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
-}
-
-func (m *appModel) pushPathLine(line string) {
-	if m.lastNPaths <= 0 {
-		return
-	}
-	if len(m.lastPaths) < m.lastNPaths {
-		m.lastPaths = append(m.lastPaths, line)
-		return
-	}
-	// drop oldest, keep last N
-	copy(m.lastPaths, m.lastPaths[1:])
-	m.lastPaths[len(m.lastPaths)-1] = line
-}
-
-func (m *appModel) clearPathBuffer() {
-	m.lastNPaths = 0
-	m.lastPaths = m.lastPaths[:0]
 }
