@@ -401,8 +401,8 @@ func entryPoint() int {
 			return 1
 		}
 
-		// Actual rebuild is done by cached.
-		repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig, true)
+		// Actual rebuild is done by cached, unless we are on windows.
+		repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig, runtime.GOOS != "windows")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", flag.CommandLine.Name(), err)
 			return 1
