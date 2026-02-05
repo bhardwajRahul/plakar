@@ -321,12 +321,18 @@ func (m appModel) View() string {
 		if maxLines <= 0 || len(m.errors) == 0 {
 			return
 		}
+		maxLines -= 3
+
 		if maxLines > len(m.errors) {
 			maxLines = len(m.errors)
 		}
 		start := len(m.errors) - maxLines
 		for i := start; i < len(m.errors); i++ {
 			fmt.Fprintf(&s, "%s\n", m.errors[i])
+		}
+
+		if maxLines < len(m.errors) {
+			fmt.Fprintf(&s, "\nerrors list truncated, run `plakar info -errors %s` for full list\n", m.snapshotID)
 		}
 	}
 
@@ -397,7 +403,7 @@ func (m appModel) View() string {
 			fmt.Fprintf(&s, "\n")
 
 			if m.height > 0 {
-				used := countLines(s.String()) + 1
+				used := countLines(s.String())
 				remaining := m.height - used
 				// If you add a separator line above, subtract 1 more here.
 				writeLastErrors(remaining)
@@ -416,5 +422,20 @@ func (m appModel) View() string {
 
 	writeProcessedSummary()
 	writeStoreSummary()
+
+	if len(m.errors) != 0 {
+		fmt.Fprintf(&s, "\n")
+
+		if m.height > 0 {
+			used := countLines(s.String())
+			remaining := m.height - used
+			// If you add a separator line above, subtract 1 more here.
+			writeLastErrors(remaining)
+		} else {
+			// fallback: show a small tail
+			writeLastErrors(5)
+		}
+	}
+
 	return s.String()
 }
