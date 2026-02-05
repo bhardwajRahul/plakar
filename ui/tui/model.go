@@ -77,7 +77,8 @@ type appModel struct {
 	forceQuit bool
 
 	// geometry
-	width int
+	width  int
+	height int
 
 	foundSummary        bool
 	summaryPathTotal    uint64
@@ -142,8 +143,8 @@ type appModel struct {
 	spin spinner.Model
 
 	// buffer view
-	lastNPaths int
-	lastPaths  []string
+	lastItem string
+	errors   []string
 }
 
 func newGenericModel(ctx *appcontext.AppContext, appName string, events <-chan Event, repo *repository.Repository) tea.Model {
@@ -162,8 +163,8 @@ func newGenericModel(ctx *appcontext.AppContext, appName string, events <-chan E
 		ressourcesProgress: rpr,
 		structureProgress:  spr,
 		spin:               sp,
-		lastNPaths:         ctx.MaxConcurrency,
-		lastPaths:          make([]string, 0, ctx.MaxConcurrency),
+		lastItem:           "",
+		errors:             []string{},
 	}
 }
 
