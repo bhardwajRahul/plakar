@@ -11,6 +11,8 @@ github.com/PlakarKorp/integration-fs v1.1.0-beta.3 h1:hOUdXWzrxbhoFMVlefMFUdxr+Z
 github.com/PlakarKorp/integration-fs v1.1.0-beta.3/go.mod h1:65biPZRZVpOvl0YPeX/QfrDjL2BtFANReTG8IatrOnA=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.2 h1:W69JP/x9+M4/EJDiXxVLgjdLbCUvaaFpO7v1gppySNg=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.2/go.mod h1:qLawGrVlmRgSIU43dqfn8k9KIBukhKP/74rOg+bs0qc=
+github.com/PlakarKorp/integration-grpc v1.1.0-beta.3 h1:u0n6Uyz7wqHOMoMYbfBLrcSrfAGqzcNQtcgkgYfU5TQ=
+github.com/PlakarKorp/integration-grpc v1.1.0-beta.3/go.mod h1:lrkbUc9iT0jHiZ5wmB19wAhjDTMRO/VDhMJEt5trFlY=
 github.com/PlakarKorp/integration-ptar v1.1.0-beta.2 h1:Hmud7Zbbgjf4knRgIPhGeCrf9o8S9HHMi9SftyMnHsE=
 github.com/PlakarKorp/integration-ptar v1.1.0-beta.2/go.mod h1:pQcSrpraLTm5vlPafDFYQi9v8SOBF0pCTXLqCgyKBZs=
 github.com/PlakarKorp/integration-stdio v1.1.0-beta.1 h1:1XznjqRPLBePte3A8VVeam9tNf9JtUZfN6WQjsO2Ryw=
@@ -19,8 +21,8 @@ github.com/PlakarKorp/integration-tar v1.1.0-beta.1 h1:gr1tIUm9mIVFm65In5Z4GujVo
 github.com/PlakarKorp/integration-tar v1.1.0-beta.1/go.mod h1:r2mfsrGgZLKYpbCpwjqQFRW2zHFeeprmGEt1FuB2YiA=
 github.com/PlakarKorp/kloset v1.1.0-beta.1 h1:U0y5BGTP0YtofAVq+WhZGJYoaksAmu2AM20+e6b5hpg=
 github.com/PlakarKorp/kloset v1.1.0-beta.1/go.mod h1:qm4dhS+wLPBzu/r+cPuhyyyeCJNz6m0AZSK/3lkZjGY=
-github.com/PlakarKorp/pkg v1.1.0-beta.2 h1:WHpyIBlDAbPrU0JJQXrDqhAxLl9YY46lCCEHSFLMfcI=
-github.com/PlakarKorp/pkg v1.1.0-beta.2/go.mod h1:s9dGwoh3bl+GoDKd+NL+ckwsbGpYU8+jErk5byOHjSM=
+github.com/PlakarKorp/pkg v1.1.0-beta.3 h1:Nq+sH6V+k/AactQHR8vwpH9zEM6ACh71Xk7801bxg8s=
+github.com/PlakarKorp/pkg v1.1.0-beta.3/go.mod h1:s9dGwoh3bl+GoDKd+NL+ckwsbGpYU8+jErk5byOHjSM=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
 github.com/RaduBerinde/axisds v0.1.0/go.mod h1:UHGJonU9z4YYGKJxSaC6/TNcLOBptpmM5m2Cksbnw0Y=
 github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 h1:bsU8Tzxr/PNz75ayvCnxKZWEYdLMPDkUgticP4a4Bvk=
