@@ -293,7 +293,7 @@ func entryPoint() int {
 		return 1
 	}
 
-	logger := logging.NewLogger(os.Stdout, os.Stderr)
+	logger := logging.NewLogger(renderer.Stdout(), renderer.Stderr())
 
 	// start logging
 	if !opt_quiet {

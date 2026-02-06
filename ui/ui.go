@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/PlakarKorp/kloset/repository"
 )
@@ -12,4 +13,7 @@ type UI interface {
 	SetRepository(*repository.Repository)
 	Run() error
 	Wait() error
+
+	Stdout() io.Writer
+	Stderr() io.Writer
 }
