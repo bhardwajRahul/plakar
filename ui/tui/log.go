@@ -6,7 +6,7 @@ import (
 )
 
 type logLineMsg struct {
-	Stream string // "stdout" ou "stderr"
+	Stream string // "stdout" or "stderr"
 	Line   string
 }
 
