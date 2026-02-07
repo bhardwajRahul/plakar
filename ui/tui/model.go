@@ -43,6 +43,7 @@ type appModel struct {
 	barPrefix string
 	progress  progress.Model
 
+	// ETA calculation
 	lastETAAt time.Time
 	lastDone  uint64
 	rateEMA   float64 // items/secec
