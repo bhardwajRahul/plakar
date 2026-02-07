@@ -83,6 +83,10 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// same: don't re-arm waitForBatch here
 		return m, cmd
 
+	case logLineMsg:
+		m.logs = append(m.logs, fmt.Sprintf("[%s] %s", event.Stream, event.Line))
+		return m, nil
+
 	case appBatchMsg:
 		// process a whole batch of events in one Bubbletea update
 		for _, e := range event.events {

@@ -2,6 +2,8 @@ package stdio
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/PlakarKorp/kloset/events"
 	"github.com/PlakarKorp/kloset/objects"
@@ -29,6 +31,14 @@ func New(ctx *appcontext.AppContext) ui.UI {
 	return &stdio{
 		ctx: ctx,
 	}
+}
+
+func (stdio *stdio) Stdout() io.Writer {
+	return os.Stdout
+}
+
+func (stdio *stdio) Stderr() io.Writer {
+	return os.Stderr
 }
 
 func (stdio *stdio) Wait() error {

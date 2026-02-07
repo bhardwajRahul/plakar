@@ -399,6 +399,10 @@ func (m appModel) View() string {
 		writeProcessedSummary()
 		writeStoreSummary()
 
+		if len(m.logs) != 0 {
+			fmt.Fprintf(&s, "\n%s\n", m.logs[len(m.logs)-1])
+		}
+
 		if len(m.errors) != 0 {
 			fmt.Fprintf(&s, "\n")
 
@@ -422,6 +426,10 @@ func (m appModel) View() string {
 
 	writeProcessedSummary()
 	writeStoreSummary()
+
+	if len(m.logs) != 0 {
+		fmt.Fprintf(&s, "\n%s\n", m.logs[len(m.logs)-1])
+	}
 
 	if len(m.errors) != 0 {
 		fmt.Fprintf(&s, "\n")

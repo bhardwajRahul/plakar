@@ -2,6 +2,8 @@ package tui
 
 import (
 	"errors"
+	"io"
+	"os"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -27,12 +29,31 @@ var apps = map[string]func(*appcontext.AppContext, string, <-chan Event, *reposi
 type tui struct {
 	ctx  *appcontext.AppContext
 	repo *repository.Repository
+
+	app *commandApp
+
 	done chan error
 }
 
 func New(ctx *appcontext.AppContext) ui.UI {
 	return &tui{
 		ctx: ctx,
+	}
+}
+
+func (t *tui) Stdout() io.Writer {
+	return &switchWriter{
+		tui:      t,
+		stream:   "stdout",
+		fallback: os.Stdout,
+	}
+}
+
+func (t *tui) Stderr() io.Writer {
+	return &switchWriter{
+		tui:      t,
+		stream:   "stderr",
+		fallback: os.Stderr,
 	}
 }
 
@@ -51,17 +72,15 @@ func (tui *tui) Run() error {
 	go func() {
 		defer close(tui.done)
 
-		var app *commandApp
-
 		hasSeenStop := false
 		for e := range events {
 			// If app is running, forward event (non-blocking / cancel-safe)
-			if app != nil {
+			if tui.app != nil {
 				select {
-				case app.events <- *e:
-				case <-app.done:
-					if app.err != nil {
-						if errors.Is(app.err, tea.ErrInterrupted) {
+				case tui.app.events <- *e:
+				case <-tui.app.done:
+					if tui.app.err != nil {
+						if errors.Is(tui.app.err, tea.ErrInterrupted) {
 							if !hasSeenStop {
 								hasSeenStop = true
 								tui.done <- ui.ErrUserAbort
@@ -69,28 +88,28 @@ func (tui *tui) Run() error {
 						} else {
 							if !hasSeenStop {
 								hasSeenStop = true
-								tui.done <- app.err
+								tui.done <- tui.app.err
 							}
 						}
 					}
 				}
 
 				// Close app on matching workflow.end
-				if e.Type == "workflow.end" && e.Job == app.job {
-					stopApp(app)
-					app = nil
+				if e.Type == "workflow.end" && e.Job == tui.app.job {
+					stopApp(tui.app)
+					tui.app = nil
 				}
 				continue
 			}
 
 			// No app: start when workflow.start matches a known model
 			if e.Type == "workflow.start" {
-				app = startApp(tui.ctx, e.Data["workflow"].(string), tui.repo)
-				if app != nil {
-					app.job = e.Job
+				tui.app = startApp(tui.ctx, e.Data["workflow"].(string), tui.repo)
+				if tui.app != nil {
+					tui.app.job = e.Job
 					// feed start event (also cancel-safe)
 					select {
-					case app.events <- *e:
+					case tui.app.events <- *e:
 					case <-tui.ctx.Done():
 						continue
 					}
@@ -101,8 +120,8 @@ func (tui *tui) Run() error {
 			// default fallback
 			stdio.HandleEvent(tui.ctx, e)
 		}
-		if app != nil {
-			stopApp(app)
+		if tui.app != nil {
+			stopApp(tui.app)
 			tui.done <- nil
 			return
 		}

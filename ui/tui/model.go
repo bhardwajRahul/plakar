@@ -145,6 +145,9 @@ type appModel struct {
 	// buffer view
 	lastItem string
 	errors   []string
+
+	// logs
+	logs []string
 }
 
 func newGenericModel(ctx *appcontext.AppContext, appName string, events <-chan Event, repo *repository.Repository) tea.Model {
@@ -165,6 +168,7 @@ func newGenericModel(ctx *appcontext.AppContext, appName string, events <-chan E
 		spin:               sp,
 		lastItem:           "",
 		errors:             []string{},
+		logs:               []string{},
 	}
 }
 
