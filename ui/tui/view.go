@@ -13,36 +13,13 @@ import (
 )
 
 var (
-	checkMark  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).SetString("✓")
-	crossMark  = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).SetString("✘")
-	okStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))             // green
-	errStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))             // red
-	dimStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))             // gray (optional)
-	reuseStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true) // bright green
-	newStyle   = okStyle
+	crossMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).SetString("✘")
+	okStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("2")) // green
+	errStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("1")) // red
+	dimStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("8")) // gray (optional)
 )
 
-func ok(n uint64) string  { return okStyle.Render(fmt.Sprintf("%d", n)) }
 func err(n uint64) string { return errStyle.Render(fmt.Sprintf("%d", n)) }
-func tot(n uint64) string { return dimStyle.Render(fmt.Sprintf("%d", n)) } // or plain fmt.Sprintf
-
-func okSize(n uint64) string  { return okStyle.Render(fmt.Sprintf("%s", humanize.IBytes(n))) }
-func errSize(n uint64) string { return errStyle.Render(fmt.Sprintf("%s", humanize.IBytes(n))) }
-func totSize(n uint64) string { return dimStyle.Render(fmt.Sprintf("%s", humanize.IBytes(n))) } // or plain fmt.Sprintf
-
-func fmtCount(ok, err, total uint64) string {
-	okS := okStyle.Render(fmt.Sprintf("%d", ok))
-	totalS := dimStyle.Render(fmt.Sprintf("%d", total))
-
-	if err == 0 {
-		// ok/total
-		return fmt.Sprintf("%s/%s", okS, totalS)
-	}
-
-	errS := errStyle.Render(fmt.Sprintf("%d", err))
-	// ok/error/total
-	return fmt.Sprintf("%s/%s/%s", okS, errS, totalS)
-}
 
 func humanDuration(d time.Duration) string {
 	sec := int(d.Round(time.Second).Seconds())
@@ -233,36 +210,33 @@ func shortenPathTailMax(path string, maxW int) string {
 }
 
 func (m appModel) View() string {
-	if !m.dirty {
-		return ""
-	}
-	m.dirty = false
+	state := m.application.state
 
 	// fast exit
 	if m.forceQuit {
-		return fmt.Sprintf("[%s] %s: aborted !\n", humanDuration(time.Since(m.startTime)), m.appName)
+		return fmt.Sprintf("[%s] %s: aborted !\n", humanDuration(time.Since(state.startTime)), m.application.name)
 	}
 
 	var s strings.Builder
-	done := m.countPathOk + m.countPathError
+	done := state.countPathOk + state.countPathError
 
 	// --- summaries (unchanged logic) ---
 	writeProcessedSummary := func() {
-		nodesTotal := m.countDir
-		leavesTotal := m.countFile + m.countSymlink + m.countXattr
-		if m.foundSummary && m.summaryPathTotal > 0 {
-			leavesTotal = max(leavesTotal, m.fileCountTotal+m.symlinkCountTotal+m.xattrCountTotal)
-			nodesTotal = max(m.countDir, m.directoryCountTotal)
+		nodesTotal := state.countDir
+		leavesTotal := state.countFile + state.countSymlink + state.countXattr
+		if state.gotSummary && state.summaryPath > 0 {
+			leavesTotal = max(leavesTotal, state.summaryFile+state.summarySymlink+state.summaryXattr)
+			nodesTotal = max(state.countDir, state.summaryDirectory)
 		}
 
-		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
-		fmt.Fprintf(&s, "%s   %s:", indent, m.appName)
+		indent := strings.Repeat(" ", len(humanDuration(time.Since(state.startTime))))
+		fmt.Fprintf(&s, "%s   %s:", indent, m.application.name)
 
-		fmt.Fprintf(&s, " nodes=%s", fmtNewReuse(m.countDirOk, nodesTotal, m.foundSummary))
-		fmt.Fprintf(&s, ", objects=%s", fmtNewReuse(m.countFileOk+m.countSymlinkOk+m.countXattrOk, leavesTotal, m.foundSummary))
+		fmt.Fprintf(&s, " nodes=%s", fmtNewReuse(state.countDirOk, nodesTotal, state.gotSummary))
+		fmt.Fprintf(&s, ", objects=%s", fmtNewReuse(state.countFileOk+state.countSymlinkOk+state.countXattrOk, leavesTotal, state.gotSummary))
 
-		if m.countPathError != 0 {
-			fmt.Fprintf(&s, ", errors=%s", err(m.countPathError))
+		if state.countPathError != 0 {
+			fmt.Fprintf(&s, ", errors=%s", err(state.countPathError))
 		}
 
 		fmt.Fprintf(&s, "\n")
@@ -273,7 +247,7 @@ func (m appModel) View() string {
 			return
 		}
 		ioStats := m.repo.IOStats()
-		indent := strings.Repeat(" ", len(humanDuration(time.Since(m.startTime))))
+		indent := strings.Repeat(" ", len(humanDuration(time.Since(state.startTime))))
 		r := ioStats.Read.Stats()
 		w := ioStats.Write.Stats()
 
@@ -318,30 +292,30 @@ func (m appModel) View() string {
 	}
 
 	writeLastErrors := func(maxLines int) {
-		if maxLines <= 0 || len(m.errors) == 0 {
+		if maxLines <= 0 || len(state.errors) == 0 {
 			return
 		}
 		maxLines -= 3
 
-		if maxLines > len(m.errors) {
-			maxLines = len(m.errors)
+		if maxLines > len(state.errors) {
+			maxLines = len(state.errors)
 		}
-		start := len(m.errors) - maxLines
-		for i := start; i < len(m.errors); i++ {
-			fmt.Fprintf(&s, "%s\n", m.errors[i])
+		start := len(state.errors) - maxLines
+		for i := start; i < len(state.errors); i++ {
+			fmt.Fprintf(&s, "%s\n", state.errors[i])
 		}
 
-		if maxLines < len(m.errors) {
-			fmt.Fprintf(&s, "\nerrors list truncated, run `plakar info -errors %s` for full list\n", m.snapshotID)
+		if maxLines < len(state.errors) {
+			fmt.Fprintf(&s, "\nerrors list truncated, run `plakar info -errors %s` for full list\n", state.snapshotID)
 		}
 	}
 
 	// --- first line always shows last item + right-aligned size ---
-	sizeText := humanize.IBytes(uint64(m.countFileSize))
+	sizeText := humanize.IBytes(uint64(state.countFileSize))
 
 	// Progress mode: we have a total and can show bar + ETA on bar line
-	if m.foundSummary && m.summaryPathTotal > 0 {
-		total := m.summaryPathTotal
+	if state.gotSummary && state.summaryPath > 0 {
+		total := state.summaryPath
 
 		// ratio clamped to [0,1]
 		ratio := 0.0
@@ -355,21 +329,21 @@ func (m appModel) View() string {
 		}
 
 		// First line: prefix + last item + size (size right aligned)
-		prefix := fmt.Sprintf("[%s] %s %s", humanDuration(time.Since(m.startTime)), m.snapshotID, m.phase)
-		writeLine(prefix, m.lastItem, sizeText)
+		prefix := fmt.Sprintf("[%s] %s %s", humanDuration(time.Since(state.startTime)), state.snapshotID, state.phase)
+		writeLine(prefix, state.lastItem, sizeText)
 
 		// ETA (to be printed on the progress bar line)
 		etaText := ""
-		if m.resRateEMA > 0 && done > 10 && time.Since(m.startTime) > 2*time.Second && total >= done {
+		if m.rateEMA > 0 && done > 10 && time.Since(state.startTime) > 2*time.Second && total >= done {
 			remaining := float64(total - done)
-			etaDur := time.Duration(remaining / m.resRateEMA * float64(time.Second))
+			etaDur := time.Duration(remaining / m.rateEMA * float64(time.Second))
 			if v := fmtETA(etaDur); v != "" {
 				etaText = "ETA " + v
 			}
 		}
 
 		// Progress bar line: bar left, ETA right (ETA right-aligned)
-		p := m.ressourcesProgress
+		p := m.progress
 		if m.width > 0 {
 			barW := m.width
 			if etaText != "" {
@@ -399,11 +373,11 @@ func (m appModel) View() string {
 		writeProcessedSummary()
 		writeStoreSummary()
 
-		if len(m.logs) != 0 {
-			fmt.Fprintf(&s, "\n%s\n", m.logs[len(m.logs)-1])
+		if len(state.logs) != 0 {
+			fmt.Fprintf(&s, "\n%s\n", state.logs[len(state.logs)-1])
 		}
 
-		if len(m.errors) != 0 {
+		if len(state.errors) != 0 {
 			fmt.Fprintf(&s, "\n")
 
 			if m.height > 0 {
@@ -421,17 +395,17 @@ func (m appModel) View() string {
 	}
 
 	// Non-progress mode: same first line, no bar
-	prefix := fmt.Sprintf("[%s] %s %s", humanDuration(m.timerResourcesElapsed), m.snapshotID, m.phase)
-	writeLine(prefix, m.lastItem, sizeText)
+	prefix := fmt.Sprintf("[%s] %s %s", humanDuration(time.Since(state.startTime)), state.snapshotID, state.phase)
+	writeLine(prefix, state.lastItem, sizeText)
 
 	writeProcessedSummary()
 	writeStoreSummary()
 
-	if len(m.logs) != 0 {
-		fmt.Fprintf(&s, "\n%s\n", m.logs[len(m.logs)-1])
+	if len(state.logs) != 0 {
+		fmt.Fprintf(&s, "\n%s\n", state.logs[len(state.logs)-1])
 	}
 
-	if len(m.errors) != 0 {
+	if len(state.errors) != 0 {
 		fmt.Fprintf(&s, "\n")
 
 		if m.height > 0 {
