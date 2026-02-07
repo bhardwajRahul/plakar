@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 )
 
@@ -61,7 +62,7 @@ func (w *switchWriter) Write(p []byte) (int, error) {
 func (w *switchWriter) writeLine(line string) {
 	app := w.tui.app
 	if app != nil && app.prog != nil {
-		app.prog.Send(logLineMsg{Stream: w.stream, Line: line})
+		app.state.logs = append(app.state.logs, fmt.Sprintf("[%s] %s", w.stream, line))
 		return
 	}
 	_, _ = io.WriteString(w.fallback, line+"\n")
