@@ -19,6 +19,8 @@ github.com/PlakarKorp/integration-tar v1.1.0-beta.1 h1:gr1tIUm9mIVFm65In5Z4GujVo
 github.com/PlakarKorp/integration-tar v1.1.0-beta.1/go.mod h1:r2mfsrGgZLKYpbCpwjqQFRW2zHFeeprmGEt1FuB2YiA=
 github.com/PlakarKorp/kloset v1.1.0-beta.1.0.20260205144526-92fab754c92a h1:ot/HlS2Hj7zshzk1my6DRdJnNyg+lTa8ih4mCTR4DOQ=
 github.com/PlakarKorp/kloset v1.1.0-beta.1.0.20260205144526-92fab754c92a/go.mod h1:+HLGlDBfioccibSgA1yBwjQuQ3mtyxvEOutFHmPB0MQ=
+github.com/PlakarKorp/kloset v1.1.0-beta.1.0.20260210141919-5c45a6595f9f h1:lCyft2+Tr1feh86F8WJ4Jnsp6Ii0YaRoD9gZcHhDeGA=
+github.com/PlakarKorp/kloset v1.1.0-beta.1.0.20260210141919-5c45a6595f9f/go.mod h1:LVCuJUI+ojPMyGeB32ydlT8xMl4NqVbvbnGwwFBaBMM=
 github.com/PlakarKorp/pkg v1.1.0-beta.3 h1:Nq+sH6V+k/AactQHR8vwpH9zEM6ACh71Xk7801bxg8s=
 github.com/PlakarKorp/pkg v1.1.0-beta.3/go.mod h1:s9dGwoh3bl+GoDKd+NL+ckwsbGpYU8+jErk5byOHjSM=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
@@ -319,6 +321,7 @@ golang.org/x/crypto v0.47.0/go.mod h1:ff3Y9VzzKbwSSEzWqJsJVBnWmRwRSHt/6Op5n9bQc4
 golang.org/x/exp v0.0.0-20220428152302-39d4317da171/go.mod h1:lgLbSvA5ygNOMpwM/9anMpWVlVJ7Z+cHWq/eFuinpGE=
 golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b h1:DXr+pvt3nC887026GRP39Ej11UATqWDmWuS99x26cD0=
 golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b/go.mod h1:4QTo5u+SEIbbKW1RacMZq1YEfOBqeXa19JeshGi+zc4=
+golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546/go.mod h1:j/pmGrbnkbPtQfxEe5D0VQhZC6qKbfKifgD0oM7sR70=
 golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.5.1/go.mod h1:5OXOZSfqPIIbmVBIIKWRFfZjPR0E5r58TLhUjH0a2Ro=
