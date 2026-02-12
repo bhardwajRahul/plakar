@@ -7,8 +7,8 @@ github.com/PlakarKorp/go-cdc-chunkers v1.0.3 h1:6ozBFcNMHvGe6IsbPcAZUUEAExCgcNx3
 github.com/PlakarKorp/go-cdc-chunkers v1.0.3/go.mod h1:y7ag92JABKPBDoSOPwedssQ5NIOgjRm4Mu6yTBpmUMY=
 github.com/PlakarKorp/go-human2duration v0.1.6 h1:pRPAU3yX4ROV7RihXihPkwyjoQNI1lnemjAMFdWRwi8=
 github.com/PlakarKorp/go-human2duration v0.1.6/go.mod h1:1kg75kTlYCYURVyciaeO2GFdLgGDMhIfBTBpfydv1sk=
-github.com/PlakarKorp/integration-fs v1.1.0-beta.3 h1:hOUdXWzrxbhoFMVlefMFUdxr+ZoRLFHFRHVvQRDH0Ts=
-github.com/PlakarKorp/integration-fs v1.1.0-beta.3/go.mod h1:65biPZRZVpOvl0YPeX/QfrDjL2BtFANReTG8IatrOnA=
+github.com/PlakarKorp/integration-fs v1.1.0-beta.4 h1:yqqa2cQv+pvwy67JKmbNB2OtEqTKd8VSrXP4bcWVOXk=
+github.com/PlakarKorp/integration-fs v1.1.0-beta.4/go.mod h1:65biPZRZVpOvl0YPeX/QfrDjL2BtFANReTG8IatrOnA=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.3 h1:u0n6Uyz7wqHOMoMYbfBLrcSrfAGqzcNQtcgkgYfU5TQ=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.3/go.mod h1:lrkbUc9iT0jHiZ5wmB19wAhjDTMRO/VDhMJEt5trFlY=
 github.com/PlakarKorp/integration-ptar v1.1.0-beta.2 h1:Hmud7Zbbgjf4knRgIPhGeCrf9o8S9HHMi9SftyMnHsE=
@@ -17,8 +17,8 @@ github.com/PlakarKorp/integration-stdio v1.1.0-beta.1 h1:1XznjqRPLBePte3A8VVeam9
 github.com/PlakarKorp/integration-stdio v1.1.0-beta.1/go.mod h1:Vj8GFQb2ct6HN0KxLqqkYuV/JHy3vsn4Z7df1P7OZ4Y=
 github.com/PlakarKorp/integration-tar v1.1.0-beta.1 h1:gr1tIUm9mIVFm65In5Z4GujVobEsnLvO6Ddbu3vWMNc=
 github.com/PlakarKorp/integration-tar v1.1.0-beta.1/go.mod h1:r2mfsrGgZLKYpbCpwjqQFRW2zHFeeprmGEt1FuB2YiA=
-github.com/PlakarKorp/kloset v1.1.0-beta.1.0.20260210141919-5c45a6595f9f h1:lCyft2+Tr1feh86F8WJ4Jnsp6Ii0YaRoD9gZcHhDeGA=
-github.com/PlakarKorp/kloset v1.1.0-beta.1.0.20260210141919-5c45a6595f9f/go.mod h1:LVCuJUI+ojPMyGeB32ydlT8xMl4NqVbvbnGwwFBaBMM=
+github.com/PlakarKorp/kloset v1.1.0-beta.2 h1:YUMCCguPW6buz3h17eYYX+c0QMVE9c8WqkwTI6ueLwA=
+github.com/PlakarKorp/kloset v1.1.0-beta.2/go.mod h1:LVCuJUI+ojPMyGeB32ydlT8xMl4NqVbvbnGwwFBaBMM=
 github.com/PlakarKorp/pkg v1.1.0-beta.3 h1:Nq+sH6V+k/AactQHR8vwpH9zEM6ACh71Xk7801bxg8s=
 github.com/PlakarKorp/pkg v1.1.0-beta.3/go.mod h1:s9dGwoh3bl+GoDKd+NL+ckwsbGpYU8+jErk5byOHjSM=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
