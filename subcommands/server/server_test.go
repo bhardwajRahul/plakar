@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,11 +10,10 @@ import (
 	"time"
 
 	_ "github.com/PlakarKorp/integration-fs/exporter"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/hashing"
 	"github.com/PlakarKorp/kloset/resources"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
-	"github.com/PlakarKorp/plakar/network"
 	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +52,7 @@ func TestExecuteCmdServerDefault(t *testing.T) {
 	// wait for the server to start
 	time.Sleep(100 * time.Millisecond)
 
-	req, err := http.NewRequest("GET", "http://localhost:12345/", bytes.NewBuffer([]byte(`{"Repository": ""}`)))
+	req, err := http.NewRequest("GET", "http://localhost:12345/", nil)
 	require.NoError(t, err, "creating request")
 
 	client := &http.Client{}
@@ -67,12 +65,8 @@ func TestExecuteCmdServerDefault(t *testing.T) {
 	rawBody, err := io.ReadAll(response.Body)
 	require.NoError(t, err, "reading response")
 
-	var resOpen network.ResOpen
-	err = json.Unmarshal(rawBody, &resOpen)
-	require.NoError(t, err, "unmarshaling response")
-
 	hasher := hashing.GetHasher(hashing.DEFAULT_HASHING_ALGORITHM)
-	version, unwrappedConfigRd, err := storage.Deserialize(hasher, resources.RT_CONFIG, io.NopCloser(bytes.NewReader(resOpen.Configuration)))
+	version, unwrappedConfigRd, err := storage.Deserialize(hasher, resources.RT_CONFIG, io.NopCloser(bytes.NewReader(rawBody)))
 	require.NoError(t, err, "deserializing configuration")
 
 	unwrappedConfig, err := io.ReadAll(unwrappedConfigRd)
