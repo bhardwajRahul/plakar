@@ -10,7 +10,7 @@ require (
 	github.com/PlakarKorp/integration-ptar v1.1.0-beta.2
 	github.com/PlakarKorp/integration-stdio v1.1.0-beta.1
 	github.com/PlakarKorp/integration-tar v1.1.0-beta.1
-	github.com/PlakarKorp/kloset v1.1.0-beta.2
+	github.com/PlakarKorp/kloset v1.1.0-beta.2.0.20260216120034-2353cd775d15
 	github.com/PlakarKorp/pkg v1.1.0-beta.3
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.1
@@ -134,5 +134,5 @@ require (
 	modernc.org/libc v1.67.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.44.3 // indirect
+	modernc.org/sqlite v1.45.0 // indirect
 )

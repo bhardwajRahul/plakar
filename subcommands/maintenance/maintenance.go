@@ -63,7 +63,10 @@ func (cmd *Maintenance) updateCache(ctx *appcontext.AppContext, cache *caching.M
 	wg := new(errgroup.Group)
 	wg.SetLimit(ctx.MaxConcurrency)
 
-	for snapshotID := range cmd.repository.ListSnapshots() {
+	for snapshotID, err := range cmd.repository.ListSnapshots() {
+		if err != nil {
+			return err
+		}
 		wg.Go(func() error {
 			snapshot, err := snapshot.Load(cmd.repository, snapshotID)
 			if err != nil {
