@@ -219,25 +219,21 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	srcLocation := srcRepository.Origin()
 	dstLocation := dstRepository.Origin()
 
-	srcSnapshots, err := srcRepository.GetSnapshots()
-	if err != nil {
-		return 1, fmt.Errorf("could not get list of snapshots from source store %s: %s", srcLocation, err)
-	}
-
-	dstSnapshots, err := dstRepository.GetSnapshots()
-	if err != nil {
-		return 1, fmt.Errorf("could not get list of snapshots from peer store %s: %s", dstLocation, err)
-	}
-
 	srcSnapshotsMap := make(map[objects.MAC]struct{})
 	dstSnapshotsMap := make(map[objects.MAC]struct{})
 
-	for _, snapshotID := range srcSnapshots {
-		srcSnapshotsMap[snapshotID] = struct{}{}
+	for objMAC, err := range srcRepository.ListSnapshots() {
+		if err != nil {
+			return 1, err
+		}
+		srcSnapshotsMap[objMAC] = struct{}{}
 	}
 
-	for _, snapshotID := range dstSnapshots {
-		dstSnapshotsMap[snapshotID] = struct{}{}
+	for objMAC, err := range dstRepository.ListSnapshots() {
+		if err != nil {
+			return 1, err
+		}
+		dstSnapshotsMap[objMAC] = struct{}{}
 	}
 
 	srcSyncList := make([]objects.MAC, 0)

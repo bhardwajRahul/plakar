@@ -37,7 +37,11 @@ type RepositoryInfoResponse struct {
 
 func getNSnapshotsPerDay(repo *repository.Repository, ndays int) ([]int, error) {
 	nSnapshotsPerDay := make([]int, ndays)
-	for snapshotID := range repo.ListSnapshots() {
+	for snapshotID, err := range repo.ListSnapshots() {
+		if err != nil {
+			// XXX - temporarily ignore errors in List snapshots iteration, it is safe here
+			continue
+		}
 		snap, err := snapshot.Load(repo, snapshotID)
 		if err != nil {
 			continue
@@ -149,14 +153,14 @@ func (ui *uiserver) repositorySnapshots(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	snapshotIDs, err := ui.repository.GetSnapshots()
-	if err != nil {
-		return err
-	}
-
 	totalSnapshots := int(0)
-	headers := make([]header.Header, 0, len(snapshotIDs))
-	for _, snapshotID := range snapshotIDs {
+	headers := make([]header.Header, 0)
+	for snapshotID, err := range ui.repository.ListSnapshots() {
+		if err != nil {
+			// XXX - temporarily ignore errors in List snapshots iteration, it is safe here
+			continue
+		}
+
 		snap, err := snapshot.Load(ui.repository, snapshotID)
 		if err != nil {
 			return err
@@ -206,13 +210,12 @@ func (ui *uiserver) repositoryImporterTypes(w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
-	snapshotIDs, err := ui.repository.GetSnapshots()
-	if err != nil {
-		return err
-	}
-
 	importerTypesMap := make(map[string]struct{})
-	for _, snapshotID := range snapshotIDs {
+	for snapshotID, err := range ui.repository.ListSnapshots() {
+		if err != nil {
+			// XXX - temporarily ignore errors in List snapshots iteration, it is safe here
+			continue
+		}
 		snap, err := snapshot.Load(ui.repository, snapshotID)
 		if err != nil {
 			return err
@@ -287,14 +290,13 @@ func (ui *uiserver) repositoryLocatePathname(w http.ResponseWriter, r *http.Requ
 		return err
 	}
 
-	snapshotIDs, err := ui.repository.GetSnapshots()
-	if err != nil {
-		return err
-	}
-
 	totalSnapshots := int(0)
-	locations := make([]TimelineLocation, 0, len(snapshotIDs))
-	for _, snapshotID := range snapshotIDs {
+	locations := make([]TimelineLocation, 0)
+	for snapshotID, err := range ui.repository.ListSnapshots() {
+		if err != nil {
+			// XXX - temporarily ignore errors in List snapshots iteration, it is safe here
+			continue
+		}
 		snap, err := snapshot.Load(ui.repository, snapshotID)
 		if err != nil {
 			return err
