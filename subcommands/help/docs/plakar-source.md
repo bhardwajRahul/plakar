@@ -71,7 +71,7 @@ The subcommands are as follows:
 > **:**&zwnj;*newname*.
 
 > For detailed examples and usage patterns, see the
-> [https://docs.plakar.io/en/guides/importing-configurations/](https://docs.plakar.io/en/guides/importing-configurations/)
+> [https://plakar.io/docs/v1.1.0/guides/importing-configurations/](https://plakar.io/docs/v1.1.0/guides/importing-configurations/)
 > Importing Configurations
 > guide.
 
