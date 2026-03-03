@@ -34,6 +34,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const defaultDuration = 7 * 24 * time.Hour
+
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Maintenance{} }, 0, "maintenance")
 }
@@ -214,7 +216,7 @@ func (cmd *Maintenance) colourPass(ctx *appcontext.AppContext, cache *caching.Ma
 	if coloredPackfiles > 0 {
 		duration, err := time.ParseDuration(os.Getenv("PLAKAR_GRACEPERIOD"))
 		if err != nil {
-			duration = 30 * 24 * time.Hour
+			duration = defaultDuration
 		}
 
 		humanDuration := duration.String()
@@ -240,7 +242,7 @@ func (cmd *Maintenance) colourPass(ctx *appcontext.AppContext, cache *caching.Ma
 }
 
 func (cmd *Maintenance) sweepPass(ctx *appcontext.AppContext, cache *caching.MaintenanceCache) error {
-	doDeletion, _ := strconv.ParseBool(os.Getenv("PLAKAR_DODELETION"))
+	noDeletion, _ := strconv.ParseBool(os.Getenv("PLAKAR_NODELETION"))
 
 	stateID := objects.RandomMAC()
 	sc, err := cmd.repository.AppContext().GetCache().Scan(stateID)
@@ -305,7 +307,7 @@ func (cmd *Maintenance) sweepPass(ctx *appcontext.AppContext, cache *caching.Mai
 		}
 	}
 
-	if doDeletion {
+	if !noDeletion {
 		for packfileMAC := range toDelete {
 			if err := cmd.repository.DeletePackfile(packfileMAC); err != nil {
 				fmt.Fprintf(ctx.Stderr, "maintenance: Sweep pass failed to delete packfile %x, skipping it\n", packfileMAC)
@@ -333,7 +335,7 @@ func (cmd *Maintenance) Execute(ctx *appcontext.AppContext, repo *repository.Rep
 	// This need to be configurable per repo, but we don't have a mechanism yet (comes in a PR soon!)
 	duration, err := time.ParseDuration(os.Getenv("PLAKAR_GRACEPERIOD"))
 	if err != nil {
-		duration = 30 * 24 * time.Hour
+		duration = defaultDuration
 	}
 
 	cmd.cutoff = time.Now().Add(-duration)
