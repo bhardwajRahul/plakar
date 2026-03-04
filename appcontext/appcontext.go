@@ -20,6 +20,9 @@ type AppContext struct {
 	secret    []byte
 
 	StoreConfig map[string]string
+
+	Quiet  bool
+	Silent bool
 }
 
 func NewAppContext() *AppContext {
