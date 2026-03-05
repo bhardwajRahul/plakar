@@ -246,17 +246,24 @@ func (m appModel) View() string {
 		if m.repo == nil {
 			return
 		}
-		ioStats := m.repo.IOStats()
-		indent := strings.Repeat(" ", len(humanDuration(time.Since(state.startTime))))
-		r := ioStats.Read.Stats()
-		w := ioStats.Write.Stats()
 
-		fmt.Fprintf(&s,
-			"%s    store: read=%s, write=%s\n",
-			indent,
-			formatBytes(r.TotalBytes),
-			formatBytes(w.TotalBytes),
-		)
+		if time.Since(m.application.debounceStat) >= 1*time.Second {
+			ioStats := m.repo.IOStats()
+			indent := strings.Repeat(" ", len(humanDuration(time.Since(state.startTime))))
+			r := ioStats.Read.Stats()
+			w := ioStats.Write.Stats()
+
+			m.application.lastStat = fmt.Sprintf(
+				"%s    store: read=%s, write=%s\n",
+				indent,
+				formatBytes(r.TotalBytes),
+				formatBytes(w.TotalBytes),
+			)
+
+			m.application.debounceStat = time.Now()
+		}
+
+		fmt.Fprint(&s, m.application.lastStat)
 	}
 
 	// --- shared line writer: prefix + item + right-aligned tail ---
