@@ -26,6 +26,9 @@ type Application struct {
 	done   chan struct{} // closed when Bubbletea program exits
 	prog   *tea.Program
 	err    error
+
+	debounceStat time.Time
+	lastStat     string
 }
 
 type State struct {
