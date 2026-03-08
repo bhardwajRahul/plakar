@@ -128,7 +128,7 @@ func (cmd *Cached) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 	// Since we are detaching, we loose all stack traces, with no possibility
 	// to recover them, try to log them to a known location.
 	crashLog := filepath.Join(ctx.GetInner().CacheDir, "crash-cached.log")
-	f, err := os.OpenFile(crashLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(crashLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		return 1, err
 	}
