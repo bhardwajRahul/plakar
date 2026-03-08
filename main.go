@@ -64,6 +64,7 @@ import (
 	_ "github.com/PlakarKorp/plakar/subcommands/scheduler"
 	_ "github.com/PlakarKorp/plakar/subcommands/server"
 	_ "github.com/PlakarKorp/plakar/subcommands/service"
+	_ "github.com/PlakarKorp/plakar/subcommands/sync"
 	_ "github.com/PlakarKorp/plakar/subcommands/ui"
 	_ "github.com/PlakarKorp/plakar/subcommands/version"
 
