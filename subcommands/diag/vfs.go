@@ -195,13 +195,12 @@ func (cmd *DiagVFS) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 	}
 
-	errors, err := fs.Errors(pathname)
-	if err != nil {
-		return 1, err
-	}
 	offset := 0
-	for err := range errors {
-		fmt.Fprintf(ctx.Stdout, "Error[%d]: %s: %s\n", offset, err.Name, err.Error)
+	for entry, err := range fs.Errors(pathname) {
+		if err != nil {
+			return 1, fmt.Errorf("failure in scanning errors: %w", err)
+		}
+		fmt.Fprintf(ctx.Stdout, "Error[%d]: %s: %s\n", offset, entry.Name, entry.Error)
 		offset++
 	}
 	return 0, nil
