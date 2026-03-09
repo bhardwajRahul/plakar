@@ -7,8 +7,8 @@ github.com/PlakarKorp/go-cdc-chunkers v1.0.3 h1:6ozBFcNMHvGe6IsbPcAZUUEAExCgcNx3
 github.com/PlakarKorp/go-cdc-chunkers v1.0.3/go.mod h1:y7ag92JABKPBDoSOPwedssQ5NIOgjRm4Mu6yTBpmUMY=
 github.com/PlakarKorp/go-human2duration v0.1.6 h1:pRPAU3yX4ROV7RihXihPkwyjoQNI1lnemjAMFdWRwi8=
 github.com/PlakarKorp/go-human2duration v0.1.6/go.mod h1:1kg75kTlYCYURVyciaeO2GFdLgGDMhIfBTBpfydv1sk=
-github.com/PlakarKorp/integration-fs v1.1.0-beta.4 h1:yqqa2cQv+pvwy67JKmbNB2OtEqTKd8VSrXP4bcWVOXk=
-github.com/PlakarKorp/integration-fs v1.1.0-beta.4/go.mod h1:65biPZRZVpOvl0YPeX/QfrDjL2BtFANReTG8IatrOnA=
+github.com/PlakarKorp/integration-fs v1.1.0-beta.5 h1:oEFEDBCLCRTJrljoLiDBDB6L4edQ7kePySVmpRQyN/w=
+github.com/PlakarKorp/integration-fs v1.1.0-beta.5/go.mod h1:kGvhzBRSTUKVkKf0/31Iz9v6X082nEMfi7cX6vBCxII=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.3 h1:u0n6Uyz7wqHOMoMYbfBLrcSrfAGqzcNQtcgkgYfU5TQ=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.3/go.mod h1:lrkbUc9iT0jHiZ5wmB19wAhjDTMRO/VDhMJEt5trFlY=
 github.com/PlakarKorp/integration-http v1.1.0-beta.1 h1:y/LhWrWkA5C4E6yJ6rBGTRwcdyBx7efbDLpJLxoqquo=
