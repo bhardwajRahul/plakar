@@ -11,16 +11,13 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-    strategy:
-      matrix:
-        go: [ '1.24.0' ]
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
-        go-version: ${{ matrix.go }}
+        go-version-file: 'go.mod'
 
     - name: Build
       run: go build -v ./...
