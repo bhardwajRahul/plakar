@@ -682,11 +682,6 @@ func (ui *uiserver) snapshotVFSErrors(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	errorList, err := fs.Errors(path)
-	if err != nil {
-		return err
-	}
-
 	summary := dir.Summary
 	if summary == nil && dir.IsDir() {
 		tree, err := snap.SummaryIdx()
@@ -718,7 +713,10 @@ func (ui *uiserver) snapshotVFSErrors(w http.ResponseWriter, r *http.Request) er
 		Items: []*vfs.ErrorItem{},
 		Total: int(summary.Directory.Errors + summary.Below.Errors),
 	}
-	for errorEntry := range errorList {
+	for errorEntry, err := range fs.Errors(path) {
+		if err != nil {
+			return err
+		}
 		if i >= offset && i < offset+limit {
 			items.Items = append(items.Items, errorEntry)
 		}

@@ -20,12 +20,11 @@ func (cmd *Info) executeErrors(ctx *appcontext.AppContext, repo *repository.Repo
 		return 1, err
 	}
 
-	errstream, err := fs.Errors(pathname)
-	if err != nil {
-		return 1, err
-	}
+	for item, err := range fs.Errors(pathname) {
+		if err != nil {
+			return 1, fmt.Errorf("failed to scan errors: %w", err)
+		}
 
-	for item := range errstream {
 		fmt.Fprintf(ctx.Stdout, "%s: %s\n", item.Name, item.Error)
 	}
 	return 0, nil
