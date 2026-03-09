@@ -11,8 +11,8 @@ github.com/PlakarKorp/integration-fs v1.1.0-beta.4 h1:yqqa2cQv+pvwy67JKmbNB2OtEq
 github.com/PlakarKorp/integration-fs v1.1.0-beta.4/go.mod h1:65biPZRZVpOvl0YPeX/QfrDjL2BtFANReTG8IatrOnA=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.3 h1:u0n6Uyz7wqHOMoMYbfBLrcSrfAGqzcNQtcgkgYfU5TQ=
 github.com/PlakarKorp/integration-grpc v1.1.0-beta.3/go.mod h1:lrkbUc9iT0jHiZ5wmB19wAhjDTMRO/VDhMJEt5trFlY=
-github.com/PlakarKorp/integration-http v1.0.6-0.20260216100811-4872fc00aecf h1:gAE12CynywvUjUhAMnvUmvF+EVBuUmYRbmtJbvgtBKA=
-github.com/PlakarKorp/integration-http v1.0.6-0.20260216100811-4872fc00aecf/go.mod h1:T1xQSLZ2NH3Rvjd2ILwh+mEMwsuSEW1uDEdF6hAmYuM=
+github.com/PlakarKorp/integration-http v1.1.0-beta.1 h1:y/LhWrWkA5C4E6yJ6rBGTRwcdyBx7efbDLpJLxoqquo=
+github.com/PlakarKorp/integration-http v1.1.0-beta.1/go.mod h1:T1xQSLZ2NH3Rvjd2ILwh+mEMwsuSEW1uDEdF6hAmYuM=
 github.com/PlakarKorp/integration-ptar v1.1.0-beta.2 h1:Hmud7Zbbgjf4knRgIPhGeCrf9o8S9HHMi9SftyMnHsE=
 github.com/PlakarKorp/integration-ptar v1.1.0-beta.2/go.mod h1:pQcSrpraLTm5vlPafDFYQi9v8SOBF0pCTXLqCgyKBZs=
 github.com/PlakarKorp/integration-stdio v1.1.0-beta.1 h1:1XznjqRPLBePte3A8VVeam9tNf9JtUZfN6WQjsO2Ryw=
