@@ -17,6 +17,13 @@ plakar-pkg-recipe.yaml(5).
 If it builds successfully, the resulting plugin will be created in the
 current working directory.
 
+# ENVIRONMENT
+
+`PLAKAR_CLONE_TOKEN`
+
+> If set, this token will be used to authenticate git clone operations.
+> This is useful for cloning private repositories.
+
 # FILES
 
 *~/.cache/plakar/plugins/*

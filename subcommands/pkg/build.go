@@ -19,6 +19,7 @@ package pkg
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,7 +33,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-var namere = regexp.MustCompile("^[_a-zA-Z0-9]+$")
+var namere = regexp.MustCompile("^[-_a-zA-Z0-9]+$")
 
 type PkgBuild struct {
 	subcommands.SubcommandBase
@@ -89,6 +90,8 @@ func (cmd *PkgBuild) Execute(ctx *appcontext.AppContext, repo *repository.Reposi
 	}
 
 	make := exec.Command("make", args...)
+	make.Stderr = os.Stderr
+	make.Stdout = os.Stdout
 	fmt.Fprintln(ctx.Stderr, make.String())
 	if err := make.Run(); err != nil {
 		return 1, fmt.Errorf("make failed: %w", err)
@@ -107,6 +110,16 @@ func (cmd *PkgBuild) Execute(ctx *appcontext.AppContext, repo *repository.Reposi
 }
 
 func clone(destdir string, recipe *pkg.Recipe) error {
+	token := os.Getenv("PLAKAR_CLONE_TOKEN")
+	if token != "" {
+		parsedUrl, err := url.Parse(recipe.Repository)
+		if err != nil {
+			return fmt.Errorf("failed to parse repository URL: %w", err)
+		}
+		parsedUrl.User = url.User(token)
+		recipe.Repository = parsedUrl.String()
+	}
+
 	git := exec.Command("git", "clone", "--depth=1", "--branch", recipe.Version,
 		recipe.Repository, destdir)
 	if err := git.Run(); err != nil {
