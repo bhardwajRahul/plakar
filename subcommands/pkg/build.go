@@ -33,7 +33,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-var namere = regexp.MustCompile("^[_a-zA-Z0-9]+$")
+var namere = regexp.MustCompile("^[-_a-zA-Z0-9]+$")
 
 type PkgBuild struct {
 	subcommands.SubcommandBase
