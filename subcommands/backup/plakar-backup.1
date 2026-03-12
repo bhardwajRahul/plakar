@@ -73,6 +73,14 @@ Suppress all output.
 .It Fl tag Ar tag
 Comma-separated list of tags to apply to the snapshot.
 .El
+.Sh ENVIRONMENT
+.Bl -tag -width Ds
+.It Ev PLAKAR_TAGS
+Comma-separated list of tags to apply to the snapshot during backup.
+Overridden by the
+.Fl tag
+command-line flag.
+.El
 .Sh EXAMPLES
 Create a snapshot of the current directory with two tags:
 .Bd -literal -offset indent

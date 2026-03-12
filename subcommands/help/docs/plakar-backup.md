@@ -97,6 +97,15 @@ The options are as follows:
 
 > Comma-separated list of tags to apply to the snapshot.
 
+# ENVIRONMENT
+
+`PLAKAR_TAGS`
+
+> Comma-separated list of tags to apply to the snapshot during backup.
+> Overridden by the
+> **-tag**
+> command-line flag.
+
 # EXAMPLES
 
 Create a snapshot of the current directory with two tags:
