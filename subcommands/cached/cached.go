@@ -60,7 +60,7 @@ type Cached struct {
 	jobMtx   sync.Mutex
 	jobQueue map[uuid.UUID](chan jobReq)
 
-	inflight sync.WaitGroup
+	runningJobs chan int
 }
 
 type jobReq struct {
@@ -110,6 +110,7 @@ func (cmd *Cached) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	cmd.jobMtx = sync.Mutex{}
 	cmd.jobQueue = make(map[uuid.UUID]chan jobReq)
+	cmd.runningJobs = make(chan int)
 
 	return nil
 }
@@ -146,6 +147,21 @@ func (cmd *Cached) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 	return 0, nil
 }
 
+func (cmd *Cached) Watcher(listener net.Listener) {
+	var inflight int
+
+	for {
+		select {
+		case n := <-cmd.runningJobs:
+			inflight += n
+		case <-time.After(cmd.teardown):
+			if inflight == 0 {
+				listener.Close()
+			}
+		}
+	}
+}
+
 func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 	lock, err := cached.LockedFile(cmd.socketPath + ".cached-lock")
 	if err != nil {
@@ -166,16 +182,12 @@ func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 		return fmt.Errorf("failed to bind the socket: %w", err)
 	}
 
+	go cmd.Watcher(listener)
+
 	cancelled := false
 	go func() {
 		<-ctx.Done()
 		cancelled = true
-		listener.Close()
-	}()
-
-	go func() {
-		time.Sleep(cmd.teardown)
-		cmd.inflight.Wait()
 		listener.Close()
 	}()
 
@@ -194,17 +206,15 @@ func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 			return err
 		}
 
-		cmd.inflight.Add(1)
+		cmd.runningJobs <- 1
 		go func() {
-			defer cmd.inflight.Done()
+			defer func() { cmd.runningJobs <- -1 }()
 
 			if err := ctx.ReloadConfig(); err != nil {
 				ctx.GetLogger().Warn("could not load configuration: %v", err)
 			}
 
 			cmd.handleCachedClient(ctx, conn)
-
-			time.Sleep(cmd.teardown)
 		}()
 	}
 
@@ -318,7 +328,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 		for {
 			select {
 			case job := <-jobChan:
-				cmd.inflight.Add(1)
+				cmd.runningJobs <- 1
 				var err error
 				if job.stateID == objects.NilMac {
 					err = repo.RebuildState()
@@ -332,7 +342,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 					close(job.ch)
 				}
 
-				cmd.inflight.Done()
+				cmd.runningJobs <- -1
 
 			// Debounce a bit to avoid halting and creating too many jobs.
 			case <-ctx.Done():
