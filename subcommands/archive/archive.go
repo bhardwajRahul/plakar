@@ -19,7 +19,6 @@ package archive
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -83,32 +82,18 @@ func (cmd *Archive) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 	defer snap.Close()
 
-	var out io.Writer
-	if cmd.Output == "-" {
-		out = ctx.Stdout
-	} else {
-		tmp, err := os.CreateTemp("", "plakar-archive-")
+	out := os.Stdout
+	if cmd.Output != "-" {
+		out, err = os.Create(cmd.Output)
 		if err != nil {
-			return 1, fmt.Errorf("archive: %s: %w", pathname, err)
+			return 1, fmt.Errorf("failed to create %s: %w", cmd.Output, err)
 		}
-		defer os.Remove(tmp.Name())
-		out = tmp
+		defer out.Close()
 	}
 
 	if err = snap.Archive(out, cmd.Format, []string{pathname}, cmd.Rebase); err != nil {
 		return 1, err
 	}
 
-	if outCloser, isCloser := out.(io.Closer); isCloser {
-		if err := outCloser.Close(); err != nil {
-			return 1, err
-		}
-	}
-
-	if out, isFile := out.(*os.File); isFile {
-		if err := os.Rename(out.Name(), cmd.Output); err != nil {
-			return 1, err
-		}
-	}
 	return 0, nil
 }
