@@ -19,7 +19,6 @@ package archive
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -84,10 +83,8 @@ func (cmd *Archive) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 	defer snap.Close()
 
-	var out io.Writer
-	if cmd.Output == "-" {
-		out = ctx.Stdout
-	} else {
+	out := os.Stdout
+	if cmd.Output != "-" {
 		tmp, err := os.CreateTemp(filepath.Dir(cmd.Output), "plakar-archive-")
 		if err != nil {
 			return 1, fmt.Errorf("archive: %s: %w", pathname, err)
@@ -100,16 +97,15 @@ func (cmd *Archive) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 		return 1, err
 	}
 
-	if outCloser, isCloser := out.(io.Closer); isCloser {
-		if err := outCloser.Close(); err != nil {
-			return 1, err
+	if cmd.Output != "-" {
+		if err := out.Close(); err != nil {
+			return 1, fmt.Errorf("failed to close writer: %w", err)
+		}
+
+		if err := os.Rename(out.Name(), cmd.Output); err != nil {
+			return 1, fmt.Errorf("failed to rename to destination: %w", err)
 		}
 	}
 
-	if out, isFile := out.(*os.File); isFile {
-		if err := os.Rename(out.Name(), cmd.Output); err != nil {
-			return 1, err
-		}
-	}
 	return 0, nil
 }
