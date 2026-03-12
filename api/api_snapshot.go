@@ -373,6 +373,33 @@ func (ui *uiserver) snapshotVFSBrowse(w http.ResponseWriter, r *http.Request) er
 	return json.NewEncoder(w).Encode(Item[*vfs.Entry]{Item: entry})
 }
 
+func (ui *uiserver) loadEntrySummaries(snap *snapshot.Snapshot, fsinfo *vfs.Entry) error {
+	if fsinfo.Summary != nil {
+		return nil
+	}
+
+	tree, err := snap.SummaryIdx()
+	if err != nil {
+		return err
+	}
+
+	key, found, err := tree.Find(fsinfo.Path())
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("could not resolve pathname: %s", fsinfo.Path())
+	}
+
+	serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
+	if err != nil {
+		return err
+	}
+
+	fsinfo.Summary, err = vfs.SummaryFromBytes(serializedSummary)
+	return err
+}
+
 func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) error {
 	snapshotID32, entrypath, err := SnapshotPathParam(r, ui.repository, "snapshot_path")
 	if err != nil {
@@ -425,31 +452,10 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
-	summary := fsinfo.Summary
-	if summary == nil && fsinfo.IsDir() {
-		tree, err := snap.SummaryIdx()
-		if err != nil {
-			return err
-		}
-
-		key, found, err := tree.Find(fsinfo.Path())
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("could not resolve pathname: %s", fsinfo.Path())
-		}
-
-		serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
-		if err != nil {
-			return err
-		}
-
-		summary, err = vfs.SummaryFromBytes(serializedSummary)
-		if err != nil {
-			return err
-		}
+	if err := ui.loadEntrySummaries(snap, fsinfo); err != nil {
+		return err
 	}
+	summary := fsinfo.Summary
 
 	items := Items[*vfs.Entry]{
 		Total: int(summary.Directory.Children),
@@ -494,6 +500,10 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 		}
 		if i >= limit+offset {
 			break
+		}
+
+		if err := ui.loadEntrySummaries(snap, child); err != nil {
+			return err
 		}
 
 		// These might be huge and we don't need them in this
