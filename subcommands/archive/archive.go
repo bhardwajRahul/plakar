@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/PlakarKorp/kloset/locate"
@@ -87,7 +88,7 @@ func (cmd *Archive) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 	if cmd.Output == "-" {
 		out = ctx.Stdout
 	} else {
-		tmp, err := os.CreateTemp("", "plakar-archive-")
+		tmp, err := os.CreateTemp(filepath.Dir(cmd.Output), "plakar-archive-")
 		if err != nil {
 			return 1, fmt.Errorf("archive: %s: %w", pathname, err)
 		}
