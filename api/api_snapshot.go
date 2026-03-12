@@ -447,7 +447,7 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	if !fsinfo.Stat().Mode().IsDir() {
+	if !fsinfo.IsDir() {
 		http.Error(w, "not a directory", http.StatusBadRequest)
 		return nil
 	}
