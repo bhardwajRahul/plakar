@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/PlakarKorp/kloset/locate"
@@ -85,26 +84,15 @@ func (cmd *Archive) Execute(ctx *appcontext.AppContext, repo *repository.Reposit
 
 	out := os.Stdout
 	if cmd.Output != "-" {
-		tmp, err := os.CreateTemp(filepath.Dir(cmd.Output), "plakar-archive-")
+		out, err = os.Create(cmd.Output)
 		if err != nil {
-			return 1, fmt.Errorf("archive: %s: %w", pathname, err)
+			return 1, fmt.Errorf("failed to create %s: %w", cmd.Output, err)
 		}
-		defer os.Remove(tmp.Name())
-		out = tmp
+		defer out.Close()
 	}
 
 	if err = snap.Archive(out, cmd.Format, []string{pathname}, cmd.Rebase); err != nil {
 		return 1, err
-	}
-
-	if cmd.Output != "-" {
-		if err := out.Close(); err != nil {
-			return 1, fmt.Errorf("failed to close writer: %w", err)
-		}
-
-		if err := os.Rename(out.Name(), cmd.Output); err != nil {
-			return 1, fmt.Errorf("failed to rename to destination: %w", err)
-		}
 	}
 
 	return 0, nil
