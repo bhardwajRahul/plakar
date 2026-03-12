@@ -313,7 +313,6 @@ func entryPoint() int {
 
 	var repositoryPath string
 
-	var at bool
 	var args []string
 	if flag.Arg(0) == "at" {
 		if len(flag.Args()) < 2 {
@@ -324,7 +323,6 @@ func entryPoint() int {
 		}
 		repositoryPath = flag.Arg(1)
 		args = flag.Args()[2:]
-		at = true
 	} else {
 		repositoryPath = os.Getenv("PLAKAR_REPOSITORY")
 		if repositoryPath == "" {
@@ -345,7 +343,7 @@ func entryPoint() int {
 		return 1
 	}
 
-	cmd, name, args := subcommands.Lookup(args)
+	cmd, _, args := subcommands.Lookup(args)
 	if cmd == nil {
 		fmt.Fprintf(os.Stderr, "command not found: %s\n", args[0])
 		return 1
@@ -366,10 +364,6 @@ func entryPoint() int {
 	var repo *repository.Repository
 
 	if cmd.GetFlags()&subcommands.BeforeRepositoryOpen != 0 {
-		if at {
-			log.Fatalf("%s: %s command cannot be used with 'at' parameter.",
-				flag.CommandLine.Name(), strings.Join(name, " "))
-		}
 		// store and repo can stay nil
 	} else if cmd.GetFlags()&subcommands.BeforeRepositoryWithStorage != 0 {
 		repo, err = repository.Inexistent(ctx.GetInner(), storeConfig)
