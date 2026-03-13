@@ -502,8 +502,10 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 			break
 		}
 
-		if err := ui.loadEntrySummaries(snap, child); err != nil {
-			return err
+		if child.IsDir() {
+			if err := ui.loadEntrySummaries(snap, child); err != nil {
+				return err
+			}
 		}
 
 		// These might be huge and we don't need them in this
