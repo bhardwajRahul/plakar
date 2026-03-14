@@ -343,31 +343,10 @@ func (ui *uiserver) snapshotVFSBrowse(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	summary := entry.Summary
-	if summary == nil && entry.IsDir() {
-		tree, err := snap.SummaryIdx()
-		if err != nil {
+	if entry.IsDir() {
+		if err := ui.loadEntrySummaries(snap, entry); err != nil {
 			return err
 		}
-
-		key, found, err := tree.Find(entry.Path())
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("could not resolve pathname: %s", entry.Path())
-		}
-
-		serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
-		if err != nil {
-			return err
-		}
-
-		summary, err = vfs.SummaryFromBytes(serializedSummary)
-		if err != nil {
-			return err
-		}
-		entry.Summary = summary
 	}
 
 	return json.NewEncoder(w).Encode(Item[*vfs.Entry]{Item: entry})
@@ -502,8 +481,10 @@ func (ui *uiserver) snapshotVFSChildren(w http.ResponseWriter, r *http.Request) 
 			break
 		}
 
-		if err := ui.loadEntrySummaries(snap, child); err != nil {
-			return err
+		if child.IsDir() {
+			if err := ui.loadEntrySummaries(snap, child); err != nil {
+				return err
+			}
 		}
 
 		// These might be huge and we don't need them in this
@@ -692,36 +673,19 @@ func (ui *uiserver) snapshotVFSErrors(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	summary := dir.Summary
-	if summary == nil && dir.IsDir() {
-		tree, err := snap.SummaryIdx()
-		if err != nil {
-			return err
-		}
+	if !dir.IsDir() {
+		http.Error(w, "not a directory", http.StatusBadRequest)
+		return nil
+	}
 
-		key, found, err := tree.Find(dir.Path())
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("could not resolve pathname: %s", dir.Path())
-		}
-
-		serializedSummary, err := ui.repository.GetBlobBytes(resources.RT_VFS_SUMMARY, key)
-		if err != nil {
-			return err
-		}
-
-		summary, err = vfs.SummaryFromBytes(serializedSummary)
-		if err != nil {
-			return err
-		}
+	if err := ui.loadEntrySummaries(snap, dir); err != nil {
+		return err
 	}
 
 	var i int64
 	items := Items[*vfs.ErrorItem]{
 		Items: []*vfs.ErrorItem{},
-		Total: int(summary.Directory.Errors + summary.Below.Errors),
+		Total: int(dir.Summary.Directory.Errors + dir.Summary.Below.Errors),
 	}
 	for errorEntry, err := range fs.Errors(path) {
 		if err != nil {
