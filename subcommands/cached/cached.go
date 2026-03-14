@@ -68,6 +68,11 @@ type jobReq struct {
 	ch      chan error
 }
 
+const (
+	newJob  = 1
+	jobDone = -1
+)
+
 func (cmd *Cached) Parse(ctx *appcontext.AppContext, args []string) error {
 	var opt_foreground bool
 	var opt_logfile string
@@ -147,6 +152,14 @@ func (cmd *Cached) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 	return 0, nil
 }
 
+// Background task dealing with the teardown, basically anything running sends a
+// message over the channel, when taks is done we get another message. If the
+// teardown time passes and nothing is in flight we are free to stop, otherwise
+// someone is running and we need to stay alive. This is not a perfect "last
+// request + teardown seconds" implementation but it's close enough for our need
+// and is simpler. This is conceptually a waitgroup, except we can't use a
+// waitgroup as it has one special property (you can't reincrement the semaphore
+// while a Wait() is in progress) that our use case would transgress.
 func (cmd *Cached) Watcher(listener net.Listener) {
 	var inflight int
 
@@ -206,9 +219,9 @@ func (cmd *Cached) ListenAndServe(ctx *appcontext.AppContext) error {
 			return err
 		}
 
-		cmd.runningJobs <- 1
+		cmd.runningJobs <- newJob
 		go func() {
-			defer func() { cmd.runningJobs <- -1 }()
+			defer func() { cmd.runningJobs <- jobDone }()
 
 			if err := ctx.ReloadConfig(); err != nil {
 				ctx.GetLogger().Warn("could not load configuration: %v", err)
@@ -328,7 +341,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 		for {
 			select {
 			case job := <-jobChan:
-				cmd.runningJobs <- 1
+				cmd.runningJobs <- newJob
 				var err error
 				if job.stateID == objects.NilMac {
 					err = repo.RebuildState()
@@ -342,7 +355,7 @@ func (cmd *Cached) rebuildJob(ctx *appcontext.AppContext, jobChan chan jobReq, r
 					close(job.ch)
 				}
 
-				cmd.runningJobs <- -1
+				cmd.runningJobs <- jobDone
 
 			// Debounce a bit to avoid halting and creating too many jobs.
 			case <-ctx.Done():
