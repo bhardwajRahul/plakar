@@ -36,6 +36,8 @@ type UiOptions struct {
 	NoSpawn        bool
 	Cors           bool
 	Token          string
+	Cert           string
+	Key            string
 }
 
 //go:embed all:frontend/*
@@ -78,10 +80,16 @@ func Ui(repo *repository.Repository, ctx *appcontext.AppContext, addr string, op
 	}
 
 	var url string
-	if opts.Token == "" {
-		url = fmt.Sprintf("http://%s", addr)
+	var protocol string
+	if opts.Cert != "" && opts.Key != "" {
+		protocol = "https"
 	} else {
-		url = fmt.Sprintf("http://%s?plakar_token=%s", addr, opts.Token)
+		protocol = "http"
+	}
+	if opts.Token == "" {
+		url = fmt.Sprintf("%s://%s", protocol, addr)
+	} else {
+		url = fmt.Sprintf("%s://%s?plakar_token=%s", protocol, addr, opts.Token)
 	}
 
 	if !opts.NoSpawn {
@@ -103,6 +111,9 @@ func Ui(repo *repository.Repository, ctx *appcontext.AppContext, addr string, op
 		s.Shutdown(repo.AppContext().Context)
 	}()
 
+	if protocol == "https" {
+		return s.ListenAndServeTLS(opts.Cert, opts.Key)
+	}
 	return s.ListenAndServe()
 }
 

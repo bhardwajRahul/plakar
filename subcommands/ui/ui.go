@@ -47,6 +47,8 @@ func (cmd *Ui) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.BoolVar(&cmd.Cors, "cors", false, "enable CORS")
 	flags.BoolVar(&cmd.NoAuth, "no-auth", false, "don't use authentication")
 	flags.BoolVar(&cmd.NoSpawn, "no-spawn", false, "don't spawn browser")
+	flags.StringVar(&cmd.Cert, "cert", "", "Full certificate chain")
+	flags.StringVar(&cmd.Key, "key", "", "Certificate private key")
 	flags.Parse(args)
 
 	if flags.NArg() > 0 {
@@ -65,6 +67,8 @@ type Ui struct {
 	Cors    bool
 	NoAuth  bool
 	NoSpawn bool
+	Cert    string
+	Key     string
 }
 
 func (cmd *Ui) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
@@ -72,6 +76,8 @@ func (cmd *Ui) Execute(ctx *appcontext.AppContext, repo *repository.Repository) 
 		NoSpawn: cmd.NoSpawn,
 		Cors:    cmd.Cors,
 		Token:   "",
+		Cert:    cmd.Cert,
+		Key:     cmd.Key,
 	}
 
 	if !cmd.NoAuth {
