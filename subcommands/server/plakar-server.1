@@ -8,6 +8,8 @@
 .Nm plakar server
 .Op Fl allow-delete
 .Op Fl listen Oo Ar host Ns Oc : Ns Ar port
+.Op Fl cert Ar path
+.Op Fl key Ar path
 .Sh DESCRIPTION
 The
 .Nm plakar server
@@ -31,6 +33,16 @@ The host name is optional, and defaults to all available addresses.
 If
 .Fl listen
 is not provided, the server defaults to listen on localhost at port 9876.
+.It Fl cert Ar path
+Path to a full certificate file in PEM format.
+If both
+.Fl cert
+and
+.Fl key
+are provided, the server will expect https connections.
+If one or both are missing, the server will fall back to http.
+.It Fl key Ar path
+Path to a certificate private key file in PEM format.
 .El
 .Sh EXAMPLES
 Start a plakar server on the local store:
@@ -46,6 +58,11 @@ $ plakar at sftp://example.org server
 Start a server on a specific address and port:
 .Bd -literal -offset indent
 $ plakar server -listen 127.0.0.1:12345
+.Ed
+.Pp
+Start a https server on a specific address and port:
+.Bd -literal -offset indent
+$ plakar server -listen backup.example.com:12345 -cert fullchain.pem -key privkey.pem
 .Ed
 .Sh DIAGNOSTICS
 .Ex -std
