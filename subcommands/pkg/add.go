@@ -17,6 +17,7 @@
 package pkg
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -31,13 +32,16 @@ import (
 
 type PkgAdd struct {
 	subcommands.SubcommandBase
-	Args []string
+
+	upgrade bool
+	Args    []string
 }
 
 func (cmd *PkgAdd) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags := flag.NewFlagSet("pkg add", flag.ExitOnError)
+	flags.BoolVar(&cmd.upgrade, "u", false, "Update packages")
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), `Usage: %s <package> ...
+		fmt.Fprintf(flags.Output(), `Usage: %s [-u] <package> ...
 
 Arguments:
   <package>    Local .ptar file, or recipe name to fetch from plugins.plakar.io
@@ -51,7 +55,7 @@ Examples:
 
 	flags.Parse(args)
 
-	if flags.NArg() < 1 {
+	if flags.NArg() < 1 && !cmd.upgrade {
 		return fmt.Errorf("not enough arguments")
 	}
 
@@ -82,10 +86,35 @@ func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository)
 		addopts := pkg.AddOptions{
 			ImplicitFetch: true,
 			Version:       version,
+			Upgrade:       cmd.upgrade,
 		}
 		if err := pkgmgr.Add(plugin, &addopts); err != nil {
+			if cmd.upgrade && errors.Is(err, pkg.ErrAlreadyInstalled) {
+				continue
+			}
 			return 1, fmt.Errorf("failed to install %s: %w",
 				filepath.Base(plugin), err)
+		}
+	}
+
+	if len(cmd.Args) == 0 && cmd.upgrade {
+		for plugin, err := range pkgmgr.List() {
+			if err != nil {
+				return 1, err
+			}
+
+			addopts := pkg.AddOptions{
+				ImplicitFetch: true,
+				Upgrade:       cmd.upgrade,
+			}
+
+			if err := pkgmgr.Add(plugin.Name, &addopts); err != nil {
+				if errors.Is(err, pkg.ErrAlreadyInstalled) {
+					continue
+				}
+				return 1, fmt.Errorf("failed to update %s: %w",
+					plugin.Name, err)
+			}
 		}
 	}
 
