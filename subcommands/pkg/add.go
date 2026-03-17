@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/pkg"
@@ -75,12 +76,13 @@ Examples:
 }
 
 func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository) (int, error) {
-	addopts := pkg.AddOptions{
-		ImplicitFetch: true,
-	}
-
 	pkgmgr := ctx.GetPkgManager()
 	for _, plugin := range cmd.Args {
+		plugin, version, _ := strings.Cut(plugin, "@")
+		addopts := pkg.AddOptions{
+			ImplicitFetch: true,
+			Version:       version,
+		}
 		if err := pkgmgr.Add(plugin, &addopts); err != nil {
 			return 1, fmt.Errorf("failed to install %s: %w",
 				filepath.Base(plugin), err)
