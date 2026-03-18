@@ -129,7 +129,7 @@ func (s *server) deleteResource(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Server(ctx context.Context, repo *repository.Repository, addr string, noDelete bool) error {
+func Server(ctx context.Context, repo *repository.Repository, addr string, noDelete bool, cert string, key string) error {
 	s := server{
 		store:    repo.Store(),
 		ctx:      ctx,
@@ -151,6 +151,9 @@ func Server(ctx context.Context, repo *repository.Repository, addr string, noDel
 		server.Shutdown(repo.AppContext().Context)
 	}()
 
+	if cert != "" && key != "" {
+		return server.ListenAndServeTLS(cert, key)
+	}
 	return server.ListenAndServe()
 }
 
