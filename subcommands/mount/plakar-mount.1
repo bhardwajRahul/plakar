@@ -6,7 +6,8 @@
 .Nd Mount Plakar snapshots as read-only filesystem
 .Sh SYNOPSIS
 .Nm plakar mount
-.Ar mountpoint
+.Op Fl to Ar mountpoint
+.Op Ar snapshotID
 .Sh DESCRIPTION
 The
 .Nm plakar mount
@@ -17,10 +18,63 @@ This allows users to access snapshot contents as if they were part of
 the local file system, providing easy browsing and retrieval of files
 without needing to explicitly restore them.
 This command may not work on all Operating Systems.
+.Pp
+In addition to the flags described below,
+.Nm plakar mount
+supports the location flags documented in
+.Xr plakar-query 7
+to precisely select snapshots.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl to Ar mountpoint
+Specify the mount location.
+The
+.Ar mountpoint
+can either be:
+.Bl -bullet -offset Ds
+.It
+A directory path for FUSE mounts
+.It
+An HTTP address including port for remote mounting (e.g.,
+.Ql http://hostname:8080 )
+.El
+If not specified, mount will attempt a FUSE mount in the working directory with
+a random subdirectory name.
+.It Ar snapshotID
+Optional.
+Specifies which snapshot to mount.
+If not provided, all snapshots are mounted.
+.El
 .Sh EXAMPLES
-Mount a snapshot to the specified directory:
+Mount all snapshots to a local directory:
 .Bd -literal -offset indent
-$ plakar mount ~/mnt
+$ plakar mount -to ~/mnt
+.Ed
+.Pp
+Mount the latest snapshot to a local directory:
+.Bd -literal -offset indent
+$ plakar mount -to ~/mnt -latest
+.Ed
+.Pp
+Mount a specific snapshot by ID to a directory:
+.Bd -literal -offset indent
+$ plakar mount -to ~/mnt abc123
+.Ed
+.Pp
+Mount snapshots matching a filter (e.g., snapshots with tag "daily-backup"):
+.Bd -literal -offset indent
+$ plakar mount -to ~/mnt -tag daily-backup
+.Ed
+.Pp
+Mount a snapshot to an HTTP endpoint:
+.Bd -literal -offset indent
+$ plakar mount -to http://hostname:8080
+.Ed
+.Pp
+Mount a specific snapshot to an HTTP endpoint:
+.Bd -literal -offset indent
+$ plakar mount -to http://hostname:8080 abc123
 .Ed
 .Sh DIAGNOSTICS
 .Ex -std
@@ -32,4 +86,5 @@ An error occurred, such as an invalid mountpoint or failure during the
 mounting process.
 .El
 .Sh SEE ALSO
-.Xr plakar 1
+.Xr plakar 1 ,
+.Xr plakar-query 7

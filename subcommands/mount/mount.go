@@ -50,7 +50,7 @@ func (cmd *Mount) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	flags := flag.NewFlagSet("mount", flag.ExitOnError)
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s PATH\n", flags.Name())
+		fmt.Fprintf(flags.Output(), "Usage: %s [-to PATH] [snapshotID]\n", flags.Name())
 	}
 	flags.StringVar(&cmd.Mountpoint, "to", "", "mount point")
 	cmd.LocateOptions.InstallLocateFlags(flags)

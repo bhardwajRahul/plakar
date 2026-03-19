@@ -7,7 +7,8 @@ PLAKAR-MOUNT(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;mount**
-*mountpoint*
+\[**-to**&nbsp;*mountpoint*]
+\[*snapshotID*]
 
 # DESCRIPTION
 
@@ -21,27 +22,77 @@ the local file system, providing easy browsing and retrieval of files
 without needing to explicitly restore them.
 This command may not work on all Operating Systems.
 
+In addition to the flags described below,
+**plakar mount**
+supports the location flags documented in
+plakar-query(7)
+to precisely select snapshots.
+
+The options are as follows:
+
+**-to** *mountpoint*
+
+> Specify the mount location.
+> The
+> *mountpoint*
+> can either be:
+
+> *	A directory path for FUSE mounts
+
+> *	An HTTP address including port for remote mounting (e.g.,
+> 	'`http://hostname:8080`')
+
+> If not specified, mount will attempt a FUSE mount in the working directory with
+> a random subdirectory name.
+
+*snapshotID*
+
+	Optional.
+	Specifies which snapshot to mount.
+	If not provided, all snapshots are mounted.
+
 # EXAMPLES
 
-Mount a snapshot to the specified directory:
+Mount all snapshots to a local directory:
 
-	$ plakar mount ~/mnt
+> $ plakar mount -to ~/mnt
+
+Mount the latest snapshot to a local directory:
+
+> $ plakar mount -to ~/mnt -latest
+
+Mount a specific snapshot by ID to a directory:
+
+> $ plakar mount -to ~/mnt abc123
+
+Mount snapshots matching a filter (e.g., snapshots with tag "daily-backup"):
+
+> $ plakar mount -to ~/mnt -tag daily-backup
+
+Mount a snapshot to an HTTP endpoint:
+
+> $ plakar mount -to http://hostname:8080
+
+Mount a specific snapshot to an HTTP endpoint:
+
+> $ plakar mount -to http://hostname:8080 abc123
 
 # DIAGNOSTICS
 
-The **plakar-mount** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+The **plakar-mount** utility exits0 on success, and>0 if an error occurs.
 
 0
 
-> Command completed successfully.
+	Command completed successfully.
 
-&gt;0
+>0
 
-> An error occurred, such as an invalid mountpoint or failure during the
-> mounting process.
+	An error occurred, such as an invalid mountpoint or failure during the
+	mounting process.
 
 # SEE ALSO
 
-plakar(1)
+plakar(1),
+plakar-query(7)
 
 Plakar - July 3, 2025
