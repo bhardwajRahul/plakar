@@ -11,6 +11,8 @@ PLAKAR-UI(1) - General Commands Manual
 \[**-cors**]
 \[**-no-auth**]
 \[**-no-spawn**]
+\[**-cert**&nbsp;*path*]
+\[**-key**&nbsp;*path*]
 
 # DESCRIPTION
 
@@ -44,11 +46,29 @@ The options are as follows:
 
 > Do not automatically open the web browser.
 
+**-cert** *path*
+
+> Path to a full certificate file in PEM format.
+> If both
+> **-cert**
+> and
+> **-key**
+> are provided, the server will expect https connections.
+> If one or both are missing, the server will fall back to http.
+
+**-key** *path*
+
+> Path to a certificate private key file in PEM format.
+
 # EXAMPLES
 
 Using a custom address and disable automatic browser execution:
 
 	$ plakar ui -addr localhost:9090 -no-spawn
+
+Create a https server with a custom certificate:
+
+	$ plakar ui -cert fullchain.pem -key privkey.pem
 
 # DIAGNOSTICS
 
