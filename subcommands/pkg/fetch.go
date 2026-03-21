@@ -29,7 +29,7 @@ func getRecipe(ctx *appcontext.AppContext, name string, recipe *pkg.Recipe) erro
 	case filepath.IsAbs(name) || strings.Contains(name, string(os.PathSeparator)):
 		fp, err := os.Open(name)
 		if err != nil {
-			return fmt.Errorf("coludn't open %s: %w", name, err)
+			return fmt.Errorf("couldn't open %s: %w", name, err)
 		}
 		defer fp.Close()
 		return recipe.Parse(fp)
