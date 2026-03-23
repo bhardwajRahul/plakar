@@ -1,11 +1,13 @@
-.Dd November 27, 2025
+.Dd March 23, 2026
 .Dt PLAKAR-PKG-ADD 1
 .Os
 .Sh NAME
 .Nm plakar-pkg-add
 .Nd Install Plakar plugins
 .Sh SYNOPSIS
-.Nm plakar pkg add Ar plugin ...
+.Nm plakar pkg add
+.Op Fl u
+.Ar plugin ...
 .Sh DESCRIPTION
 The
 .Nm plakar pkg add
@@ -25,8 +27,16 @@ command, provided you have the necessary dependencies to build
 it locally
 .Pq currently, official plugins require make and a working Go toolchain .
 .Pp
-To force local resolution use an absolute path, otherwise to
-force remote fetching pass an HTTP or HTTPS URL.
+To install a specific version of a plugin, use the
+.Ar name Ns @ Ns Ar version
+syntax.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl u
+Update the specific plugins.
+If none are given, attempt to update all the installed ones.
+.El
 .Sh FILES
 .Bl -tag -width Ds
 .It Pa ~/.cache/plakar/plugins/
