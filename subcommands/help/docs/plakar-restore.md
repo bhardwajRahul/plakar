@@ -75,7 +75,9 @@ The options are as follows:
 
 > Skip restoring file permissions and ownership during restore,
 > defaulting to 0750 for directories and 0640 for files.
-> It Fl to Ar directory
+
+**-to** *directory*
+
 > Specify the base directory to which the files will be restored.
 > If omitted, files are restored to the current working directory.
 
