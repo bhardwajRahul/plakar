@@ -6,7 +6,9 @@ PLAKAR-PKG-ADD(1) - General Commands Manual
 
 # SYNOPSIS
 
-**plakar&nbsp;pkg&nbsp;add&nbsp;*plugin&nbsp;...*&zwnj;**
+**plakar&nbsp;pkg&nbsp;add**
+\[**-u**]
+*plugin&nbsp;...*
 
 # DESCRIPTION
 
@@ -28,8 +30,16 @@ command, provided you have the necessary dependencies to build
 it locally
 (currently, official plugins require make and a working Go toolchain).
 
-To force local resolution use an absolute path, otherwise to
-force remote fetching pass an HTTP or HTTPS URL.
+To install a specific version of a plugin, use the
+*name*@*version*
+syntax.
+
+The options are as follows:
+
+**-u**
+
+> Update the specific plugins.
+> If none are given, attempt to update all the installed ones.
 
 # FILES
 
@@ -55,4 +65,4 @@ plakar-pkg-create(1),
 plakar-pkg-rm(1),
 plakar-pkg-show(1)
 
-Plakar - November 27, 2025
+Plakar - March 23, 2026 - PLAKAR-PKG-ADD(1)

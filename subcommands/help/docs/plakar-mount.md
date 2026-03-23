@@ -47,52 +47,52 @@ The options are as follows:
 
 *snapshotID*
 
-	Optional.
-	Specifies which snapshot to mount.
-	If not provided, all snapshots are mounted.
+> Optional.
+> Specifies which snapshot to mount.
+> If not provided, all snapshots are mounted.
 
 # EXAMPLES
 
 Mount all snapshots to a local directory:
 
-> $ plakar mount -to ~/mnt
+	$ plakar mount -to ~/mnt
 
 Mount the latest snapshot to a local directory:
 
-> $ plakar mount -to ~/mnt -latest
+	$ plakar mount -to ~/mnt -latest
 
 Mount a specific snapshot by ID to a directory:
 
-> $ plakar mount -to ~/mnt abc123
+	$ plakar mount -to ~/mnt abc123
 
 Mount snapshots matching a filter (e.g., snapshots with tag "daily-backup"):
 
-> $ plakar mount -to ~/mnt -tag daily-backup
+	$ plakar mount -to ~/mnt -tag daily-backup
 
 Mount a snapshot to an HTTP endpoint:
 
-> $ plakar mount -to http://hostname:8080
+	$ plakar mount -to http://hostname:8080
 
 Mount a specific snapshot to an HTTP endpoint:
 
-> $ plakar mount -to http://hostname:8080 abc123
+	$ plakar mount -to http://hostname:8080 abc123
 
 # DIAGNOSTICS
 
-The **plakar-mount** utility exits0 on success, and>0 if an error occurs.
+The **plakar-mount** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
 0
 
-	Command completed successfully.
+> Command completed successfully.
 
->0
+&gt;0
 
-	An error occurred, such as an invalid mountpoint or failure during the
-	mounting process.
+> An error occurred, such as an invalid mountpoint or failure during the
+> mounting process.
 
 # SEE ALSO
 
 plakar(1),
 plakar-query(7)
 
-Plakar - July 3, 2025
+Plakar - July 3, 2025 - PLAKAR-MOUNT(1)

@@ -9,6 +9,8 @@ PLAKAR-SERVER(1) - General Commands Manual
 **plakar&nbsp;server**
 \[**-allow-delete**]
 \[**-listen**&nbsp;\[*host*]:*port*]
+\[**-cert**&nbsp;*path*]
+\[**-key**&nbsp;*path*]
 
 # DESCRIPTION
 
@@ -38,6 +40,20 @@ The options are as follows:
 > **-listen**
 > is not provided, the server defaults to listen on localhost at port 9876.
 
+**-cert** *path*
+
+> Path to a full certificate file in PEM format.
+> If both
+> **-cert**
+> and
+> **-key**
+> are provided, the server will expect https connections.
+> If one or both are missing, the server will fall back to http.
+
+**-key** *path*
+
+> Path to a certificate private key file in PEM format.
+
 # EXAMPLES
 
 Start a plakar server on the local store:
@@ -51,6 +67,10 @@ Start a plakar server on a remote store:
 Start a server on a specific address and port:
 
 	$ plakar server -listen 127.0.0.1:12345
+
+Start a https server on a specific address and port:
+
+	$ plakar server -listen backup.example.com:12345 -cert fullchain.pem -key privkey.pem
 
 # DIAGNOSTICS
 
@@ -67,4 +87,4 @@ When a host name is provided,
 uses only one of the IP addresses it resolves to,
 preferably IPv4 .
 
-Plakar - July 3, 2025
+Plakar - July 3, 2025 - PLAKAR-SERVER(1)
