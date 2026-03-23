@@ -125,7 +125,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 		name := normalizeName(args[0])
 		if !hasFunc(name) {
-			return fmt.Errorf("%s %q does not exists", cmd, name)
+			return fmt.Errorf("%s %q does not exist", cmd, name)
 		}
 
 		switch cmd {
@@ -255,7 +255,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 		name := normalizeName(args[0])
 		if !hasFunc(name) {
-			return fmt.Errorf("%s %q does not exists", cmd, name)
+			return fmt.Errorf("%s %q does not exist", cmd, name)
 		}
 
 		switch cmd {
@@ -335,7 +335,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 		name := normalizeName(args[0])
 		if !hasFunc(name) {
-			return fmt.Errorf("%s %q does not exists", cmd, name)
+			return fmt.Errorf("%s %q does not exist", cmd, name)
 		}
 		for _, kv := range args[1:] {
 			key, val, found := strings.Cut(kv, "=")
@@ -439,7 +439,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 		name := normalizeName(args[0])
 		if !hasFunc(name) {
-			return fmt.Errorf("%s %q does not exists", cmd, name)
+			return fmt.Errorf("%s %q does not exist", cmd, name)
 		}
 		for _, key := range args[1:] {
 			if key == "location" {

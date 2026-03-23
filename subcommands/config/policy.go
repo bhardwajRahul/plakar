@@ -114,7 +114,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		}
 		name := normalizeName(args[0])
 		if !config.Has(name) {
-			return fmt.Errorf("%s %q does not exists", cmd, name)
+			return fmt.Errorf("%s %q does not exist", cmd, name)
 		}
 		for _, kv := range args[1:] {
 			key, val, found := strings.Cut(kv, "=")
@@ -169,7 +169,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		}
 		name := normalizeName(args[0])
 		if !config.Has(name) {
-			return fmt.Errorf("%s %q does not exists", cmd, name)
+			return fmt.Errorf("%s %q does not exist", cmd, name)
 		}
 		for _, key := range args[1:] {
 			config.Unset(name, key)

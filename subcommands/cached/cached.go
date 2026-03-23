@@ -131,7 +131,7 @@ func (cmd *Cached) Close() error {
 }
 
 func (cmd *Cached) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
-	// Since we are detaching, we loose all stack traces, with no possibility
+	// Since we are detaching, we lose all stack traces, with no possibility
 	// to recover them, try to log them to a known location.
 	crashLog := filepath.Join(ctx.GetInner().CacheDir, "crash-cached.log")
 	f, err := os.OpenFile(crashLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
@@ -153,7 +153,7 @@ func (cmd *Cached) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 }
 
 // Background task dealing with the teardown, basically anything running sends a
-// message over the channel, when taks is done we get another message. If the
+// message over the channel, when task is done we get another message. If the
 // teardown time passes and nothing is in flight we are free to stop, otherwise
 // someone is running and we need to stay alive. This is not a perfect "last
 // request + teardown seconds" implementation but it's close enough for our need
