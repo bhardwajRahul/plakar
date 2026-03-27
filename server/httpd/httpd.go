@@ -22,12 +22,11 @@ var ErrInvalidRange = fmt.Errorf("Invalid range")
 
 type server struct {
 	store    storage.Store
-	ctx      context.Context
 	noDelete bool
 }
 
 func (s *server) openRepository(w http.ResponseWriter, r *http.Request) {
-	serializedConfig, err := s.store.Open(s.ctx)
+	serializedConfig, err := s.store.Open(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -132,7 +131,6 @@ func (s *server) deleteResource(w http.ResponseWriter, r *http.Request) {
 func Server(ctx context.Context, repo *repository.Repository, addr string, noDelete bool, cert string, key string) error {
 	s := server{
 		store:    repo.Store(),
-		ctx:      ctx,
 		noDelete: noDelete,
 	}
 
