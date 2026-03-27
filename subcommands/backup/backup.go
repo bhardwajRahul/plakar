@@ -59,7 +59,7 @@ type Backup struct {
 	PostHook            string
 	FailHook            string
 	NoXattr             bool
-	NoVFSCache          bool
+	Cache               string
 	NoProgress          bool
 }
 
@@ -127,7 +127,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
 	flags.BoolVar(&cmd.DryRun, "dry-run", false, "do not actually perform a backup")
 	flags.BoolVar(&cmd.NoXattr, "no-xattr", false, "do not back up extended attributes")
-	flags.BoolVar(&cmd.NoVFSCache, "no-vfs-cache", false, "do not use VFS cache for this backup")
+	flags.StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
 	flags.BoolVar(&cmd.NoProgress, "no-progress", false, "do not display progress")
 
 	flags.Var(locate.NewTimeFlag(&cmd.ForcedTimestamp), "force-timestamp", "force a timestamp")
@@ -326,7 +326,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 
 		var parentVFS *vfs.Filesystem
 
-		if !cmd.NoVFSCache {
+		if cmd.Cache == "vfs" {
 			parentID, _, err := locate.Match(repo, &locate.LocateOptions{
 				Filters: locate.LocateFilters{
 					Latest: true,
