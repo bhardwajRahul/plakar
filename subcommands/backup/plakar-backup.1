@@ -17,6 +17,11 @@
 .Op Fl quiet
 .Op Fl silent
 .Op Fl tag Ar tag
+.Op Fl name Ar name
+.Op Fl job Ar job
+.Op Fl category Ar category
+.Op Fl environment Ar environment
+.Op Fl perimeter Ar perimeter
 .Op Ar place
 .Sh DESCRIPTION
 The
@@ -72,6 +77,16 @@ is specified then the packfiles are built in memory.
 Suppress all output.
 .It Fl tag Ar tag
 Comma-separated list of tags to apply to the snapshot.
+.It Fl name Ar name
+Name the snapshot.
+.It Fl job Ar job
+Name the snapshot job.
+.It Fl category Ar category
+Set the snapshot category.
+.It Fl environment Ar environment
+Set the snapshot environment.
+.It Fl perimeter Ar perimeter
+Set the snapshot perimeter.
 .El
 .Sh ENVIRONMENT
 .Bl -tag -width Ds
