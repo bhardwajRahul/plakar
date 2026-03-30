@@ -65,4 +65,4 @@ plakar-pkg-create(1),
 plakar-pkg-rm(1),
 plakar-pkg-show(1)
 
-Plakar - March 23, 2026 - PLAKAR-PKG-ADD(1)
+Plakar - March 23, 2026
