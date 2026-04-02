@@ -10,6 +10,7 @@ PLAKAR-BACKUP(1) - General Commands Manual
 \[**-force-timestamp**&nbsp;*timestamp*]
 \[**-ignore**&nbsp;*pattern*]
 \[**-ignore-file**&nbsp;*file*]
+\[**-cache**&nbsp;*path*]
 \[**-check**]
 \[**-dry-run**]
 \[**-no-xattr**]
@@ -59,6 +60,16 @@ The options are as follows:
 
 > Specify a file containing gitignore exclusion patterns, one per line, to
 > ignore files or directories in the backup.
+
+**-cache** *path*
+
+> Specify a path to store the vfs cache.
+> Use the special value
+> 'no'
+> to disable caching.
+> Use the special value
+> 'vfs'
+> to use the in-memory vfs cache (the default).
 
 **-check**
 

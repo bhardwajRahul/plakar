@@ -9,6 +9,7 @@
 .Op Fl force-timestamp Ar timestamp
 .Op Fl ignore Ar pattern
 .Op Fl ignore-file Ar file
+.Op Fl cache Ar path
 .Op Fl check
 .Op Fl dry-run
 .Op Fl no-xattr
@@ -51,6 +52,14 @@ This option can be repeated.
 .It Fl ignore-file Ar file
 Specify a file containing gitignore exclusion patterns, one per line, to
 ignore files or directories in the backup.
+.It Fl cache Ar path
+Specify a path to store the vfs cache.
+Use the special value
+.Sq no
+to disable caching.
+Use the special value
+.Sq vfs
+to use the in-memory vfs cache (the default).
 .It Fl check
 Perform a full check on the backup after success.
 .It Fl dry-run
