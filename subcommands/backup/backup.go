@@ -61,6 +61,10 @@ type Backup struct {
 	NoXattr             bool
 	Cache               string
 	NoProgress          bool
+	Name                string
+	Category            string
+	Environment         string
+	Perimeter           string
 }
 
 func init() {
@@ -120,6 +124,11 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	}
 
 	flags.Var(&opt_tags, "tag", "comma-separated list of tags to apply to the snapshot")
+	flags.StringVar(&cmd.Name, "name", "default", "backup name")
+	flags.StringVar(&cmd.Category, "category", "", "backup category")
+	flags.StringVar(&cmd.Environment, "environment", "", "backup environment")
+	flags.StringVar(&cmd.Perimeter, "perimeter", "", "backup perimeter")
+	flags.StringVar(&cmd.Job, "job", "", "backup job")
 	flags.StringVar(&opt_ignore_file, "ignore-file", "", "path to a file containing newline-separated gitignore patterns, treated as -ignore")
 	flags.Var(&opt_ignore, "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
 	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
@@ -191,8 +200,12 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	defer emitter.Close()
 
 	opts := &snapshot.BuilderOptions{
-		Name:           "default",
+		Name:           cmd.Name,
 		Tags:           cmd.Tags,
+		Job:            cmd.Job,
+		Category:       cmd.Category,
+		Environment:    cmd.Environment,
+		Perimeter:      cmd.Perimeter,
 		NoXattr:        cmd.NoXattr,
 		StateRefresher: stateRefresher(ctx, repo),
 	}

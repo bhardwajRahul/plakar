@@ -19,6 +19,11 @@ PLAKAR-BACKUP(1) - General Commands Manual
 \[**-quiet**]
 \[**-silent**]
 \[**-tag**&nbsp;*tag*]
+\[**-name**&nbsp;*name*]
+\[**-job**&nbsp;*job*]
+\[**-category**&nbsp;*category*]
+\[**-environment**&nbsp;*environment*]
+\[**-perimeter**&nbsp;*perimeter*]
 \[*place*]
 
 # DESCRIPTION
@@ -107,6 +112,26 @@ The options are as follows:
 **-tag** *tag*
 
 > Comma-separated list of tags to apply to the snapshot.
+
+**-name** *name*
+
+> Name the snapshot.
+
+**-job** *job*
+
+> Name the snapshot job.
+
+**-category** *category*
+
+> Set the snapshot category.
+
+**-environment** *environment*
+
+> Set the snapshot environment.
+
+**-perimeter** *perimeter*
+
+> Set the snapshot perimeter.
 
 # ENVIRONMENT
 
