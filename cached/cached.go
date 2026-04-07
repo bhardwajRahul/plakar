@@ -52,11 +52,6 @@ func rebuildStateRequest(ctx *appcontext.AppContext, req *RequestPkt) (int, erro
 	}
 	defer client.Close()
 
-	go func() {
-		<-ctx.Done()
-		client.Close()
-	}()
-
 	if err := client.enc.Encode(req); err != nil {
 		return 1, err
 	}
