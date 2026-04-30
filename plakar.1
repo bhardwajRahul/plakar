@@ -8,6 +8,8 @@
 .Nm
 .Op Fl concurrency Ar number
 .Op Fl config Ar dir
+.Op Fl cache Ar dir
+.Op Fl data Ar dir
 .Op Fl cpu Ar number
 .Op Fl json
 .Op Fl keyfile Ar path
@@ -40,6 +42,14 @@ Defaults to the CPU count.
 Specify an alternate configuration directory.
 Defaults to
 .Pa ~/.config/plakar .
+.It Fl cache Ar dir
+Specify an alternate cache directory.
+Defaults to
+.Pa ~/.cache/plakar .
+.It Fl data Ar dir
+Specify an alternate data directory.
+Defaults to
+.Pa ~/.local/share/plakar .
 .It Fl cpu Ar number
 Limit the number of parallel workers
 .Nm

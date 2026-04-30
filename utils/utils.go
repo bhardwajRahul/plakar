@@ -275,14 +275,13 @@ func GetCacheDir(appName string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		cacheDir = filepath.Join(homeDir, ".cache", appName)
+		if runtime.GOOS == "windows" {
+			cacheDir = filepath.Join(homeDir, "AppData", "Local", appName)
+		} else {
+			cacheDir = filepath.Join(homeDir, ".cache", appName)
+		}
 	} else {
 		cacheDir = filepath.Join(cacheDir, appName)
-	}
-	// Create the cache directory if it doesn't exist
-	err := os.MkdirAll(cacheDir, 0700)
-	if err != nil {
-		return "", err
 	}
 
 	return cacheDir, nil
@@ -308,12 +307,6 @@ func GetConfigDir(appName string) (string, error) {
 		configDir = filepath.Join(configDir, appName)
 	}
 
-	// Create the cache directory if it doesn't exist
-	err := os.MkdirAll(configDir, 0700)
-	if err != nil {
-		return "", err
-	}
-
 	return configDir, nil
 }
 
@@ -335,12 +328,6 @@ func GetDataDir(appName string) (string, error) {
 		dataDir = filepath.Join(homeDir, ".local", "share", appName)
 	} else {
 		dataDir = filepath.Join(dataDir, appName)
-	}
-
-	// Create the cache directory if it doesn't exist
-	err := os.MkdirAll(dataDir, 0700)
-	if err != nil {
-		return "", err
 	}
 
 	return dataDir, nil

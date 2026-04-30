@@ -9,6 +9,8 @@ PLAKAR(1) - General Commands Manual
 **plakar**
 \[**-concurrency**&nbsp;*number*]
 \[**-config**&nbsp;*dir*]
+\[**-cache**&nbsp;*dir*]
+\[**-data**&nbsp;*dir*]
 \[**-cpu**&nbsp;*number*]
 \[**-json**]
 \[**-keyfile**&nbsp;*path*]
@@ -46,6 +48,18 @@ The following options are available:
 > Specify an alternate configuration directory.
 > Defaults to
 > *~/.config/plakar*.
+
+**-cache** *dir*
+
+> Specify an alternate cache directory.
+> Defaults to
+> *~/.cache/plakar*.
+
+**-data** *dir*
+
+> Specify an alternate data directory.
+> Defaults to
+> *~/.local/share/plakar*.
 
 **-cpu** *number*
 
