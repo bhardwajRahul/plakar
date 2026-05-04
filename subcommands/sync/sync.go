@@ -27,6 +27,7 @@ import (
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
+	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -371,6 +372,42 @@ func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstReposito
 
 	// overwrite the header, we want to keep the original snapshot info
 	dstSnapshot.Header = srcSnapshot.Header
+
+	var parentVFS *vfs.Filesystem
+	if true {
+		parentID, _, err := locate.Match(dstRepository, &locate.LocateOptions{
+			Filters: locate.LocateFilters{
+				Latest: true,
+				Roots: []string{
+					srcSnapshot.Header.GetSource(0).Importer.Directory,
+				},
+				Types: []string{
+					srcSnapshot.Header.GetSource(0).Importer.Type,
+				},
+				Origins: []string{
+					srcSnapshot.Header.GetSource(0).Importer.Origin,
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(parentID) != 0 {
+			parent, err := snapshot.Load(dstRepository, parentID[0])
+			if err != nil {
+				return err
+			}
+			defer parent.Close()
+
+			parentVFS, err = parent.FilesystemWithCache()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	dstSnapshot.WithVFSCache(parentVFS)
 
 	if err := srcSnapshot.Synchronize(dstSnapshot); err != nil {
 		return err
