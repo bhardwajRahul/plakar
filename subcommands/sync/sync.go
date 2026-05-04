@@ -230,6 +230,9 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 		srcRepository = peerRepository
 		dstRepository = repo
 		srcStoreConfig = storeConfig
+		tmp := ctx
+		ctx = peerCtx
+		peerCtx = tmp
 	} else if cmd.Direction == "with" {
 		srcRepository = repo
 		dstRepository = peerRepository
@@ -292,10 +295,18 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	}
 
 	if cmd.Direction == "with" {
+
 		dstSnapshotIDs, err := locate.LocateSnapshotIDs(dstRepository, cmd.SrcLocateOptions)
 		if err != nil {
 			return 1, fmt.Errorf("could not locate snapshots in store %s: %s", dstLocation, err)
 		}
+
+		srcRepository = peerRepository
+		dstRepository = repo
+		srcStoreConfig = storeConfig
+		tmp := ctx
+		ctx = peerCtx
+		peerCtx = tmp
 
 		dstSyncList := make([]objects.MAC, 0)
 		for _, snapshotID := range dstSnapshotIDs {
@@ -309,7 +320,8 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			if err := ctx.Err(); err != nil {
 				return 1, err
 			}
-			err := synchronize(ctx, peerCtx, dstRepository, srcRepository, storeConfig, snapshotID, cmd.PackfileTempStorage)
+
+			err := synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
 			if err != nil {
 				ctx.GetLogger().Error("failed to synchronize snapshot %x from peer store %s: %s",
 					snapshotID[:4], dstLocation, err)
