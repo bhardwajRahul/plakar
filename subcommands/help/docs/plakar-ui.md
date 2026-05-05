@@ -60,6 +60,10 @@ The options are as follows:
 
 > Path to a certificate private key file in PEM format.
 
+# EXIT STATUS
+
+The **plakar-ui** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Using a custom address and disable automatic browser execution:
@@ -70,21 +74,8 @@ Create a https server with a custom certificate:
 
 	$ plakar ui -cert fullchain.pem -key privkey.pem
 
-# DIAGNOSTICS
-
-The **plakar-ui** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> A general error occurred, such as an inability to launch the UI or
-> bind to the specified address.
-
 # SEE ALSO
 
 plakar(1)
 
-Plakar - August 6, 2025
+Plakar - May 5, 2026 - PLAKAR-UI(1)

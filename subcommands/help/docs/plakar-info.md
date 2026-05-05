@@ -25,6 +25,10 @@ The options are as follows:
 
 > Show errors within the specified snapshot.
 
+# EXIT STATUS
+
+The **plakar-info** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Show repository information:
@@ -39,22 +43,9 @@ Show errors within a snapshot:
 
 	$ plakar info -errors abc123
 
-# DIAGNOSTICS
-
-The **plakar-info** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as an invalid snapshot or object ID, or a
-> failure to retrieve the requested data.
-
 # SEE ALSO
 
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-INFO(1)

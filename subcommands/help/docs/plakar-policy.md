@@ -46,13 +46,11 @@ The subcommands are as follows:
 > Multiple option/value pairs can be specified.
 
 **show**
-\[**-ini**]
 \[**-json**]
 \[**-yaml**]
 \[*name ...*]
 
 > Display the current sources configuration.
-> **-ini**,
 > **-json**
 > and
 > **-yaml**
@@ -95,4 +93,4 @@ policy:
 plakar(1),
 plakar-prune(1)
 
-Plakar - September 11, 2025
+Plakar - September 11, 2025 - PLAKAR-POLICY(1)

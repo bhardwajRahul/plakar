@@ -9,6 +9,7 @@ PLAKAR-LS(1) - General Commands Manual
 **plakar&nbsp;ls**
 \[**-uuid**]
 \[**-recursive**]
+\[**-tags**]
 \[*snapshotID*:*path*]
 
 # DESCRIPTION
@@ -37,6 +38,14 @@ The options are as follows:
 
 > List directory contents recursively when exploring snapshot contents.
 
+**-tags**
+
+> Show tags in snapshot listing.
+
+# EXIT STATUS
+
+The **plakar-ls** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 List all snapshots with their short IDs:
@@ -59,22 +68,9 @@ Recursively list contents of a specific snapshot:
 
 	$ plakar ls -recursive abc123:/etc
 
-# DIAGNOSTICS
-
-The **plakar-ls** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as failure to retrieve snapshot information or
-> invalid snapshot ID.
-
 # SEE ALSO
 
 plakar(1),
 plakar-query(7)
 
-Plakar - September 10, 2025
+Plakar - May 5, 2026 - PLAKAR-LS(1)

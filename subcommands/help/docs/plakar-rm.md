@@ -7,15 +7,7 @@ PLAKAR-RM(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;rm**
-\[**-name**&nbsp;*name*]
-\[**-category**&nbsp;*category*]
-\[**-environment**&nbsp;*environment*]
-\[**-perimeter**&nbsp;*perimeter*]
-\[**-job**&nbsp;*job*]
-\[**-tag**&nbsp;*tag*]
-\[**-latest**]
-\[**-before**&nbsp;*date*]
-\[**-since**&nbsp;*date*]
+\[**-apply**]
 \[*snapshotID&nbsp;...*]
 
 # DESCRIPTION
@@ -33,58 +25,24 @@ or
 **-tag**
 must be specified to filter the snapshots to delete.
 
+In addition to the flags described below,
+**plakar ls**
+supports the location flags documented in
+plakar-query(7)
+to precisely select snapshots.
+
 The arguments are as follows:
 
-**-name** *name*
+**-apply**
 
-> Filter snapshots that match
-> *name*.
+> Delete the matching snapshots.
+> By default,
+> **plakar rm**
+> only prints the snapshots that would be deleted.
 
-**-category** *category*
+# EXIT STATUS
 
-> Filter snapshots that match
-> *category*.
-
-**-environment** *environment*
-
-> Filter snapshots that match
-> *environment*.
-
-**-perimeter** *perimeter*
-
-> Filter snapshots that match
-> *perimeter*.
-
-**-job** *job*
-
-> Filter snapshots that match
-> *job*.
-
-**-tag** *tag*
-
-> Filter snapshots that match
-> *tag*.
-
-**-latest**
-
-> Filter latest snapshot matching filters.
-
-**-before** *date*
-
-> Filter snapshots matching filters and older than the specified date.
-> Accepted formats include relative durations
-> (e.g. 2d for two days, 1w for one week)
-> or specific dates in various formats
-> (e.g. 2006-01-02 15:04:05).
-
-**-since** *date*
-
-> Filter snapshots matching filters and created since the specified date,
-> included.
-> Accepted formats include relative durations
-> (e.g. 2d for two days, 1w for one week)
-> or specific dates in various formats
-> (e.g. 2006-01-02 15:04:05).
+The **plakar-rm** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
 # EXAMPLES
 
@@ -104,22 +62,9 @@ Remove snapshots older than 1 year with a specific tag:
 
 	$ plakar rm -before 1y -tag daily-backup
 
-# DIAGNOSTICS
-
-The **plakar-rm** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as invalid date format or failure to delete a
-> snapshot.
-
 # SEE ALSO
 
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-RM(1)

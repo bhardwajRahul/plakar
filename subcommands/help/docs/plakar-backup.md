@@ -7,23 +7,22 @@ PLAKAR-BACKUP(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;backup**
+\[**-cache**&nbsp;*path*]
+\[**-category**&nbsp;*category*]
+\[**-check**]
+\[**-dry-run**]
+\[**-environment**&nbsp;*environment*]
 \[**-force-timestamp**&nbsp;*timestamp*]
 \[**-ignore**&nbsp;*pattern*]
 \[**-ignore-file**&nbsp;*file*]
-\[**-cache**&nbsp;*path*]
-\[**-check**]
-\[**-dry-run**]
+\[**-job**&nbsp;*job*]
+\[**-name**&nbsp;*name*]
+\[**-no-progress**]
 \[**-no-xattr**]
 \[**-o**&nbsp;*option*=*value*]
 \[**-packfiles**&nbsp;*path*]
-\[**-quiet**]
-\[**-silent**]
-\[**-tag**&nbsp;*tag*]
-\[**-name**&nbsp;*name*]
-\[**-job**&nbsp;*job*]
-\[**-category**&nbsp;*category*]
-\[**-environment**&nbsp;*environment*]
 \[**-perimeter**&nbsp;*perimeter*]
+\[**-tag**&nbsp;*tag*]
 \[*place*]
 
 # DESCRIPTION
@@ -44,6 +43,35 @@ plakar-source(1).
 
 The options are as follows:
 
+**-cache** *path*
+
+> Specify a path to store the vfs cache.
+> Use the special value
+> 'no'
+> to disable caching.
+> Use the special value
+> 'vfs'
+> to use the in-memory vfs cache (the default).
+
+**-category** *category*
+
+> Set the snapshot category.
+
+**-check**
+
+> Perform a full check on the backup after success.
+
+**-dry-run**
+
+> Do not write a snapshot; instead, perform a dry run by outputting the list of
+> files and directories that would be included in the backup.
+> Respects all exclude patterns and other options, but makes no changes to the
+> Kloset store.
+
+**-environment** *environment*
+
+> Set the snapshot environment.
+
 **-force-timestamp** *timestamp*
 
 > Specify a fixed timestamp (in ISO 8601 or relative human format) to use
@@ -61,26 +89,24 @@ The options are as follows:
 > Specify a file containing gitignore exclusion patterns, one per line, to
 > ignore files or directories in the backup.
 
-**-cache** *path*
+**-job** *job*
 
-> Specify a path to store the vfs cache.
-> Use the special value
-> 'no'
-> to disable caching.
-> Use the special value
-> 'vfs'
-> to use the in-memory vfs cache (the default).
+> Name the snapshot job.
 
-**-check**
+**-name** *name*
 
-> Perform a full check on the backup after success.
+> Name the snapshot.
 
-**-dry-run**
+**-no-progress**
 
-> Do not write a snapshot; instead, perform a dry run by outputting the list of
-> files and directories that would be included in the backup.
-> Respects all exclude patterns and other options, but makes no changes to the
-> Kloset store.
+> Do not compute or display progress.
+> By default,
+> **plakar backup**
+> does two passes on the source of the backup: one to compute the
+> number of items, and a second for processing the items themselves.
+> This flag disables the pass to compute the number of items.
+> It is set implicitly for some importer connectors that don't support
+> the two-passes.
 
 **-no-xattr**
 
@@ -93,45 +119,21 @@ The options are as follows:
 > *option*
 > takes precedence over the configuration file.
 
-**-quiet**
-
-> Suppress output to standard input, only logging errors and warnings.
-
 **-packfiles** *path*
 
-> Path where to put the temporary packfiles instead of building them in the
-> default temporary directory.
+> Path where to put the temporary packfiles instead of building them in
+> the default temporary directory.
 > If the special value
 > 'memory'
 > is specified then the packfiles are built in memory.
 
-**-silent**
+**-perimeter** *perimeter*
 
-> Suppress all output.
+> Set the snapshot perimeter.
 
 **-tag** *tag*
 
 > Comma-separated list of tags to apply to the snapshot.
-
-**-name** *name*
-
-> Name the snapshot.
-
-**-job** *job*
-
-> Name the snapshot job.
-
-**-category** *category*
-
-> Set the snapshot category.
-
-**-environment** *environment*
-
-> Set the snapshot environment.
-
-**-perimeter** *perimeter*
-
-> Set the snapshot perimeter.
 
 # ENVIRONMENT
 
@@ -141,6 +143,10 @@ The options are as follows:
 > Overridden by the
 > **-tag**
 > command-line flag.
+
+# EXIT STATUS
+
+The **plakar-backup** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
 # EXAMPLES
 
@@ -161,26 +167,9 @@ points:
 
 	$ plakar backup -o dont_traverse_fs=true /
 
-# DIAGNOSTICS
-
-The **plakar-backup** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully; a snapshot was created, but some items may have
-> been skipped (for example, files without sufficient permissions).
-> Run
-> plakar-info(1)
-> on the new snapshot to view any errors.
-
-&gt;0
-
-> An error occurred, such as failure to access the Kloset store or issues
-> with exclusion patterns.
-
 # SEE ALSO
 
 plakar(1),
 plakar-source(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-BACKUP(1)

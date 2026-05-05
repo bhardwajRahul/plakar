@@ -110,7 +110,7 @@ The subcommands are as follows:
 > for the store entry identified by
 > *name*.
 
-# DIAGNOSTICS
+# EXIT STATUS
 
 The **plakar-store** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
@@ -118,4 +118,4 @@ The **plakar-store** utility exits&#160;0 on success, and&#160;&gt;0 if an error
 
 plakar(1)
 
-Plakar - September 11, 2025
+Plakar - May 5, 2026 - PLAKAR-STORE(1)

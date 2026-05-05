@@ -38,6 +38,10 @@ The options are as follows:
 
 > Limit the search to the given snapshot.
 
+# EXIT STATUS
+
+The **plakar-locate** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Search for files ending in
@@ -46,19 +50,6 @@ Search for files ending in
 	$ plakar locate '*wd'
 	abc123:/etc/master.passwd
 	abc123:/etc/passwd
-
-# DIAGNOSTICS
-
-The **plakar-locate** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as invalid parameters, inability to create the
-> repository, or configuration issues.
 
 # SEE ALSO
 
@@ -71,4 +62,4 @@ plakar-query(7)
 The patterns may have to be quoted to avoid the shell attempting to
 expand them.
 
-Plakar - September 10, 2025
+Plakar - May 5, 2026 - PLAKAR-LOCATE(1)

@@ -7,6 +7,7 @@ PLAKAR-SYNC(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;sync**
+\[**-cache**&nbsp;*path*]
 \[**-packfiles**&nbsp;*path*]
 \[*snapshotID*]
 **to**&nbsp;|&nbsp;**from**&nbsp;|&nbsp;**with**
@@ -26,6 +27,16 @@ plakar-query(7)
 to precisely select snapshots.
 
 The options are as follows:
+
+**-cache** *path*
+
+> Specify a path to store the vfs cache.
+> Use the special value
+> 'no'
+> to disable caching.
+> Use the special value
+> 'vfs'
+> to use the in-memory vfs cache (the default).
 
 **-packfiles** *path*
 
@@ -60,6 +71,10 @@ The arguments are as follows:
 
 > Path to the peer repository to synchronize with.
 
+# EXIT STATUS
+
+The **plakar-sync** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Synchronize the snapshot
@@ -76,22 +91,9 @@ Synchronize all snapshots of @peer to @repo:
 
 	$ plakar at @repo sync from @peer
 
-# DIAGNOSTICS
-
-The **plakar-sync** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> General failure occurred, such as an invalid repository path, snapshot
-> ID mismatch, or network error.
-
 # SEE ALSO
 
 plakar(1),
 plakar-query(7)
 
-Plakar - September 10, 2025
+Plakar - May 5, 2026 - PLAKAR-SYNC(1)

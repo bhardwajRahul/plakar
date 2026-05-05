@@ -7,15 +7,11 @@ PLAKAR-RESTORE(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;restore**
-\[**-before**&nbsp;*date*]
 \[**-category**&nbsp;*category*]
 \[**-environment**&nbsp;*environment*]
 \[**-job**&nbsp;*job*]
-\[**-latest**]
 \[**-name**&nbsp;*name*]
 \[**-perimeter**&nbsp;*perimeter*]
-\[**-quiet**]
-\[**-since**&nbsp;*date*]
 \[**-skip-permissions**]
 \[**-tag**&nbsp;*tag*]
 \[**-to**&nbsp;*directory*]
@@ -88,9 +84,9 @@ The options are as follows:
 > *option*
 > takes precedence over the configuration file.
 
-**-quiet**
+# EXIT STATUS
 
-> Suppress output to standard input, only logging errors and warnings.
+The **plakar-restore** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
 # EXAMPLES
 
@@ -101,10 +97,6 @@ Restore all files from a specific snapshot to the current directory:
 Restore to a specific directory:
 
 	$ plakar restore -to /mnt/ abc123
-
-Restore latest snapshot to a specific directory:
-
-	$ plakar restore -latest -to /mnt/ abc123
 
 Restore specific path to a specific directory:
 
@@ -118,22 +110,9 @@ Restore specific path to a specific destination :
 
 	$ plakar restore -to  @s3target abc123:/etc/apache2
 
-# DIAGNOSTICS
-
-The **plakar-restore** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as a failure to locate the snapshot or a
-> destination directory issue.
-
 # SEE ALSO
 
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-RESTORE(1)

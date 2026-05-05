@@ -52,6 +52,10 @@ The sub-commands are as follows:
 
 **xattr** *snapshotID*:*path*
 
+# EXIT STATUS
+
+The **plakar-diag** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Show repository information:
@@ -74,22 +78,9 @@ Display filesystem details for a path within a snapshot:
 
 	$ plakar diag vfs abc123:/etc/passwd
 
-# DIAGNOSTICS
-
-The **plakar-diag** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as an invalid snapshot or object ID, or a
-> failure to retrieve the requested data.
-
 # SEE ALSO
 
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-DIAG(1)
