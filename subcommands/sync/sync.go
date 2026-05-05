@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
@@ -27,6 +28,7 @@ import (
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
+	"github.com/PlakarKorp/kloset/snapshot/vfs"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
@@ -41,6 +43,7 @@ type Sync struct {
 
 	Direction           string
 	PackfileTempStorage string
+	Cache               string
 
 	SrcLocateOptions *locate.LocateOptions
 }
@@ -62,6 +65,7 @@ func (cmd *Sync) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	cmd.SrcLocateOptions.InstallLocateFlags(flags)
 	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
+	flags.StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
 
 	flags.Parse(args)
 
@@ -176,15 +180,20 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 
 	peerStore, peerStoreSerializedConfig, err := storage.Open(ctx.GetInner(), storeConfig)
 	if err != nil {
-		return 1, fmt.Errorf("could not open peer store %s: %s", cmd.PeerRepositoryLocation, err)
+		return 1, fmt.Errorf("could not open peer store %s: %w", cmd.PeerRepositoryLocation, err)
 	}
 
 	peerCtx := appcontext.NewAppContextFrom(ctx)
 	peerCtx.SetSecret(cmd.PeerRepositorySecret)
 	peerCtx.StoreConfig = storeConfig
-	peerRepository, err := repository.New(peerCtx.GetInner(), peerCtx.GetSecret(), peerStore, peerStoreSerializedConfig)
+	peerRepository, err := repository.NewNoRebuild(peerCtx.GetInner(), peerCtx.GetSecret(), peerStore, peerStoreSerializedConfig, runtime.GOOS != "windows")
 	if err != nil {
-		return 1, fmt.Errorf("could not open peer store %s: %s", cmd.PeerRepositoryLocation, err)
+		return 1, fmt.Errorf("could not open peer repository %s: %w", cmd.PeerRepositoryLocation, err)
+	}
+
+	_, err = cached.RebuildStateFromStore(ctx, peerRepository.Configuration().RepositoryID, storeConfig, false)
+	if err != nil {
+		return 1, fmt.Errorf("failed to rebuild peer repository's state %s: %w", cmd.PeerRepositoryLocation, err)
 	}
 
 	if repo.Configuration().RepositoryID == peerRepository.Configuration().RepositoryID {
@@ -230,6 +239,9 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 		srcRepository = peerRepository
 		dstRepository = repo
 		srcStoreConfig = storeConfig
+		tmp := ctx
+		ctx = peerCtx
+		peerCtx = tmp
 	} else if cmd.Direction == "with" {
 		srcRepository = repo
 		dstRepository = peerRepository
@@ -282,7 +294,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			return 1, err
 		}
 
-		err := synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
+		err := cmd.synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID)
 		if err != nil {
 			ctx.GetLogger().Error("failed to synchronize snapshot %x from store %s: %s",
 				snapshotID[:4], srcLocation, err)
@@ -292,10 +304,18 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	}
 
 	if cmd.Direction == "with" {
+
 		dstSnapshotIDs, err := locate.LocateSnapshotIDs(dstRepository, cmd.SrcLocateOptions)
 		if err != nil {
 			return 1, fmt.Errorf("could not locate snapshots in store %s: %s", dstLocation, err)
 		}
+
+		srcRepository = peerRepository
+		dstRepository = repo
+		srcStoreConfig = storeConfig
+		tmp := ctx
+		ctx = peerCtx
+		peerCtx = tmp
 
 		dstSyncList := make([]objects.MAC, 0)
 		for _, snapshotID := range dstSnapshotIDs {
@@ -309,7 +329,8 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			if err := ctx.Err(); err != nil {
 				return 1, err
 			}
-			err := synchronize(ctx, peerCtx, dstRepository, srcRepository, storeConfig, snapshotID, cmd.PackfileTempStorage)
+
+			err := cmd.synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID)
 			if err != nil {
 				ctx.GetLogger().Error("failed to synchronize snapshot %x from peer store %s: %s",
 					snapshotID[:4], dstLocation, err)
@@ -336,7 +357,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	return 0, nil
 }
 
-func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC, packfileDir string) error {
+func (cmd *Sync) synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC) error {
 	srcLocation := srcRepository.Origin()
 	dstLocation := dstRepository.Origin()
 
@@ -347,7 +368,7 @@ func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstReposito
 	}
 	defer srcSnapshot.Close()
 
-	dstSnapshot, err := snapshot.Create(dstRepository, repository.DefaultType, packfileDir, srcSnapshot.Header.Identifier, &snapshot.BuilderOptions{
+	dstSnapshot, err := snapshot.Create(dstRepository, repository.DefaultType, cmd.PackfileTempStorage, srcSnapshot.Header.Identifier, &snapshot.BuilderOptions{
 		NoCommit:       false,
 		NoCheckpoint:   false,
 		StateRefresher: stateRefresher(peerCtx, dstRepository),
@@ -359,6 +380,42 @@ func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstReposito
 
 	// overwrite the header, we want to keep the original snapshot info
 	dstSnapshot.Header = srcSnapshot.Header
+
+	var parentVFS *vfs.Filesystem
+	if cmd.Cache == "vfs" {
+		parentID, _, err := locate.Match(dstRepository, &locate.LocateOptions{
+			Filters: locate.LocateFilters{
+				Latest: true,
+				Roots: []string{
+					srcSnapshot.Header.GetSource(0).Importer.Directory,
+				},
+				Types: []string{
+					srcSnapshot.Header.GetSource(0).Importer.Type,
+				},
+				Origins: []string{
+					srcSnapshot.Header.GetSource(0).Importer.Origin,
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(parentID) != 0 {
+			parent, err := snapshot.Load(dstRepository, parentID[0])
+			if err != nil {
+				return err
+			}
+			defer parent.Close()
+
+			parentVFS, err = parent.FilesystemWithCache()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	dstSnapshot.WithVFSCache(parentVFS)
 
 	if err := srcSnapshot.Synchronize(dstSnapshot); err != nil {
 		return err
