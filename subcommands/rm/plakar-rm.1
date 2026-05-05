@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-RM 1
 .Os
 .Sh NAME
@@ -6,15 +6,7 @@
 .Nd Remove snapshots from a Plakar repository
 .Sh SYNOPSIS
 .Nm plakar rm
-.Op Fl name Ar name
-.Op Fl category Ar category
-.Op Fl environment Ar environment
-.Op Fl perimeter Ar perimeter
-.Op Fl job Ar job
-.Op Fl tag Ar tag
-.Op Fl latest
-.Op Fl before Ar date
-.Op Fl since Ar date
+.Op Fl apply
 .Op Ar snapshotID ...
 .Sh DESCRIPTION
 The
@@ -30,41 +22,19 @@ or
 .Fl tag
 must be specified to filter the snapshots to delete.
 .Pp
+In addition to the flags described below,
+.Nm plakar ls
+supports the location flags documented in
+.Xr plakar-query 7
+to precisely select snapshots.
+.Pp
 The arguments are as follows:
 .Bl -tag -width Ds
-.It Fl name Ar name
-Filter snapshots that match
-.Ar name .
-.It Fl category Ar category
-Filter snapshots that match
-.Ar category .
-.It Fl environment Ar environment
-Filter snapshots that match
-.Ar environment .
-.It Fl perimeter Ar perimeter
-Filter snapshots that match
-.Ar perimeter .
-.It Fl job Ar job
-Filter snapshots that match
-.Ar job .
-.It Fl tag Ar tag
-Filter snapshots that match
-.Ar tag .
-.It Fl latest
-Filter latest snapshot matching filters.
-.It Fl before Ar date
-Filter snapshots matching filters and older than the specified date.
-Accepted formats include relative durations
-.Pq e.g. "2d" for two days, "1w" for one week
-or specific dates in various formats
-.Pq e.g. "2006-01-02 15:04:05" .
-.It Fl since Ar date
-Filter snapshots matching filters and created since the specified date,
-included.
-Accepted formats include relative durations
-.Pq e.g. "2d" for two days, "1w" for one week
-or specific dates in various formats
-.Pq e.g. "2006-01-02 15:04:05" .
+.It Fl apply
+Delete the matching snapshots.
+By default,
+.Nm plakar rm
+only prints the snapshots that would be deleted.
 .El
 .Sh EXAMPLES
 Remove a specific snapshot by ID:
@@ -86,7 +56,7 @@ Remove snapshots older than 1 year with a specific tag:
 .Bd -literal -offset indent
 $ plakar rm -before 1y -tag daily-backup
 .Ed
-.Sh DIAGNOSTICS
+.Sh EXIT STATUS
 .Ex -std
 .Bl -tag -width Ds
 .It 0

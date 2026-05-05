@@ -1,4 +1,4 @@
-.Dd July 8, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-LOGIN 1
 .Os
 .Sh NAME
@@ -9,11 +9,7 @@
 .Op Fl no-spawn
 .Op Fl status
 .Oo
-.Fl email Ar email
-|
-.Fl env
-|
-.Fl github
+.Fl email Ar email No | Fl env No | Fl github
 .Oc
 .Sh DESCRIPTION
 The
@@ -39,7 +35,7 @@ The options are as follows:
 .Bl -tag -width Ds
 .It Fl email Ar email
 Send a login link to the specified email address.
-Clicking the link in the received email will authenticate
+Visiting that link will authenticate
 .Nm plakar .
 .It Fl env
 Persist the value of the

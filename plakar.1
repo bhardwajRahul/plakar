@@ -1,4 +1,4 @@
-.Dd December 9, 2025
+.Dd May 5, 2026
 .Dt PLAKAR 1
 .Os
 .Sh NAME
@@ -6,11 +6,15 @@
 .Nd effortless backups
 .Sh SYNOPSIS
 .Nm
-.Op Fl config Ar dir
 .Op Fl concurrency Ar number
+.Op Fl config Ar dir
 .Op Fl cpu Ar number
+.Op Fl json
 .Op Fl keyfile Ar path
 .Op Fl quiet
+.Op Fl silent
+.Op Fl stdio
+.Op Fl time
 .Op Fl trace Ar subsystems
 .Op Cm at Ar kloset
 .Ar subcommand ...
@@ -28,22 +32,22 @@ This can be changed either by using the
 option.
 .Pp
 The following options are available:
-.Bl -tag -width Ds
+.Bl -tag -width concurrency
+.It Fl concurrency Ar number
+Set the maximum number of parallel tasks for faster processing.
+Defaults to the CPU count.
 .It Fl config Ar dir
 Specify an alternate configuration directory.
 Defaults to
 .Pa ~/.config/plakar .
-.It Fl concurrency Ar number
-Set the maximum number of parallel tasks for faster
-processing.
-Defaults to
-.Dv CPU count .
 .It Fl cpu Ar number
 Limit the number of parallel workers
 .Nm
 uses to
 .Ar number .
 By default it's the number of online CPUs.
+.It Fl json
+Use newline-delimited JSON as output format for some subcommands.
 .It Fl keyfile Ar path
 Read the passphrase from the key file at
 .Ar path
@@ -53,6 +57,14 @@ Overrides the
 environment variable.
 .It Fl quiet
 Disable all output except for errors.
+.It Fl silent
+Disable all output.
+.It Fl stdio
+Use text lines as output format for some subcommands instead of the
+default ncurses frontend.
+Enabled by default when the standard output is not a terminal.
+.It Fl time
+Report the time the subcommand took to run.
 .It Fl trace Ar subsystems
 Display trace logs.
 .Ar subsystems

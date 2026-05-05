@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-DUP 1
 .Os
 .Sh NAME
@@ -6,6 +6,7 @@
 .Nd Duplicates an existing snapshot with a different ID
 .Sh SYNOPSIS
 .Nm plakar dup
+.Ar snapshots ...
 .Sh DESCRIPTION
 The
 .Nm plakar dup
@@ -18,7 +19,7 @@ Create a duplicate of a snapshot with ID "abc123":
 .Bd -literal -offset indent
 $ plakar dup abc123
 .Ed
-.Sh DIAGNOSTICS
+.Sh EXIT STATUS
 .Ex -std
 .Bl -tag -width Ds
 .It 0
