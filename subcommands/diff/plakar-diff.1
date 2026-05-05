@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-DIFF 1
 .Os
 .Sh NAME
@@ -29,6 +29,8 @@ Apply syntax highlighting to the diff output for readability.
 .It Fl recursive
 When comparing directories, recursively compare all subdirectories.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Compare root directories of two snapshots:
 .Bd -literal -offset indent
@@ -41,15 +43,6 @@ across snapshots with highlighting:
 .Bd -literal -offset indent
 $ plakar diff -highlight abc123:/etc/passwd def456:/etc/passwd
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as invalid snapshot IDs, missing files, or an
-unsupported file type.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1

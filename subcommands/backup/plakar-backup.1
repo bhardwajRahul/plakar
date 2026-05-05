@@ -109,6 +109,8 @@ Overridden by the
 .Fl tag
 command-line flag.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Create a snapshot of the current directory with two tags:
 .Bd -literal -offset indent
@@ -130,19 +132,6 @@ points:
 .Bd -literal -offset indent
 $ plakar backup -o dont_traverse_fs=true /
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully; a snapshot was created, but some items may have
-been skipped (for example, files without sufficient permissions).
-Run
-.Xr plakar-info 1
-on the new snapshot to view any errors.
-.It >0
-An error occurred, such as failure to access the Kloset store or issues
-with exclusion patterns.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-source 1

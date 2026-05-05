@@ -1,4 +1,4 @@
-.Dd August 6, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-CAT 1
 .Os
 .Sh NAME
@@ -26,6 +26,8 @@ If set, Plakar attempts to decompress application/gzip files.
 .It Fl highlight
 Apply syntax highlighting to the output based on the file type.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Display a file's contents from a snapshot:
 .Bd -literal -offset indent
@@ -36,15 +38,6 @@ Display a file with syntax highlighting:
 .Bd -literal -offset indent
 $ plakar cat -highlight abc123:/home/op/korpus/driver.sh
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as failure to retrieve a file or decompress
-content.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1

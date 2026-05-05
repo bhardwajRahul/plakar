@@ -36,6 +36,8 @@ Disable signature verification.
 This option allows to proceed with checking snapshot integrity
 regardless of an invalid snapshot signature.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Perform a full integrity check on all snapshots:
 .Bd -literal -offset indent
@@ -46,15 +48,6 @@ Perform a fast check on specific paths of two snapshot:
 .Bd -literal -offset indent
 $ plakar check -fast abc123:/etc/passwd def456:/var/www
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully with no integrity issues found.
-.It >0
-An error occurred, such as corruption detected in a snapshot or
-failure to check data integrity.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-query 7

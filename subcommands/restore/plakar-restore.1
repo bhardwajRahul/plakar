@@ -64,6 +64,8 @@ The given
 .Ar option
 takes precedence over the configuration file.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Restore all files from a specific snapshot to the current directory:
 .Bd -literal -offset indent
@@ -89,15 +91,6 @@ Restore specific path to a specific destination :
 .Bd -literal -offset indent
 $ plakar restore -to  @s3target abc123:/etc/apache2
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as a failure to locate the snapshot or a
-destination directory issue.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1

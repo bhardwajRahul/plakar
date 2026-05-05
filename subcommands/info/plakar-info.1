@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-INFO 1
 .Os
 .Sh NAME
@@ -21,6 +21,8 @@ The options are as follows:
 .It Fl errors
 Show errors within the specified snapshot.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Show repository information:
 .Bd -literal -offset indent
@@ -41,15 +43,6 @@ $ plakar info -errors abc123
 .\".Bd -literal -offset indent
 .\"$ plakar info abcd123:/etc/passwd
 .\".Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as an invalid snapshot or object ID, or a
-failure to retrieve the requested data.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1

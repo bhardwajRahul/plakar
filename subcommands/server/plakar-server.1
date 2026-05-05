@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-SERVER 1
 .Os
 .Sh NAME
@@ -44,6 +44,8 @@ If one or both are missing, the server will fall back to http.
 .It Fl key Ar path
 Path to a certificate private key file in PEM format.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Start a plakar server on the local store:
 .Bd -literal -offset indent
@@ -64,8 +66,6 @@ Start a https server on a specific address and port:
 .Bd -literal -offset indent
 $ plakar server -listen backup.example.com:12345 -cert fullchain.pem -key privkey.pem
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
 .Sh SEE ALSO
 .Xr plakar 1
 .Sh CAVEATS

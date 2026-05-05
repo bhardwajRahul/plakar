@@ -59,6 +59,8 @@ are fully synchronized.
 .It Ar repository
 Path to the peer repository to synchronize with.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Synchronize the snapshot
 .Sq abcd
@@ -76,15 +78,6 @@ Synchronize all snapshots of @peer to @repo:
 .Bd -literal -offset indent
 $ plakar at @repo sync from @peer
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-General failure occurred, such as an invalid repository path, snapshot
-ID mismatch, or network error.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-query 7

@@ -36,6 +36,8 @@ By default,
 .Nm plakar rm
 only prints the snapshots that would be deleted.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Remove a specific snapshot by ID:
 .Bd -literal -offset indent
@@ -56,15 +58,6 @@ Remove snapshots older than 1 year with a specific tag:
 .Bd -literal -offset indent
 $ plakar rm -before 1y -tag daily-backup
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as invalid date format or failure to delete a
-snapshot.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1

@@ -34,6 +34,8 @@ List directory contents recursively when exploring snapshot contents.
 .It Fl tags
 Show tags in snapshot listing.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 List all snapshots with their short IDs:
 .Bd -literal -offset indent
@@ -59,15 +61,6 @@ Recursively list contents of a specific snapshot:
 .Bd -literal -offset indent
 $ plakar ls -recursive abc123:/etc
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as failure to retrieve snapshot information or
-invalid snapshot ID.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-query 7
