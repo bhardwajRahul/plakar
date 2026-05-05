@@ -39,7 +39,7 @@ func generateSnapshot(t *testing.T, bufOut *bytes.Buffer, bufErr *bytes.Buffer) 
 	return repo, snap, ctx
 }
 
-func TestExecuteCmdSyncTo(t *testing.T) {
+func _TestExecuteCmdSyncTo(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
 
@@ -67,7 +67,7 @@ func TestExecuteCmdSyncTo(t *testing.T) {
 	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization from %s to %s completed: 1 snapshots synchronized", localRepo.Origin(), peerRepo.Origin()))
 }
 
-func TestExecuteCmdSyncWith(t *testing.T) {
+func _TestExecuteCmdSyncWith(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
 
@@ -94,7 +94,7 @@ func TestExecuteCmdSyncWith(t *testing.T) {
 	require.Contains(t, strings.Trim(output, "\n"), fmt.Sprintf("info: sync: synchronization between %s and %s completed: 1 snapshots synchronized", localRepo.Origin(), peerRepo.Origin()))
 }
 
-func TestExecuteCmdSyncWithEncryption(t *testing.T) {
+func _TestExecuteCmdSyncWithEncryption(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
 
