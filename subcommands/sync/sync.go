@@ -42,6 +42,7 @@ type Sync struct {
 
 	Direction           string
 	PackfileTempStorage string
+	Cache               string
 
 	SrcLocateOptions *locate.LocateOptions
 }
@@ -63,6 +64,7 @@ func (cmd *Sync) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	cmd.SrcLocateOptions.InstallLocateFlags(flags)
 	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
+	flags.StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
 
 	flags.Parse(args)
 
@@ -286,7 +288,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 			return 1, err
 		}
 
-		err := synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
+		err := cmd.synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID)
 		if err != nil {
 			ctx.GetLogger().Error("failed to synchronize snapshot %x from store %s: %s",
 				snapshotID[:4], srcLocation, err)
@@ -322,7 +324,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 				return 1, err
 			}
 
-			err := synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID, cmd.PackfileTempStorage)
+			err := cmd.synchronize(ctx, peerCtx, srcRepository, dstRepository, srcStoreConfig, snapshotID)
 			if err != nil {
 				ctx.GetLogger().Error("failed to synchronize snapshot %x from peer store %s: %s",
 					snapshotID[:4], dstLocation, err)
@@ -349,7 +351,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	return 0, nil
 }
 
-func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC, packfileDir string) error {
+func (cmd *Sync) synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstRepository *repository.Repository, srcStoreConfig map[string]string, snapshotID objects.MAC) error {
 	srcLocation := srcRepository.Origin()
 	dstLocation := dstRepository.Origin()
 
@@ -360,7 +362,7 @@ func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstReposito
 	}
 	defer srcSnapshot.Close()
 
-	dstSnapshot, err := snapshot.Create(dstRepository, repository.DefaultType, packfileDir, srcSnapshot.Header.Identifier, &snapshot.BuilderOptions{
+	dstSnapshot, err := snapshot.Create(dstRepository, repository.DefaultType, cmd.PackfileTempStorage, srcSnapshot.Header.Identifier, &snapshot.BuilderOptions{
 		NoCommit:       false,
 		NoCheckpoint:   false,
 		StateRefresher: stateRefresher(peerCtx, dstRepository),
@@ -374,7 +376,7 @@ func synchronize(ctx, peerCtx *appcontext.AppContext, srcRepository, dstReposito
 	dstSnapshot.Header = srcSnapshot.Header
 
 	var parentVFS *vfs.Filesystem
-	if true {
+	if cmd.Cache == "vfs" {
 		parentID, _, err := locate.Match(dstRepository, &locate.LocateOptions{
 			Filters: locate.LocateFilters{
 				Latest: true,
