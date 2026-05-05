@@ -228,17 +228,23 @@ func entryPoint() int {
 	}
 
 	if opt_disableSecurityCheck {
-		ctx.GetCookies().SetDisabledSecurityCheck()
-		fmt.Fprintln(ctx.Stdout, "security check disabled !")
-		return 1
+		if err := ctx.GetCookies().SetDisabledSecurityCheck(); err != nil {
+			fmt.Fprintln(ctx.Stderr, "failed to disable security checks:", err)
+			return 1
+		}
+		fmt.Fprintln(ctx.Stdout, "security check disabled")
+		return 0
 	} else {
 		opt_disableSecurityCheck = ctx.GetCookies().IsDisabledSecurityCheck()
 	}
 
 	if opt_enableSecurityCheck {
-		ctx.GetCookies().RemoveDisabledSecurityCheck()
-		fmt.Fprintln(ctx.Stdout, "security check enabled !")
-		return 1
+		if err := ctx.GetCookies().RemoveDisabledSecurityCheck(); err != nil {
+			fmt.Fprintln(ctx.Stderr, "failed to enable security checks:", err)
+			return 1
+		}
+		fmt.Fprintln(ctx.Stdout, "security check enabled")
+		return 0
 	}
 
 	checkUpdate(ctx, opt_disableSecurityCheck)
