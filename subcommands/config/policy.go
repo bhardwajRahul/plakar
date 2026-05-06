@@ -129,7 +129,6 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 
 	case "show":
 		var opt_json bool
-		var opt_ini bool
 		var opt_yaml bool
 		p := flag.NewFlagSet("show", flag.ExitOnError)
 		p.Usage = func() {
@@ -138,7 +137,6 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		}
 
 		p.BoolVar(&opt_json, "json", false, "output in JSON format")
-		p.BoolVar(&opt_ini, "ini", false, "output in INI format")
 		p.BoolVar(&opt_yaml, "yaml", false, "output in YAML format (default)")
 		p.Parse(args)
 
@@ -150,8 +148,6 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		format := "yaml"
 		if opt_json {
 			format = "json"
-		} else if opt_ini {
-			format = "ini"
 		}
 
 		return config.Dump(ctx.Stdout, format, names)
