@@ -46,6 +46,10 @@ The arguments are as follows:
 > plakar-policy(1)
 > for how policies are managed.
 
+# EXIT STATUS
+
+The **plakar-prune** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Remove a specific snapshot by ID:
@@ -64,19 +68,6 @@ Remove snapshots older than 1 year with a specific tag:
 
 	$ plakar prune -years 1 -tag daily-backup
 
-# DIAGNOSTICS
-
-The **plakar-prune** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as invalid date format or failure to delete a
-> snapshot.
-
 # SEE ALSO
 
 plakar(1),
@@ -84,4 +75,4 @@ plakar-backup(1),
 plakar-policy(1),
 plakar-query(7)
 
-Plakar - September 10, 2025
+Plakar - May 5, 2026 - PLAKAR-PRUNE(1)

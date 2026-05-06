@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-BACKUP 1
 .Os
 .Sh NAME
@@ -6,23 +6,22 @@
 .Nd Create a new snapshot in a Kloset store
 .Sh SYNOPSIS
 .Nm plakar backup
+.Op Fl cache Ar path
+.Op Fl category Ar category
+.Op Fl check
+.Op Fl dry-run
+.Op Fl environment Ar environment
 .Op Fl force-timestamp Ar timestamp
 .Op Fl ignore Ar pattern
 .Op Fl ignore-file Ar file
-.Op Fl cache Ar path
-.Op Fl check
-.Op Fl dry-run
+.Op Fl job Ar job
+.Op Fl name Ar name
+.Op Fl no-progress
 .Op Fl no-xattr
 .Op Fl o Ar option Ns No = Ns Ar value
 .Op Fl packfiles Ar path
-.Op Fl quiet
-.Op Fl silent
-.Op Fl tag Ar tag
-.Op Fl name Ar name
-.Op Fl job Ar job
-.Op Fl category Ar category
-.Op Fl environment Ar environment
 .Op Fl perimeter Ar perimeter
+.Op Fl tag Ar tag
 .Op Ar place
 .Sh DESCRIPTION
 The
@@ -41,6 +40,25 @@ to reference a source connector configured with
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl cache Ar path
+Specify a path to store the vfs cache.
+Use the special value
+.Sq no
+to disable caching.
+Use the special value
+.Sq vfs
+to use the in-memory vfs cache (the default).
+.It Fl category Ar category
+Set the snapshot category.
+.It Fl check
+Perform a full check on the backup after success.
+.It Fl dry-run
+Do not write a snapshot; instead, perform a dry run by outputting the list of
+files and directories that would be included in the backup.
+Respects all exclude patterns and other options, but makes no changes to the
+Kloset store.
+.It Fl environment Ar environment
+Set the snapshot environment.
 .It Fl force-timestamp Ar timestamp
 Specify a fixed timestamp (in ISO 8601 or relative human format) to use
 for the snapshot.
@@ -52,21 +70,19 @@ This option can be repeated.
 .It Fl ignore-file Ar file
 Specify a file containing gitignore exclusion patterns, one per line, to
 ignore files or directories in the backup.
-.It Fl cache Ar path
-Specify a path to store the vfs cache.
-Use the special value
-.Sq no
-to disable caching.
-Use the special value
-.Sq vfs
-to use the in-memory vfs cache (the default).
-.It Fl check
-Perform a full check on the backup after success.
-.It Fl dry-run
-Do not write a snapshot; instead, perform a dry run by outputting the list of
-files and directories that would be included in the backup.
-Respects all exclude patterns and other options, but makes no changes to the
-Kloset store.
+.It Fl job Ar job
+Name the snapshot job.
+.It Fl name Ar name
+Name the snapshot.
+.It Fl no-progress
+Do not compute or display progress.
+By default,
+.Nm plakar backup
+does two passes on the source of the backup: one to compute the
+number of items, and a second for processing the items themselves.
+This flag disables the pass to compute the number of items.
+It is set implicitly for some importer connectors that don't support
+the two-passes.
 .It Fl no-xattr
 Skip extended attributes (xattrs) when creating the backup.
 .It Fl o Ar option Ns No = Ns Ar value
@@ -74,28 +90,16 @@ Can be used to pass extra arguments to the source connector.
 The given
 .Ar option
 takes precedence over the configuration file.
-.It Fl quiet
-Suppress output to standard input, only logging errors and warnings.
 .It Fl packfiles Ar path
-Path where to put the temporary packfiles instead of building them in the
-default temporary directory.
+Path where to put the temporary packfiles instead of building them in
+the default temporary directory.
 If the special value
 .Sq memory
 is specified then the packfiles are built in memory.
-.It Fl silent
-Suppress all output.
-.It Fl tag Ar tag
-Comma-separated list of tags to apply to the snapshot.
-.It Fl name Ar name
-Name the snapshot.
-.It Fl job Ar job
-Name the snapshot job.
-.It Fl category Ar category
-Set the snapshot category.
-.It Fl environment Ar environment
-Set the snapshot environment.
 .It Fl perimeter Ar perimeter
 Set the snapshot perimeter.
+.It Fl tag Ar tag
+Comma-separated list of tags to apply to the snapshot.
 .El
 .Sh ENVIRONMENT
 .Bl -tag -width Ds
@@ -105,6 +109,8 @@ Overridden by the
 .Fl tag
 command-line flag.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Create a snapshot of the current directory with two tags:
 .Bd -literal -offset indent
@@ -126,19 +132,6 @@ points:
 .Bd -literal -offset indent
 $ plakar backup -o dont_traverse_fs=true /
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully; a snapshot was created, but some items may have
-been skipped (for example, files without sufficient permissions).
-Run
-.Xr plakar-info 1
-on the new snapshot to view any errors.
-.It >0
-An error occurred, such as failure to access the Kloset store or issues
-with exclusion patterns.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-source 1

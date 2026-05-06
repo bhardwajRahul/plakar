@@ -9,7 +9,6 @@ PLAKAR-CHECK(1) - General Commands Manual
 **plakar&nbsp;check**
 \[**-fast**]
 \[**-no-verify**]
-\[**-quiet**]
 \[*snapshotID*:*path&nbsp;...*]
 
 # DESCRIPTION
@@ -43,9 +42,9 @@ The options are as follows:
 > This option allows to proceed with checking snapshot integrity
 > regardless of an invalid snapshot signature.
 
-**-quiet**
+# EXIT STATUS
 
-> Suppress output to standard output, only logging errors and warnings.
+The **plakar-check** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
 # EXAMPLES
 
@@ -57,22 +56,9 @@ Perform a fast check on specific paths of two snapshot:
 
 	$ plakar check -fast abc123:/etc/passwd def456:/var/www
 
-# DIAGNOSTICS
-
-The **plakar-check** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully with no integrity issues found.
-
-&gt;0
-
-> An error occurred, such as corruption detected in a snapshot or
-> failure to check data integrity.
-
 # SEE ALSO
 
 plakar(1),
 plakar-query(7)
 
-Plakar - September 10, 2025
+Plakar - May 5, 2025 - PLAKAR-CHECK(1)

@@ -28,8 +28,15 @@ jobs:
           find subcommands -type f -iname \*.[1-9] -exec cp {} "$dir" \;
           cp plakar.1 plakar-query.7 "$dir"
           cd "$dir"
-          mandoc -Tlint -Wstyle -l *
+          touch sysexits.3 # not all systems provide this
+          code=0
+          for i in *; do
+              if [ "$i" != sysexits.3 ]; then
+                  mandoc -Tlint -Wstyle -l $i || code=1
+              fi
+          done
           rm -rf "$dir"
+          exit $code
 
       - name: Ensure man pages are listed in .goreleaser.yml
         run: |

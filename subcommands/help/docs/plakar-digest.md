@@ -36,6 +36,10 @@ The options are as follows:
 > to compute the digest.
 > Defaults to SHA256.
 
+# EXIT STATUS
+
+The **plakar-digest** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Compute the digest of a file within a snapshot:
@@ -46,21 +50,8 @@ Use BLAKE3 as the digest algorithm:
 
 	$ plakar digest -hashing BLAKE3 abc123:/etc/netstart
 
-# DIAGNOSTICS
-
-The **plakar-digest** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as failure to retrieve a file digest or
-> invalid snapshot ID.
-
 # SEE ALSO
 
 plakar(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-DIGEST(1)

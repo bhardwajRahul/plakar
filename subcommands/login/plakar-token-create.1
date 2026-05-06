@@ -1,0 +1,28 @@
+.Dd May 5, 2026
+.Dt PLAKAR-TOKEN-CREATE 1
+.Os
+.Sh NAME
+.Nm plakar-token-create
+.Nd Create a token to authenticate to Plakar services
+.Sh SYNOPSIS
+.Nm plakar token create
+.Sh DESCRIPTION
+The
+.Nm plakar token create
+command generates a token that can be used to authenticate with
+.Xr plakar-login 1 .
+.Sh EXAMPLES
+Generate a token:
+.Bd -literal -offset indent
+$ plakar token create
+.Ed
+.Pp
+and then use it on a different machine to log in automatically:
+.Bd -literal -offset indent
+$ export PLAKAR_TOKEN=...
+$ plakar login -env
+.Ed
+.Sh SEE ALSO
+.Xr plakar 1 ,
+.Xr plakar-login 1 ,
+.Xr plakar-service 1

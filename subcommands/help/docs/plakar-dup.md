@@ -7,6 +7,7 @@ PLAKAR-DUP(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;dup**
+*snapshots&nbsp;...*
 
 # DESCRIPTION
 
@@ -17,27 +18,18 @@ with a new snapshot ID.
 The new snapshot is an exact copy of the original,
 including all files and metadata.
 
+# EXIT STATUS
+
+The **plakar-dup** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Create a duplicate of a snapshot with ID "abc123":
 
 	$ plakar dup abc123
 
-# DIAGNOSTICS
-
-The **plakar-dup** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as failure to retrieve existing snapshot or
-> invalid snapshot ID.
-
 # SEE ALSO
 
 plakar(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-DUP(1)

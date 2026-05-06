@@ -1,4 +1,4 @@
-.Dd September 10, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-LS 1
 .Os
 .Sh NAME
@@ -8,6 +8,7 @@
 .Nm plakar ls
 .Op Fl uuid
 .Op Fl recursive
+.Op Fl tags
 .Op Ar snapshotID : Ns Ar path
 .Sh DESCRIPTION
 The
@@ -30,7 +31,11 @@ Display the full UUID for each snapshot instead of the shorter
 snapshot ID.
 .It Fl recursive
 List directory contents recursively when exploring snapshot contents.
+.It Fl tags
+Show tags in snapshot listing.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 List all snapshots with their short IDs:
 .Bd -literal -offset indent
@@ -56,15 +61,6 @@ Recursively list contents of a specific snapshot:
 .Bd -literal -offset indent
 $ plakar ls -recursive abc123:/etc
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as failure to retrieve snapshot information or
-invalid snapshot ID.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-query 7

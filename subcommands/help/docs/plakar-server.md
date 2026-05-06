@@ -54,6 +54,10 @@ The options are as follows:
 
 > Path to a certificate private key file in PEM format.
 
+# EXIT STATUS
+
+The **plakar-server** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Start a plakar server on the local store:
@@ -72,10 +76,6 @@ Start a https server on a specific address and port:
 
 	$ plakar server -listen backup.example.com:12345 -cert fullchain.pem -key privkey.pem
 
-# DIAGNOSTICS
-
-The **plakar-server** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
 # SEE ALSO
 
 plakar(1)
@@ -87,4 +87,4 @@ When a host name is provided,
 uses only one of the IP addresses it resolves to,
 preferably IPv4 .
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-SERVER(1)

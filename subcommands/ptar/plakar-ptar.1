@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-PTAR 1
 .Os
 .Sh NAME
@@ -67,16 +67,8 @@ Zero or more filesystem paths to back up directly into the archive.
 Passphrase used to derive the encryption key when encryption is
 enabled.
 .El
-.Sh DIAGNOSTICS
+.Sh EXIT STATUS
 .Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred (invalid arguments, existing archive without
-.Fl overwrite ,
-hashing algorithm unknown, repository access failure, I/O errors, etc.).
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1 ,

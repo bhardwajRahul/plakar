@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-DIGEST 1
 .Os
 .Sh NAME
@@ -32,6 +32,8 @@ Use
 to compute the digest.
 Defaults to SHA256.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Compute the digest of a file within a snapshot:
 .Bd -literal -offset indent
@@ -42,14 +44,5 @@ Use BLAKE3 as the digest algorithm:
 .Bd -literal -offset indent
 $ plakar digest -hashing BLAKE3 abc123:/etc/netstart
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as failure to retrieve a file digest or
-invalid snapshot ID.
-.El
 .Sh SEE ALSO
 .Xr plakar 1

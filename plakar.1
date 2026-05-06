@@ -1,4 +1,4 @@
-.Dd December 9, 2025
+.Dd May 5, 2026
 .Dt PLAKAR 1
 .Os
 .Sh NAME
@@ -6,11 +6,15 @@
 .Nd effortless backups
 .Sh SYNOPSIS
 .Nm
-.Op Fl config Ar dir
 .Op Fl concurrency Ar number
+.Op Fl config Ar dir
 .Op Fl cpu Ar number
+.Op Fl json
 .Op Fl keyfile Ar path
 .Op Fl quiet
+.Op Fl silent
+.Op Fl stdio
+.Op Fl time
 .Op Fl trace Ar subsystems
 .Op Cm at Ar kloset
 .Ar subcommand ...
@@ -28,22 +32,22 @@ This can be changed either by using the
 option.
 .Pp
 The following options are available:
-.Bl -tag -width Ds
+.Bl -tag -width concurrency
+.It Fl concurrency Ar number
+Set the maximum number of parallel tasks for faster processing.
+Defaults to the CPU count.
 .It Fl config Ar dir
 Specify an alternate configuration directory.
 Defaults to
 .Pa ~/.config/plakar .
-.It Fl concurrency Ar number
-Set the maximum number of parallel tasks for faster
-processing.
-Defaults to
-.Dv CPU count .
 .It Fl cpu Ar number
 Limit the number of parallel workers
 .Nm
 uses to
 .Ar number .
 By default it's the number of online CPUs.
+.It Fl json
+Use newline-delimited JSON as output format for some subcommands.
 .It Fl keyfile Ar path
 Read the passphrase from the key file at
 .Ar path
@@ -53,6 +57,14 @@ Overrides the
 environment variable.
 .It Fl quiet
 Disable all output except for errors.
+.It Fl silent
+Disable all output.
+.It Fl stdio
+Use text lines as output format for some subcommands instead of the
+default ncurses frontend.
+Enabled by default when the standard output is not a terminal.
+.It Fl time
+Report the time the subcommand took to run.
 .It Fl trace Ar subsystems
 Display trace logs.
 .Ar subsystems
@@ -68,97 +80,121 @@ It could be a path, an URI, or a label in the form
 to reference a configuration created with
 .Xr plakar-store 1 .
 .El
-.Pp
-The following commands are available:
-.Pp
-.Bl -tag -width maintenance -compact
-.It Cm archive
-Create an archive from a Kloset snapshot, documented in
-.Xr plakar-archive 1 .
-.It Cm backup
-Create a new Kloset snapshot, documented in
-.Xr plakar-backup 1 .
-.It Cm cat
-Display file contents from a Kloset snapshot, documented in
-.Xr plakar-cat 1 .
-.It Cm check
-Check data integrity in a Kloset store, documented in
-.Xr plakar-check 1 .
-.It Cm create
-Create a new Kloset store, documented in
-.Xr plakar-create 1 .
-.It Cm destination
-Manage configurations for the destination connectors, documented in
-.Xr plakar-destination 1 .
-.It Cm diff
-Show differences between files in a Kloset snapshot, documented in
-.Xr plakar-diff 1 .
-.It Cm digest
-Compute digests for files in a Kloset snapshot, documented in
-.Xr plakar-digest 1 .
+.Ss General Commands
+.Bl -tag -width maintenance
 .It Cm help
 Show this manpage and the ones for the subcommands.
-.It Cm info
-Display detailed information about internal structures, documented in
-.Xr plakar-info 1 .
-.It Cm locate
-Find filenames in a Kloset snapshot, documented in
-.Xr plakar-locate 1 .
-.It Cm ls
-List snapshots and their contents in a Kloset store, documented in
-.Xr plakar-ls 1 .
-.It Cm maintenance
-Remove unused data from a Kloset store, documented in
-.Xr plakar-maintenance 1 .
-.It Cm mount
-Mount Kloset snapshots as a read-only filesystem, documented in
-.Xr plakar-mount 1 .
-.It Cm ptar
-Create a .ptar archive, documented in
-.Xr plakar-ptar 1 .
-.It Cm pkg show
-List installed plugins, documented in
-.Xr plakar-pkg-show 1 .
-.It Cm pkg add
-Install a plugin, documented in
-.Xr plakar-pkg-add 1 .
-.It Cm pkg build
-Build a plugin from source, documented in
-.Xr plakar-pkg-build 1 .
-.It Cm pkg create
-Package a plugin, documented in
-.Xr plakar-pkg-create 1 .
-.It Cm pkg rm
-Uninstall a plugin, documented in
-.Xr plakar-pkg-rm 1 .
-.It Cm restore
-Restore files from a Kloset snapshot, documented in
-.Xr plakar-restore 1 .
-.It Cm rm
-Remove snapshots from a Kloset store, documented in
-.Xr plakar-rm 1 .
-.It Cm server
-Start a Plakar server, documented in
-.Xr plakar-server 1 .
+.It Cm login
+Authenticate to Plakar services, refer to
+.Xr plakar-login 1 .
+.It Cm logout
+Log out from Plakar services, refer to
+.Xr plakar-logout 1 .
 .It Cm service
-Manage additional Plakar services that require you to be logged in, documented
-in
+Manage additional Plakar services that require you to be logged in, refer to
 .Xr plakar-service 1 .
+.It Cm token create
+Generate a token to interact with Plakar services, refer to
+.Xr plakar-token-create 1 .
+.It Cm version
+Display the current Plakar version, refer to
+.Xr plakar-version 1 .
+.El
+.Ss Configuration management
+.Bl -tag -width maintenance
+.It Cm destination
+Manage configurations for the destination connectors, refer to
+.Xr plakar-destination 1 .
 .It Cm source
-Manage configurations for the source connectors, documented in
+Manage configurations for the source connectors, refer to
 .Xr plakar-source 1 .
 .It Cm store
-Manage configurations for storage connectors, documented in
+Manage configurations for storage connectors, refer to
 .Xr plakar-store 1 .
+.El
+.Ss Kloset management
+.Bl -tag -width maintenance
+.It Cm check
+Check data integrity in a Kloset store, refer to
+.Xr plakar-check 1 .
+.It Cm create
+Create a new Kloset store, refer to
+.Xr plakar-create 1 .
+.It Cm info
+Display detailed information about internal structures, refer to
+.Xr plakar-info 1 .
+.It Cm maintenance
+Remove unused data from a Kloset store, refer to
+.Xr plakar-maintenance 1 .
+.It Cm prune
+Prune snapshots according to a policy, refer to
+.Xr plakar-prune 1 .
+.It Cm ptar
+Create a .ptar archive, refer to
+.Xr plakar-ptar 1 .
+.It Cm server
+Start a Plakar server, refer to
+.Xr plakar-server 1 .
 .It Cm sync
-Synchronize snapshots between Kloset stores, documented in
+Synchronize snapshots between Kloset stores, refer to
 .Xr plakar-sync 1 .
 .It Cm ui
-Serve the Plakar web user interface, documented in
+Serve the Plakar web user interface, refer to
 .Xr plakar-ui 1 .
-.It Cm version
-Display the current Plakar version, documented in
-.Xr plakar-version 1 .
+.El
+.Ss Snapshot management
+.Bl -tag -width maintenance -compact
+.It Cm archive
+Create an archive from a Kloset snapshot, refer to
+.Xr plakar-archive 1 .
+.It Cm backup
+Create a new Kloset snapshot, refer to
+.Xr plakar-backup 1 .
+.It Cm cat
+Display file contents from a Kloset snapshot, refer to
+.Xr plakar-cat 1 .
+.It Cm diff
+Show differences between files in a Kloset snapshot, refer to
+.Xr plakar-diff 1 .
+.It Cm digest
+Compute digests for files in a Kloset snapshot, refer to
+.Xr plakar-digest 1 .
+.It Cm dup
+Duplicate an existing snapshot with a different ID, refer to
+.Xr plakar-dup 1 .
+.It Cm locate
+Find filenames in a Kloset snapshot, refer to
+.Xr plakar-locate 1 .
+.It Cm ls
+List snapshots and their contents in a Kloset store, refer to
+.Xr plakar-ls 1 .
+.It Cm mount
+Mount Kloset snapshots as a read-only filesystem, refer to
+.Xr plakar-mount 1 .
+.It Cm restore
+Restore files from a Kloset snapshot, refer to
+.Xr plakar-restore 1 .
+.It Cm rm
+Remove snapshots from a Kloset store, refer to
+.Xr plakar-rm 1 .
+.El
+.Ss Plugin handling
+.Bl -tag -width maintenance
+.It Cm pkg add
+Install a plugin, refer to
+.Xr plakar-pkg-add 1 .
+.It Cm pkg build
+Build a plugin from source, refer to
+.Xr plakar-pkg-build 1 .
+.It Cm pkg create
+Package a plugin, refer to
+.Xr plakar-pkg-create 1 .
+.It Cm pkg rm
+Uninstall a plugin, refer to
+.Xr plakar-pkg-rm 1 .
+.It Cm pkg show
+List installed plugins, refer to
+.Xr plakar-pkg-show 1 .
 .El
 .Sh ENVIRONMENT
 .Bl -tag -width Ds
@@ -189,7 +225,9 @@ Kloset stores configuration.
 Default Kloset store location.
 .El
 .Sh EXIT STATUS
-The following exit codes are aligned with sysexits(3) where applicable:
+The following exit codes are aligned with
+.Xr sysexits 3
+where applicable:
 .Bl -tag -width Ds
 .It 0
 Command completed successfully.

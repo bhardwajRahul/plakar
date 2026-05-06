@@ -7,11 +7,15 @@ PLAKAR(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar**
-\[**-config**&nbsp;*dir*]
 \[**-concurrency**&nbsp;*number*]
+\[**-config**&nbsp;*dir*]
 \[**-cpu**&nbsp;*number*]
+\[**-json**]
 \[**-keyfile**&nbsp;*path*]
 \[**-quiet**]
+\[**-silent**]
+\[**-stdio**]
+\[**-time**]
 \[**-trace**&nbsp;*subsystems*]
 \[**at**&nbsp;*kloset*]
 *subcommand&nbsp;...*
@@ -32,18 +36,16 @@ option.
 
 The following options are available:
 
+**-concurrency** *number*
+
+> Set the maximum number of parallel tasks for faster processing.
+> Defaults to the CPU count.
+
 **-config** *dir*
 
 > Specify an alternate configuration directory.
 > Defaults to
 > *~/.config/plakar*.
-
-**-concurrency** *number*
-
-> Set the maximum number of parallel tasks for faster
-> processing.
-> Defaults to
-> `CPU count`.
 
 **-cpu** *number*
 
@@ -52,6 +54,10 @@ The following options are available:
 > uses to
 > *number*.
 > By default it's the number of online CPUs.
+
+**-json**
+
+> Use newline-delimited JSON as output format for some subcommands.
 
 **-keyfile** *path*
 
@@ -65,6 +71,20 @@ The following options are available:
 **-quiet**
 
 > Disable all output except for errors.
+
+**-silent**
+
+> Disable all output.
+
+**-stdio**
+
+> Use text lines as output format for some subcommands instead of the
+> default ncurses frontend.
+> Enabled by default when the standard output is not a terminal.
+
+**-time**
+
+> Report the time the subcommand took to run.
 
 **-trace** *subsystems*
 
@@ -84,152 +104,184 @@ The following options are available:
 > to reference a configuration created with
 > plakar-store(1).
 
-The following commands are available:
-
-**archive**
-
-> Create an archive from a Kloset snapshot, documented in
-> plakar-archive(1).
-
-**backup**
-
-> Create a new Kloset snapshot, documented in
-> plakar-backup(1).
-
-**cat**
-
-> Display file contents from a Kloset snapshot, documented in
-> plakar-cat(1).
-
-**check**
-
-> Check data integrity in a Kloset store, documented in
-> plakar-check(1).
-
-**create**
-
-> Create a new Kloset store, documented in
-> plakar-create(1).
-
-**destination**
-
-> Manage configurations for the destination connectors, documented in
-> plakar-destination(1).
-
-**diff**
-
-> Show differences between files in a Kloset snapshot, documented in
-> plakar-diff(1).
-
-**digest**
-
-> Compute digests for files in a Kloset snapshot, documented in
-> plakar-digest(1).
+## General Commands
 
 **help**
 
 > Show this manpage and the ones for the subcommands.
 
-**info**
+**login**
 
-> Display detailed information about internal structures, documented in
-> plakar-info(1).
+> Authenticate to Plakar services, refer to
+> plakar-login(1).
 
-**locate**
+**logout**
 
-> Find filenames in a Kloset snapshot, documented in
-> plakar-locate(1).
-
-**ls**
-
-> List snapshots and their contents in a Kloset store, documented in
-> plakar-ls(1).
-
-**maintenance**
-
-> Remove unused data from a Kloset store, documented in
-> plakar-maintenance(1).
-
-**mount**
-
-> Mount Kloset snapshots as a read-only filesystem, documented in
-> plakar-mount(1).
-
-**ptar**
-
-> Create a .ptar archive, documented in
-> plakar-ptar(1).
-
-**pkg show**
-
-> List installed plugins, documented in
-> plakar-pkg-show(1).
-
-**pkg add**
-
-> Install a plugin, documented in
-> plakar-pkg-add(1).
-
-**pkg build**
-
-> Build a plugin from source, documented in
-> plakar-pkg-build(1).
-
-**pkg create**
-
-> Package a plugin, documented in
-> plakar-pkg-create(1).
-
-**pkg rm**
-
-> Uninstall a plugin, documented in
-> plakar-pkg-rm(1).
-
-**restore**
-
-> Restore files from a Kloset snapshot, documented in
-> plakar-restore(1).
-
-**rm**
-
-> Remove snapshots from a Kloset store, documented in
-> plakar-rm(1).
-
-**server**
-
-> Start a Plakar server, documented in
-> plakar-server(1).
+> Log out from Plakar services, refer to
+> plakar-logout(1).
 
 **service**
 
-> Manage additional Plakar services that require you to be logged in, documented
-> in
+> Manage additional Plakar services that require you to be logged in, refer to
 > plakar-service(1).
+
+**token create**
+
+> Generate a token to interact with Plakar services, refer to
+> plakar-token-create(1).
+
+**version**
+
+> Display the current Plakar version, refer to
+> plakar-version(1).
+
+## Configuration management
+
+**destination**
+
+> Manage configurations for the destination connectors, refer to
+> plakar-destination(1).
 
 **source**
 
-> Manage configurations for the source connectors, documented in
+> Manage configurations for the source connectors, refer to
 > plakar-source(1).
 
 **store**
 
-> Manage configurations for storage connectors, documented in
+> Manage configurations for storage connectors, refer to
 > plakar-store(1).
+
+## Kloset management
+
+**check**
+
+> Check data integrity in a Kloset store, refer to
+> plakar-check(1).
+
+**create**
+
+> Create a new Kloset store, refer to
+> plakar-create(1).
+
+**info**
+
+> Display detailed information about internal structures, refer to
+> plakar-info(1).
+
+**maintenance**
+
+> Remove unused data from a Kloset store, refer to
+> plakar-maintenance(1).
+
+**prune**
+
+> Prune snapshots according to a policy, refer to
+> plakar-prune(1).
+
+**ptar**
+
+> Create a .ptar archive, refer to
+> plakar-ptar(1).
+
+**server**
+
+> Start a Plakar server, refer to
+> plakar-server(1).
 
 **sync**
 
-> Synchronize snapshots between Kloset stores, documented in
+> Synchronize snapshots between Kloset stores, refer to
 > plakar-sync(1).
 
 **ui**
 
-> Serve the Plakar web user interface, documented in
+> Serve the Plakar web user interface, refer to
 > plakar-ui(1).
 
-**version**
+## Snapshot management
 
-> Display the current Plakar version, documented in
-> plakar-version(1).
+**archive**
+
+> Create an archive from a Kloset snapshot, refer to
+> plakar-archive(1).
+
+**backup**
+
+> Create a new Kloset snapshot, refer to
+> plakar-backup(1).
+
+**cat**
+
+> Display file contents from a Kloset snapshot, refer to
+> plakar-cat(1).
+
+**diff**
+
+> Show differences between files in a Kloset snapshot, refer to
+> plakar-diff(1).
+
+**digest**
+
+> Compute digests for files in a Kloset snapshot, refer to
+> plakar-digest(1).
+
+**dup**
+
+> Duplicate an existing snapshot with a different ID, refer to
+> plakar-dup(1).
+
+**locate**
+
+> Find filenames in a Kloset snapshot, refer to
+> plakar-locate(1).
+
+**ls**
+
+> List snapshots and their contents in a Kloset store, refer to
+> plakar-ls(1).
+
+**mount**
+
+> Mount Kloset snapshots as a read-only filesystem, refer to
+> plakar-mount(1).
+
+**restore**
+
+> Restore files from a Kloset snapshot, refer to
+> plakar-restore(1).
+
+**rm**
+
+> Remove snapshots from a Kloset store, refer to
+> plakar-rm(1).
+
+## Plugin handling
+
+**pkg add**
+
+> Install a plugin, refer to
+> plakar-pkg-add(1).
+
+**pkg build**
+
+> Build a plugin from source, refer to
+> plakar-pkg-build(1).
+
+**pkg create**
+
+> Package a plugin, refer to
+> plakar-pkg-create(1).
+
+**pkg rm**
+
+> Uninstall a plugin, refer to
+> plakar-pkg-rm(1).
+
+**pkg show**
+
+> List installed plugins, refer to
+> plakar-pkg-show(1).
 
 # ENVIRONMENT
 
@@ -273,6 +325,40 @@ The following commands are available:
 
 > Default Kloset store location.
 
+# EXIT STATUS
+
+The following exit codes are aligned with
+sysexits(3)
+where applicable:
+
+0
+
+> Command completed successfully.
+
+1
+
+> A general error occurred.
+
+64 (EX\_USAGE)
+
+> Invalid command-line arguments or flags.
+
+65 (EX\_DATAERR)
+
+> Data integrity check failed (corrupted chunks, verification mismatch).
+
+66 (EX\_NOINPUT)
+
+> The repository could not be opened or located.
+
+77 (EX\_NOPERM)
+
+> Authentication or decryption failure (wrong passphrase, missing keyfile).
+
+78 (EX\_CONFIG)
+
+> Incompatible repository version.
+
 # EXAMPLES
 
 Create an encrypted Kloset store at the default location:
@@ -306,4 +392,4 @@ Remove snapshots older than 30 days:
 
 	$ plakar rm -before 30d
 
-Plakar - December 9, 2025
+Plakar - May 5, 2026 - PLAKAR(1)

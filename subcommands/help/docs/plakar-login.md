@@ -9,11 +9,7 @@ PLAKAR-LOGIN(1) - General Commands Manual
 **plakar&nbsp;login**
 \[**-no-spawn**]
 \[**-status**]
-\[**-email**&nbsp;*email*
-|
-**-env**
-|
-**-github**]
+\[**-email**&nbsp;*email*&nbsp;|&nbsp;**-env**&nbsp;|&nbsp;**-github**]
 
 # DESCRIPTION
 
@@ -41,7 +37,7 @@ The options are as follows:
 **-email** *email*
 
 > Send a login link to the specified email address.
-> Clicking the link in the received email will authenticate
+> Visiting that link will authenticate
 > **plakar**.
 
 **-env**
@@ -50,7 +46,7 @@ The options are as follows:
 > `PLAKAR_TOKEN`
 > environment variable into the configuration.
 > Generate this token with
-> plakar-token(1).
+> plakar-token-create(1).
 
 **-github**
 
@@ -84,4 +80,4 @@ plakar(1),
 plakar-logout(1),
 plakar-service(1)
 
-Plakar - July 8, 2025
+Plakar - May 5, 2026 - PLAKAR-LOGIN(1)

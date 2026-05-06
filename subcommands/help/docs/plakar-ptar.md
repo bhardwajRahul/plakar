@@ -80,19 +80,9 @@ The options are as follows:
 > Passphrase used to derive the encryption key when encryption is
 > enabled.
 
-# DIAGNOSTICS
+# EXIT STATUS
 
 The **plakar-ptar** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred (invalid arguments, existing archive without
-> **-overwrite**,
-> hashing algorithm unknown, repository access failure, I/O errors, etc.).
 
 # SEE ALSO
 
@@ -100,4 +90,4 @@ plakar(1),
 plakar-backup(1),
 plakar-create(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-PTAR(1)

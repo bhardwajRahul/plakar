@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-MOUNT 1
 .Os
 .Sh NAME
@@ -46,6 +46,8 @@ Optional.
 Specifies which snapshot to mount.
 If not provided, all snapshots are mounted.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Mount all snapshots to a local directory:
 .Bd -literal -offset indent
@@ -76,15 +78,6 @@ Mount a specific snapshot to an HTTP endpoint:
 .Bd -literal -offset indent
 $ plakar mount -to http://hostname:8080 abc123
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as an invalid mountpoint or failure during the
-mounting process.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-query 7

@@ -1,4 +1,4 @@
-.Dd September 10, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-LOCATE 1
 .Os
 .Sh NAME
@@ -34,6 +34,8 @@ The options are as follows:
 .It Fl snapshot Ar snapshotID
 Limit the search to the given snapshot.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Search for files ending in
 .Dq wd :
@@ -42,15 +44,6 @@ $ plakar locate '*wd'
 abc123:/etc/master.passwd
 abc123:/etc/passwd
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred, such as invalid parameters, inability to create the
-repository, or configuration issues.
-.El
 .Sh SEE ALSO
 .Xr plakar 1 ,
 .Xr plakar-backup 1 ,

@@ -35,6 +35,10 @@ The options are as follows:
 
 > When comparing directories, recursively compare all subdirectories.
 
+# EXIT STATUS
+
+The **plakar-diff** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Compare root directories of two snapshots:
@@ -47,22 +51,9 @@ across snapshots with highlighting:
 
 	$ plakar diff -highlight abc123:/etc/passwd def456:/etc/passwd
 
-# DIAGNOSTICS
-
-The **plakar-diff** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as invalid snapshot IDs, missing files, or an
-> unsupported file type.
-
 # SEE ALSO
 
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-DIFF(1)

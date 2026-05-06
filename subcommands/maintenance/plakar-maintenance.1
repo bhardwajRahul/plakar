@@ -1,4 +1,4 @@
-.Dd July 3, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-MAINTENANCE 1
 .Os
 .Sh NAME
@@ -15,14 +15,7 @@ It identifies unreferenced data and reorganizes packfiles to ensure
 only active snapshots and their dependencies are retained.
 The maintenance process updates snapshot indexes to reflect these
 changes.
-.Sh DIAGNOSTICS
+.Sh EXIT STATUS
 .Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-An error occurred during maintenance, such as failure to update indexes
-or remove data.
-.El
 .Sh SEE ALSO
 .Xr plakar 1

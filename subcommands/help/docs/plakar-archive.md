@@ -56,6 +56,10 @@ The options are as follows:
 > Strip the leading path from archived files, useful for creating "flat"
 > archives without nested directories.
 
+# EXIT STATUS
+
+The **plakar-archive** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
+
 # EXAMPLES
 
 Create a tarball of the entire snapshot:
@@ -70,22 +74,9 @@ Archive with rebasing to remove directory structure:
 
 	$ plakar archive -rebase -format tar abc123
 
-# DIAGNOSTICS
-
-The **plakar-archive** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
-
-0
-
-> Command completed successfully.
-
-&gt;0
-
-> An error occurred, such as unsupported format, missing files, or
-> permission issues.
-
 # SEE ALSO
 
 plakar(1),
 plakar-backup(1)
 
-Plakar - July 3, 2025
+Plakar - May 5, 2026 - PLAKAR-ARCHIVE(1)

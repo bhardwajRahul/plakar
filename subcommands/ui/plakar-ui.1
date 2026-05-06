@@ -1,4 +1,4 @@
-.Dd August 6, 2025
+.Dd May 5, 2026
 .Dt PLAKAR-UI 1
 .Os
 .Sh NAME
@@ -46,6 +46,8 @@ If one or both are missing, the server will fall back to http.
 .It Fl key Ar path
 Path to a certificate private key file in PEM format.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 Using a custom address and disable automatic browser execution:
 .Bd -literal -offset indent
@@ -55,14 +57,5 @@ Create a https server with a custom certificate:
 .Bd -literal -offset indent
 $ plakar ui -cert fullchain.pem -key privkey.pem
 .Ed
-.Sh DIAGNOSTICS
-.Ex -std
-.Bl -tag -width Ds
-.It 0
-Command completed successfully.
-.It >0
-A general error occurred, such as an inability to launch the UI or
-bind to the specified address.
-.El
 .Sh SEE ALSO
 .Xr plakar 1
