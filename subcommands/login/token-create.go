@@ -30,6 +30,10 @@ type TokenCreate struct {
 	subcommands.SubcommandBase
 }
 
+func init() {
+	subcommands.Register(func() subcommands.Subcommand { return &TokenCreate{} }, subcommands.BeforeRepositoryOpen, "token", "create")
+}
+
 func (cmd *TokenCreate) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags := flag.NewFlagSet("token-create", flag.ExitOnError)
 	flags.Usage = func() {
