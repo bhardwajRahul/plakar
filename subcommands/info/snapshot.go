@@ -43,7 +43,10 @@ func (cmd *Info) executeSnapshot(ctx *appcontext.AppContext, repo *repository.Re
 		fmt.Fprintf(ctx.Stdout, " - PublicKey: %s\n", base64.RawStdEncoding.EncodeToString(header.Identity.PublicKey))
 	}
 
-	fmt.Fprintf(ctx.Stdout, "VFS: %x\n", header.GetSource(0).VFS)
+	fmt.Fprintf(ctx.Stdout, "VFS:\n")
+	fmt.Fprintf(ctx.Stdout, " - Root: %x\n", header.GetSource(0).VFS.Root)
+	fmt.Fprintf(ctx.Stdout, " - Xattrs: %x\n", header.GetSource(0).VFS.Xattrs)
+	fmt.Fprintf(ctx.Stdout, " - Errors: %x\n", header.GetSource(0).VFS.Errors)
 
 	fmt.Fprintln(ctx.Stdout, "Importer:")
 	fmt.Fprintf(ctx.Stdout, " - Type: %s\n", header.GetSource(0).Importer.Type)
