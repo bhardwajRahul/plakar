@@ -21,8 +21,8 @@ jobs:
 
       - name: Add Plakar APT repository
         run: |
-          curl -fsSL https://packages.plakar.io/keys/plakar.gpg | sudo gpg --dearmor -o /usr/share/keyrings/plakar.gpg
-          echo "deb [signed-by=/usr/share/keyrings/plakar.gpg] https://packages.plakar.io/deb stable main" | sudo tee /etc/apt/sources.list.d/plakar.list
+          curl -fsSL https://www.plakar.io/dist/keys/community-v1.1.0.gpg | sudo gpg --dearmor -o /usr/share/keyrings/community-v1.1.0.gpg
+          echo "deb [signed-by=/usr/share/keyrings/community-v1.1.0.gpg] https://www.plakar.io/dist/repos/deb stable main" | sudo tee /etc/apt/sources.list.d/plakar.list
           sudo apt-get update
 
       - name: Install Plakar
@@ -48,10 +48,10 @@ jobs:
           cat <<EOF | tee /etc/yum.repos.d/plakar.repo
           [plakar]
           name=Plakar Repository
-          baseurl=https://packages.plakar.io/rpm/$(uname -m)/
+          baseurl=https://www.plakar.io/dist/repos/rpm/$(uname -m)/
           enabled=1
           gpgcheck=0
-          gpgkey=https://packages.plakar.io/keys/plakar.gpg
+          gpgkey=https://www.plakar.io/dist/keys/community-v1.1.0.gpg
           EOF
 
       - name: Install Plakar
