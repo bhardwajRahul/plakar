@@ -19,6 +19,7 @@ func connectPlugin(ctx context.Context, pluginPath string, args []string) (grpc.
 
 	clientConn, err := grpc.NewClient("127.0.0.1:0",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithIdleTimeout(0),
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 			return conn, nil
 		}),
