@@ -69,6 +69,10 @@ func pkgpreloadhook(m *pkg.Manifest) error {
 					return fmt.Errorf("protocol %s already provided "+
 						"by another installed package", proto)
 				}
+			default:
+				fmt.Fprintf(os.Stderr,
+				    "skipping unknown connector type: %s\n",
+				    conn.Type)
 			}
 		}
 	}

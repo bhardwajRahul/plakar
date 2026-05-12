@@ -79,8 +79,7 @@ func Load(m *pkg.Manifest, pkgdir string) error {
 			case "storage":
 				err = RegisterStorage(proto, flags, exe, conn.Args)
 			default:
-				err = fmt.Errorf("unknown connector type: %s",
-					conn.Type)
+				/* Ignore silently. */
 			}
 			if err != nil {
 				return err
@@ -103,8 +102,7 @@ func Unload(m *pkg.Manifest) error {
 			case "storage":
 				err = storage.Unregister(proto)
 			default:
-				err = fmt.Errorf("unknown connector type: %s",
-					conn.Type)
+				/* ignore silently */
 			}
 		}
 	}
