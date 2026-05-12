@@ -12,11 +12,11 @@ import (
 
 	"github.com/PlakarKorp/kloset/caching"
 	"github.com/PlakarKorp/kloset/caching/pebble"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/hashing"
 	"github.com/PlakarKorp/kloset/logging"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/resources"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
 	ptesting "github.com/PlakarKorp/plakar/testing"
@@ -165,7 +165,7 @@ func _TestSnapshotHeader(t *testing.T) {
 
 			var noToken string
 			mux := http.NewServeMux()
-			SetupRoutes(mux, repo, ctx, noToken)
+			SetupRoutes(mux, repo, ctx, noToken, false)
 
 			req, err := http.NewRequest("GET", fmt.Sprintf("/api/snapshot/%s", c.snapshotId), nil)
 			require.NoError(t, err, "creating request")
@@ -246,7 +246,7 @@ func TestSnapshotHeaderErrors(t *testing.T) {
 
 			var noToken string
 			mux := http.NewServeMux()
-			SetupRoutes(mux, repo, ctx, noToken)
+			SetupRoutes(mux, repo, ctx, noToken, false)
 
 			req, err := http.NewRequest("GET", fmt.Sprintf("/api/snapshot/%s", c.snapshotId), nil)
 			require.NoError(t, err, "creating request")
@@ -311,7 +311,7 @@ func _TestSnapshotSign(t *testing.T) {
 
 			token := "test-token"
 			mux := http.NewServeMux()
-			SetupRoutes(mux, repo, ctx, token)
+			SetupRoutes(mux, repo, ctx, token, false)
 
 			// retrieve a valid jwt token before calling the read
 			req, err := http.NewRequest("POST", fmt.Sprintf("/api/snapshot/reader-sign-url/%s", c.snapshotPath), nil)

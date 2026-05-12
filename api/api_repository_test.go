@@ -12,11 +12,11 @@ import (
 
 	"github.com/PlakarKorp/kloset/caching"
 	"github.com/PlakarKorp/kloset/caching/pebble"
+	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/hashing"
 	"github.com/PlakarKorp/kloset/logging"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/resources"
-	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/versioning"
 	"github.com/PlakarKorp/plakar/appcontext"
 	ptesting "github.com/PlakarKorp/plakar/testing"
@@ -60,7 +60,7 @@ func _Test_RepositoryConfiguration(t *testing.T) {
 
 	var noToken string
 	mux := http.NewServeMux()
-	SetupRoutes(mux, repo, ctx, noToken)
+	SetupRoutes(mux, repo, ctx, noToken, false)
 
 	req, err := http.NewRequest("GET", "/api/repository/configuration", nil)
 	require.NoError(t, err, "creating request")
@@ -345,7 +345,7 @@ func _Test_RepositorySnapshots(t *testing.T) {
 
 			var noToken string
 			mux := http.NewServeMux()
-			SetupRoutes(mux, repo, ctx, noToken)
+			SetupRoutes(mux, repo, ctx, noToken, false)
 
 			req, err := http.NewRequest("GET", "/api/repository/snapshots", nil)
 			require.NoError(t, err, "creating request")
@@ -451,7 +451,7 @@ func _Test_RepositorySnapshotsErrors(t *testing.T) {
 
 			var noToken string
 			mux := http.NewServeMux()
-			SetupRoutes(mux, repo, ctx, noToken)
+			SetupRoutes(mux, repo, ctx, noToken, false)
 
 			req, err := http.NewRequest("GET", fmt.Sprintf("/api/repository/snapshots?%s", c.params), nil)
 			require.NoError(t, err, "creating request")

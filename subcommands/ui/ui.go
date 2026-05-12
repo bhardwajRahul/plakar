@@ -31,6 +31,18 @@ import (
 	"github.com/google/uuid"
 )
 
+type Ui struct {
+	subcommands.SubcommandBase
+
+	Addr      string
+	Cors      bool
+	NoAuth    bool
+	NoSpawn   bool
+	NoRefresh bool
+	Cert      string
+	Key       string
+}
+
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Ui{} }, 0, "ui")
 }
@@ -47,6 +59,7 @@ func (cmd *Ui) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.BoolVar(&cmd.Cors, "cors", false, "enable CORS")
 	flags.BoolVar(&cmd.NoAuth, "no-auth", false, "don't use authentication")
 	flags.BoolVar(&cmd.NoSpawn, "no-spawn", false, "don't spawn browser")
+	flags.BoolVar(&cmd.NoRefresh, "no-refresh", false, "don't refresh the local state")
 	flags.StringVar(&cmd.Cert, "cert", "", "Full certificate chain")
 	flags.StringVar(&cmd.Key, "key", "", "Certificate private key")
 	flags.Parse(args)
@@ -60,24 +73,14 @@ func (cmd *Ui) Parse(ctx *appcontext.AppContext, args []string) error {
 	return nil
 }
 
-type Ui struct {
-	subcommands.SubcommandBase
-
-	Addr    string
-	Cors    bool
-	NoAuth  bool
-	NoSpawn bool
-	Cert    string
-	Key     string
-}
-
 func (cmd *Ui) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
 	ui_opts := v2.UiOptions{
-		NoSpawn: cmd.NoSpawn,
-		Cors:    cmd.Cors,
-		Token:   "",
-		Cert:    cmd.Cert,
-		Key:     cmd.Key,
+		NoSpawn:   cmd.NoSpawn,
+		NoRefresh: cmd.NoRefresh,
+		Cors:      cmd.Cors,
+		Token:     "",
+		Cert:      cmd.Cert,
+		Key:       cmd.Key,
 	}
 
 	if !cmd.NoAuth {

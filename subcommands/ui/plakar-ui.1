@@ -9,6 +9,7 @@
 .Op Fl addr Ar address
 .Op Fl cors
 .Op Fl no-auth
+.Op Fl no-refresh
 .Op Fl no-spawn
 .Op Fl cert Ar path
 .Op Fl key Ar path
@@ -33,6 +34,9 @@ HTTP headers to allow the UI to be accessed from any origin.
 .It Fl no-auth
 Disable the authentication token that otherwise is needed to consume
 the exposed HTTP APIs.
+.It Fl no-refresh
+Do not refresh the local state from the store on API calls.
+Useful when you want to share a common cache between multiple UIs.
 .It Fl no-spawn
 Do not automatically open the web browser.
 .It Fl cert Ar path

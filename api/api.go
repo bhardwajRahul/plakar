@@ -21,6 +21,7 @@ type uiserver struct {
 	store      storage.Store
 	config     storage.Configuration
 	repository *repository.Repository
+	norefresh  bool
 
 	// XXX: Adding this for transition, it needs to go away. Some
 	// places we only have Repository and out of AppContext we
@@ -153,12 +154,13 @@ func (ui *uiserver) apiInfo(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(res)
 }
 
-func SetupRoutes(server *http.ServeMux, repo *repository.Repository, ctx *appcontext.AppContext, token string) {
+func SetupRoutes(server *http.ServeMux, repo *repository.Repository, ctx *appcontext.AppContext, token string, norefresh bool) {
 	ui := uiserver{
 		store:      repo.Store(),
 		config:     repo.Configuration(),
 		repository: repo,
 		ctx:        ctx,
+		norefresh:  norefresh,
 	}
 
 	authToken := TokenAuthMiddleware(token)
