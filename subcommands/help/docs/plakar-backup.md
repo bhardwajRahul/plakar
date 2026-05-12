@@ -172,4 +172,4 @@ points:
 plakar(1),
 plakar-source(1)
 
-Plakar - May 5, 2026 - PLAKAR-BACKUP(1)
+Plakar - May 5, 2026

@@ -73,4 +73,4 @@ Recursively list contents of a specific snapshot:
 plakar(1),
 plakar-query(7)
 
-Plakar - May 5, 2026 - PLAKAR-LS(1)
+Plakar - May 5, 2026

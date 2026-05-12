@@ -115,4 +115,4 @@ Restore specific path to a specific destination :
 plakar(1),
 plakar-backup(1)
 
-Plakar - May 5, 2026 - PLAKAR-RESTORE(1)
+Plakar - May 5, 2026
