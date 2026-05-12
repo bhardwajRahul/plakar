@@ -10,6 +10,7 @@ PLAKAR-UI(1) - General Commands Manual
 \[**-addr**&nbsp;*address*]
 \[**-cors**]
 \[**-no-auth**]
+\[**-no-refresh**]
 \[**-no-spawn**]
 \[**-cert**&nbsp;*path*]
 \[**-key**&nbsp;*path*]
@@ -41,6 +42,11 @@ The options are as follows:
 
 > Disable the authentication token that otherwise is needed to consume
 > the exposed HTTP APIs.
+
+**-no-refresh**
+
+> Do not refresh the local state from the store on API calls.
+> Useful when you want to share a common cache between multiple UIs.
 
 **-no-spawn**
 
@@ -78,4 +84,4 @@ Create a https server with a custom certificate:
 
 plakar(1)
 
-Plakar - May 5, 2026 - PLAKAR-UI(1)
+Plakar - May 5, 2026

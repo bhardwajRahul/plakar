@@ -38,6 +38,7 @@ type UiOptions struct {
 	Token          string
 	Cert           string
 	Key            string
+	NoRefresh      bool
 }
 
 //go:embed all:frontend/*
@@ -45,7 +46,7 @@ var content embed.FS
 
 func Ui(repo *repository.Repository, ctx *appcontext.AppContext, addr string, opts *UiOptions) error {
 	server := http.NewServeMux()
-	api.SetupRoutes(server, repo, ctx, opts.Token)
+	api.SetupRoutes(server, repo, ctx, opts.Token, opts.NoRefresh)
 
 	statics, err := fs.Sub(content, "frontend")
 	if err != nil {
