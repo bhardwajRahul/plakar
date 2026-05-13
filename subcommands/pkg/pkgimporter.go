@@ -19,7 +19,9 @@ package pkg
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -38,6 +40,14 @@ type pkgerImporter struct {
 	manifest     *pkg.Manifest
 	manifestPath string
 }
+
+type itemtype int
+
+const (
+	itexe itemtype = iota
+	itjson
+	itextra
+)
 
 func (imp *pkgerImporter) Origin() string        { return "" }
 func (imp *pkgerImporter) Type() string          { return "pkger" }
@@ -63,7 +73,7 @@ func mkstruct(p string, ch chan<- *connectors.Record) {
 	}
 }
 
-func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, mustExe bool) error {
+func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it itemtype) error {
 	absolute := absolutify(imp.cwd, p)
 
 	relative := absolute
@@ -88,7 +98,8 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, mustExe
 		return nil
 	}
 
-	if mustExe {
+	switch it {
+	case itexe:
 		var isexe bool
 		if os.Getenv("GOOS") == "windows" || runtime.GOOS == "windows" {
 			isexe = strings.HasSuffix(fi.Name(), ".exe")
@@ -98,6 +109,17 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, mustExe
 
 		if !isexe {
 			ch <- connectors.NewError(name, fmt.Errorf("Not executable: %s", absolute))
+			return nil
+		}
+
+	case itjson:
+		content := make(map[string]any)
+		if err := json.NewDecoder(fp).Decode(&content); err != nil {
+			ch <- connectors.NewError(name, fmt.Errorf("invalid json: %s: %w", absolute, err))
+			return nil
+		}
+		if _, err := fp.Seek(0, io.SeekStart); err != nil {
+			ch <- connectors.NewError(name, fmt.Errorf("seek failed: %w", err))
 			return nil
 		}
 	}
@@ -119,15 +141,20 @@ func (imp *pkgerImporter) scan(ch chan<- *connectors.Record) error {
 		FileInfo: info,
 	}
 
-	if err := imp.dofile(imp.manifestPath, ch, false); err != nil {
+	if err := imp.dofile(imp.manifestPath, ch, itextra); err != nil {
 		return err
 	}
 	for _, conn := range imp.manifest.Connectors {
-		if err := imp.dofile(conn.Executable, ch, true); err != nil {
+		if err := imp.dofile(conn.Executable, ch, itexe); err != nil {
 			return err
 		}
+		if conn.Validator != "" {
+			if err := imp.dofile(conn.Validator, ch, itjson); err != nil {
+				return err
+			}
+		}
 		for _, file := range conn.ExtraFiles {
-			if err := imp.dofile(file, ch, false); err != nil {
+			if err := imp.dofile(file, ch, itextra); err != nil {
 				return err
 			}
 		}
