@@ -2,6 +2,9 @@ package config
 
 import (
 	"fmt"
+	"net/url"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"maps"
@@ -36,6 +39,8 @@ func (c *Config) GetRepository(name string) (map[string]string, error) {
 		return map[string]string{"location": name}, nil
 	}
 
+	name, rootOverride := resolveRootOverride(name)
+
 	kv, ok := c.Repositories[name[1:]]
 	if !ok {
 		return nil, fmt.Errorf("could not resolve repository: %s", name)
@@ -45,6 +50,12 @@ func (c *Config) GetRepository(name string) (map[string]string, error) {
 	} else {
 		res := make(map[string]string)
 		maps.Copy(res, kv)
+
+		location, err := applyRootOverride(res["location"], rootOverride)
+		if err != nil {
+			return nil, err
+		}
+		res["location"] = location
 		return res, nil
 	}
 }
@@ -55,11 +66,19 @@ func (c *Config) HasSource(name string) bool {
 }
 
 func (c *Config) GetSource(name string) (map[string]string, bool) {
+	name, rootOverride := resolveRootOverride(name)
+
 	if kv, ok := c.Sources[name]; !ok {
 		return nil, false
 	} else {
 		res := make(map[string]string)
 		maps.Copy(res, kv)
+
+		location, err := applyRootOverride(res["location"], rootOverride)
+		if err != nil {
+			return nil, false
+		}
+		res["location"] = location
 		return res, ok
 	}
 }
@@ -70,11 +89,53 @@ func (c *Config) HasDestination(name string) bool {
 }
 
 func (c *Config) GetDestination(name string) (map[string]string, bool) {
+	name, rootOverride := resolveRootOverride(name)
+
 	if kv, ok := c.Destinations[name]; !ok {
 		return nil, false
 	} else {
 		res := make(map[string]string)
 		maps.Copy(res, kv)
+
+		location, err := applyRootOverride(res["location"], rootOverride)
+		if err != nil {
+			return nil, false
+		}
+		res["location"] = location
 		return res, ok
 	}
+}
+
+func resolveRootOverride(name string) (string, string) {
+	if idx := strings.Index(name, ":"); idx == -1 {
+		return name, ""
+	} else {
+		return name[:idx], name[idx+1:]
+	}
+}
+
+func applyRootOverride(location string, rootOverride string) (string, error) {
+	localPath := false
+	if strings.HasPrefix(location, "/") {
+		localPath = true
+	}
+	if localPath {
+		if strings.HasPrefix(rootOverride, "/") {
+			location = rootOverride
+		} else {
+			location = filepath.Join(location, rootOverride)
+		}
+	} else {
+		u, err := url.Parse(location)
+		if err != nil {
+			return "", err
+		}
+		if strings.HasPrefix(rootOverride, "/") {
+			u.Path = rootOverride
+		} else {
+			u.Path = path.Join(u.Path, rootOverride)
+		}
+		location = u.String()
+	}
+	return location, nil
 }
