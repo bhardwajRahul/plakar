@@ -115,6 +115,10 @@ func resolveRootOverride(name string) (string, string) {
 }
 
 func applyRootOverride(location string, rootOverride string) (string, error) {
+	if rootOverride == "" {
+		return location, nil
+	}
+
 	localPath := false
 	if strings.HasPrefix(location, "/") {
 		localPath = true
