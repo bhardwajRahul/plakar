@@ -7,9 +7,9 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl concurrency Ar number
-.Op Fl config Ar dir
-.Op Fl cache Ar dir
-.Op Fl data Ar dir
+.Op Fl configdir Ar dir
+.Op Fl cachedir Ar dir
+.Op Fl datadir Ar dir
 .Op Fl cpu Ar number
 .Op Fl json
 .Op Fl keyfile Ar path
@@ -38,15 +38,15 @@ The following options are available:
 .It Fl concurrency Ar number
 Set the maximum number of parallel tasks for faster processing.
 Defaults to the CPU count.
-.It Fl config Ar dir
+.It Fl configdir Ar dir
 Specify an alternate configuration directory.
 Defaults to
 .Pa ~/.config/plakar .
-.It Fl cache Ar dir
+.It Fl cachedir Ar dir
 Specify an alternate cache directory.
 Defaults to
 .Pa ~/.cache/plakar .
-.It Fl data Ar dir
+.It Fl datadir Ar dir
 Specify an alternate data directory.
 Defaults to
 .Pa ~/.local/share/plakar .

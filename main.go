@@ -129,6 +129,7 @@ func entryPoint() int {
 
 	// command line overrides
 	var opt_cpuCount int
+	var opt_config string // deprecated, to be removed soon
 	var opt_configdir string
 	var opt_cachedir string
 	var opt_datadir string
@@ -145,9 +146,10 @@ func entryPoint() int {
 	var opt_disableSecurityCheck bool
 	var opt_maxConcurrency int
 
-	flag.StringVar(&opt_configdir, "config", opt_configDefault, "configuration directory")
-	flag.StringVar(&opt_cachedir, "cache", opt_cacheDefault, "cache directory")
-	flag.StringVar(&opt_datadir, "data", opt_dataDefault, "data directory")
+	flag.StringVar(&opt_config, "config", opt_configDefault, "configuration directory (deprecated, use -configdir instead)")
+	flag.StringVar(&opt_configdir, "configdir", opt_configDefault, "configuration directory")
+	flag.StringVar(&opt_cachedir, "cachedir", opt_cacheDefault, "cache directory")
+	flag.StringVar(&opt_datadir, "datadir", opt_dataDefault, "data directory")
 	flag.IntVar(&opt_cpuCount, "cpu", opt_cpuDefault, "limit the number of usable cores")
 	flag.IntVar(&opt_maxConcurrency, "concurrency", -1, "limit the number of concurrent operations")
 	flag.StringVar(&opt_cpuProfile, "profile-cpu", "", "profile CPU usage")
@@ -203,7 +205,14 @@ func entryPoint() int {
 
 	ctx.Quiet = opt_quiet
 	ctx.Silent = opt_silent
-
+	// to be removed when -config is removed vvvvv
+	if opt_config != opt_configDefault {
+		fmt.Fprintln(ctx.Stderr, "Option -config is deprecated, please use -configdir instead")
+	}
+	if opt_config != opt_configDefault && opt_configdir == opt_configDefault {
+		opt_configdir = opt_config
+	}
+	// to be removed when -config is removed ^^^^^
 	ctx.ConfigDir = opt_configdir
 	err = ctx.ReloadConfig()
 	if err != nil {

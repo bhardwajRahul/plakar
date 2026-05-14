@@ -43,19 +43,19 @@ The following options are available:
 > Set the maximum number of parallel tasks for faster processing.
 > Defaults to the CPU count.
 
-**-config** *dir*
+**-configdir** *dir*
 
 > Specify an alternate configuration directory.
 > Defaults to
 > *~/.config/plakar*.
 
-**-cache** *dir*
+**-cachedir** *dir*
 
 > Specify an alternate cache directory.
 > Defaults to
 > *~/.cache/plakar*.
 
-**-data** *dir*
+**-datadir** *dir*
 
 > Specify an alternate data directory.
 > Defaults to
