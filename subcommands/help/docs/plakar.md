@@ -9,6 +9,8 @@ PLAKAR(1) - General Commands Manual
 **plakar**
 \[**-concurrency**&nbsp;*number*]
 \[**-config**&nbsp;*dir*]
+\[**-cache**&nbsp;*dir*]
+\[**-data**&nbsp;*dir*]
 \[**-cpu**&nbsp;*number*]
 \[**-json**]
 \[**-keyfile**&nbsp;*path*]
@@ -41,11 +43,23 @@ The following options are available:
 > Set the maximum number of parallel tasks for faster processing.
 > Defaults to the CPU count.
 
-**-config** *dir*
+**-configdir** *dir*
 
 > Specify an alternate configuration directory.
 > Defaults to
 > *~/.config/plakar*.
+
+**-cachedir** *dir*
+
+> Specify an alternate cache directory.
+> Defaults to
+> *~/.cache/plakar*.
+
+**-datadir** *dir*
+
+> Specify an alternate data directory.
+> Defaults to
+> *~/.local/share/plakar*.
 
 **-cpu** *number*
 
