@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/PlakarKorp/go-human2duration v0.1.6
 	github.com/PlakarKorp/integration-fs v1.1.0-beta.6
-	github.com/PlakarKorp/integration-grpc v1.1.0-beta.4
+	github.com/PlakarKorp/integration-grpc v1.1.0-rc.1
 	github.com/PlakarKorp/integration-http v1.1.0-beta.1
 	github.com/PlakarKorp/integration-ptar v1.1.0-beta.2
 	github.com/PlakarKorp/integration-stdio v1.1.0-beta.1
