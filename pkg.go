@@ -64,15 +64,15 @@ func pkgpreloadhook(m *pkg.Manifest) error {
 					return fmt.Errorf("protocol %s already provided "+
 						"by another installed package", proto)
 				}
-			case "store":
+			case "storage":
 				if slices.Contains(storage.Backends(), proto) {
 					return fmt.Errorf("protocol %s already provided "+
 						"by another installed package", proto)
 				}
 			default:
 				fmt.Fprintf(os.Stderr,
-				    "skipping unknown connector type: %s\n",
-				    conn.Type)
+					"skipping unknown connector type: %s\n",
+					conn.Type)
 			}
 		}
 	}
