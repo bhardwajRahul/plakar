@@ -1,0 +1,1 @@
+import{ah as e,j as n,G as o}from"./index-Cb_u2MPY.js";import{a as r}from"./use-api-COaAmqGa.js";function i(){const{returnUrl:t}=e.useSearch();return r({status:"logged_in",returnUrl:t}),n.jsx(o,{})}export{i as component};
