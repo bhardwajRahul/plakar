@@ -86,9 +86,11 @@ func (cmd *Prune) Parse(ctx *appcontext.AppContext, args []string) error {
 	return nil
 }
 
-// override values in "from" if it is set in "to"
+// mergePolicyOptions layers CLI overrides (from) onto policy-loaded options
+// (to): for each field, the CLI value wins iff it is set, otherwise the
+// policy value is kept.
 func mergePolicyOptions(to *locate.LocateOptions, from *locate.LocateOptions) {
-	to.Filters = from.Filters
+	mergeFilters(&to.Filters, &from.Filters)
 
 	merge := func(a, b *locate.LocatePeriod) {
 		if b.Keep != 0 {
@@ -113,6 +115,54 @@ func mergePolicyOptions(to *locate.LocateOptions, from *locate.LocateOptions) {
 	merge(&to.Periods.Saturday, &from.Periods.Saturday)
 	merge(&to.Periods.Sunday, &from.Periods.Sunday)
 
+}
+
+// mergeFilters overlays b onto a per-field: each field of a is replaced only
+// when the corresponding field in b is non-zero. Slice fields are replaced
+// wholesale when b's slice is non-empty.
+func mergeFilters(a, b *locate.LocateFilters) {
+	if !b.Before.IsZero() {
+		a.Before = b.Before
+	}
+	if !b.Since.IsZero() {
+		a.Since = b.Since
+	}
+	if b.Name != "" {
+		a.Name = b.Name
+	}
+	if b.Category != "" {
+		a.Category = b.Category
+	}
+	if b.Environment != "" {
+		a.Environment = b.Environment
+	}
+	if b.Perimeter != "" {
+		a.Perimeter = b.Perimeter
+	}
+	if b.Job != "" {
+		a.Job = b.Job
+	}
+	if len(b.Tags) > 0 {
+		a.Tags = b.Tags
+	}
+	if len(b.IgnoreTags) > 0 {
+		a.IgnoreTags = b.IgnoreTags
+	}
+	if b.Latest {
+		a.Latest = b.Latest
+	}
+	if len(b.IDs) > 0 {
+		a.IDs = b.IDs
+	}
+	if len(b.Types) > 0 {
+		a.Types = b.Types
+	}
+	if len(b.Origins) > 0 {
+		a.Origins = b.Origins
+	}
+	if len(b.Roots) > 0 {
+		a.Roots = b.Roots
+	}
 }
 
 type planEntry struct {
