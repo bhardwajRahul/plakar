@@ -79,6 +79,13 @@ func NewDirectory(pfs *plakarFS, vfs fs.FS, parent *Dir, pathname string) (*Dir,
 		if !dir.IsRoot() {
 			if dir.vfs == nil {
 				parent.readDirMutex.Lock()
+				if len(parent.readDirSnapshotMapping) == 0 {
+					err := parent.getSnapshots()
+					if err != nil {
+						parent.readDirMutex.Unlock()
+						return nil, syscall.ENOENT
+					}
+				}
 				identifier := parent.readDirSnapshotMapping[pathname]
 				parent.readDirMutex.Unlock()
 				snap, err := snapshot.Load(pfs.repo, identifier)
@@ -146,6 +153,12 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fusefs.Node, error) {
 		return NewDirectory(d.pfs, nil, d, name)
 	}
 
+	if len(d.readDirChildren) == 0 {
+		err := d.loadDirectory()
+		if err != nil {
+			return nil, syscall.ENOENT
+		}
+	}
 	st, err := d.Stat(name)
 	if err != nil {
 		return nil, syscall.ENOENT
@@ -163,52 +176,20 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	d.readDirMutex.Lock()
 	defer d.readDirMutex.Unlock()
 
-	now := time.Now()
 	if d.vfs == nil {
 		if !d.readDirLast.IsZero() && time.Since(d.readDirLast) < d.pfs.rootRefresh {
 			return d.readDirChildren, nil
 		}
 
-		_, err := cached.RebuildStateFromStore(d.pfs.ctx, d.pfs.repo.Configuration().RepositoryID, d.pfs.ctx.StoreConfig, false)
+		err := d.getSnapshots()
 		if err != nil {
 			return nil, err
 		}
-
-		snapshotIDs, err := locate.LocateSnapshotIDs(d.pfs.repo, d.pfs.locateOptions)
+	} else {
+		err := d.loadDirectory()
 		if err != nil {
 			return nil, err
 		}
-
-		d.readDirLast = now
-		readDirSnapshotMapping := make(map[string]objects.MAC)
-		out := make([]fuse.Dirent, 0, len(snapshotIDs))
-		for _, snapshotID := range snapshotIDs {
-			name := fmt.Sprintf("%x", snapshotID[:4])
-			readDirSnapshotMapping[name] = snapshotID
-			out = append(out, fuse.Dirent{
-				Name: name,
-				Type: fuse.DT_Dir,
-			})
-		}
-		d.readDirSnapshotMapping = readDirSnapshotMapping
-		d.readDirChildren = out
-	} else if d.readDirLast.IsZero() {
-		children, err := fs.ReadDir(d.vfs, path.Join(".", d.path))
-		if err != nil {
-			return nil, err
-		}
-		d.readDirEntries = children
-
-		d.readDirLast = now
-		out := make([]fuse.Dirent, 0)
-		for _, child := range children {
-			de := fuse.Dirent{Name: child.Name(), Type: fuse.DT_File}
-			if child.IsDir() {
-				de.Type = fuse.DT_Dir
-			}
-			out = append(out, de)
-		}
-		d.readDirChildren = out
 	}
 	return d.readDirChildren, nil
 }
@@ -226,4 +207,53 @@ func (d *Dir) Stat(name string) (fs.FileInfo, error) {
 		}
 	}
 	return nil, fs.ErrNotExist
+}
+
+func (d *Dir) loadDirectory() error {
+	if d.readDirLast.IsZero() {
+		children, err := fs.ReadDir(d.vfs, path.Join(".", d.path))
+		if err != nil {
+			return err
+		}
+		d.readDirEntries = children
+
+		d.readDirLast = time.Now()
+		out := make([]fuse.Dirent, 0)
+		for _, child := range children {
+			de := fuse.Dirent{Name: child.Name(), Type: fuse.DT_File}
+			if child.IsDir() {
+				de.Type = fuse.DT_Dir
+			}
+			out = append(out, de)
+		}
+		d.readDirChildren = out
+	}
+	return nil
+}
+
+func (d *Dir) getSnapshots() error {
+	now := time.Now()
+	_, err := cached.RebuildStateFromStore(d.pfs.ctx, d.pfs.repo.Configuration().RepositoryID, d.pfs.ctx.StoreConfig, false)
+	if err != nil {
+		return err
+	}
+	snapshotIDs, err := locate.LocateSnapshotIDs(d.pfs.repo, d.pfs.locateOptions)
+	if err != nil {
+		return err
+	}
+
+	readDirSnapshotMapping := make(map[string]objects.MAC)
+	out := make([]fuse.Dirent, 0, len(snapshotIDs))
+	for _, snapshotID := range snapshotIDs {
+		name := fmt.Sprintf("%x", snapshotID[:4])
+		readDirSnapshotMapping[name] = snapshotID
+		out = append(out, fuse.Dirent{
+			Name: name,
+			Type: fuse.DT_Dir,
+		})
+	}
+	d.readDirSnapshotMapping = readDirSnapshotMapping
+	d.readDirChildren = out
+	d.readDirLast = now
+	return nil
 }
