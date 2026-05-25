@@ -1,0 +1,11 @@
+# Codecov configuration for plakar.
+#
+# https://docs.codecov.com/docs/codecov-yaml
+
+# Paths that are excluded from the coverage report. These are test-support
+# packages — they have no `_test.go` files of their own and exist purely
+# to be imported by tests elsewhere in the tree. Counting them against
+# project coverage punishes us for having well-factored test helpers.
+ignore:
+  - "testing/"          # GenerateRepository, GenerateSnapshot, MockFile, FakeCachedServer, ...
+  - "testing/fileinfo/" # FileInfo mocks used by snapshot tests
