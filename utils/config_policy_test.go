@@ -293,3 +293,98 @@ func TestPoliciesApplyConfigUnknownIsNoOp(t *testing.T) {
 		t.Fatal("ApplyConfig with unknown name should not overwrite")
 	}
 }
+
+// TestPoliciesLocateFieldAllStringKeys walks every string-valued filter
+// key supported by locateField, exercising each switch branch once.
+func TestPoliciesLocateFieldAllStringKeys(t *testing.T) {
+	stringKeys := []string{
+		"name", "category", "environment", "perimeter", "job",
+	}
+	for _, key := range stringKeys {
+		t.Run(key, func(t *testing.T) {
+			c := newTestPolicies()
+			c.Add("p")
+			if err := c.Set("p", key, "value-for-"+key); err != nil {
+				t.Fatalf("Set %s: %v", key, err)
+			}
+			if err := c.Unset("p", key); err != nil {
+				t.Fatalf("Unset %s: %v", key, err)
+			}
+		})
+	}
+}
+
+// TestPoliciesLocateFieldAllStringListKeys exercises the []string branches.
+func TestPoliciesLocateFieldAllStringListKeys(t *testing.T) {
+	listKeys := []string{"tags", "ids", "roots"}
+	for _, key := range listKeys {
+		t.Run(key, func(t *testing.T) {
+			c := newTestPolicies()
+			c.Add("p")
+			if err := c.Set("p", key, "a,b,c"); err != nil {
+				t.Fatalf("Set %s: %v", key, err)
+			}
+			if err := c.Unset("p", key); err != nil {
+				t.Fatalf("Unset %s: %v", key, err)
+			}
+		})
+	}
+}
+
+// TestPoliciesLocateFieldAllIntKeys exercises every period-related int branch
+// (Keep and Cap for each period). Each branch is hit via both Set and Unset.
+func TestPoliciesLocateFieldAllIntKeys(t *testing.T) {
+	intKeys := []string{
+		// Periods.*.Keep
+		"minutes", "hours", "days", "weeks", "months", "years",
+		"mondays", "tuesdays", "wednesdays", "thursdays",
+		"fridays", "saturdays", "sundays",
+		// Periods.*.Cap
+		"per-minute", "per-hour", "per-day", "per-week", "per-month", "per-year",
+		"per-monday", "per-tuesday", "per-wednesday", "per-thursday",
+		"per-friday", "per-saturday", "per-sunday",
+	}
+	for _, key := range intKeys {
+		t.Run(key, func(t *testing.T) {
+			c := newTestPolicies()
+			c.Add("p")
+			if err := c.Set("p", key, "5"); err != nil {
+				t.Fatalf("Set %s: %v", key, err)
+			}
+			if err := c.Unset("p", key); err != nil {
+				t.Fatalf("Unset %s: %v", key, err)
+			}
+		})
+	}
+}
+
+// TestPoliciesLocateFieldSinceAndLatest exercises the last remaining
+// non-string/non-int branches: `since` (time.Time) and `latest` (bool).
+func TestPoliciesLocateFieldSinceAndLatest(t *testing.T) {
+	c := newTestPolicies()
+	c.Add("p")
+	if err := c.Set("p", "since", "2026-01-01T00:00:00Z"); err != nil {
+		t.Fatalf("Set since: %v", err)
+	}
+	if err := c.Unset("p", "since"); err != nil {
+		t.Fatalf("Unset since: %v", err)
+	}
+	if err := c.Set("p", "latest", "true"); err != nil {
+		t.Fatalf("Set latest: %v", err)
+	}
+	if err := c.Unset("p", "latest"); err != nil {
+		t.Fatalf("Unset latest: %v", err)
+	}
+}
+
+// TestPoliciesLocateFieldInvalidKey hits the default branch.
+func TestPoliciesLocateFieldInvalidKey(t *testing.T) {
+	c := newTestPolicies()
+	c.Add("p")
+	if err := c.Set("p", "bogus-key", "x"); err == nil {
+		t.Fatal("Set with invalid key should error")
+	}
+	if err := c.Unset("p", "bogus-key"); err == nil {
+		t.Fatal("Unset with invalid key should error")
+	}
+}
