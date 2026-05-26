@@ -8,6 +8,9 @@
 [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?logo=youtube&logoColor=white&style=for-the-badge)](https://www.youtube.com/@PlakarKorp)
 [![Join our Subreddit](https://img.shields.io/badge/Reddit-Join%20r%2Fplakar-orange?logo=reddit&logoColor=white&style=for-the-badge)](https://www.reddit.com/r/plakar/)
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/PlakarKorp/plakar)](https://goreportcard.com/report/github.com/PlakarKorp/plakar)
+[![codecov](https://codecov.io/gh/PlakarKorp/plakar/branch/main/graph/badge.svg)](https://codecov.io/gh/PlakarKorp/plakar)
+
 [Deutsch](https://www.readme-i18n.com/PlakarKorp/plakar?lang=de) |
 [Español](https://www.readme-i18n.com/PlakarKorp/plakar?lang=es) |
 [français](https://www.readme-i18n.com/PlakarKorp/plakar?lang=fr) |

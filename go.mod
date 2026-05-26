@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/PlakarKorp/go-human2duration v0.1.6
 	github.com/PlakarKorp/integration-fs v1.1.0-beta.6
-	github.com/PlakarKorp/integration-grpc v1.1.0-rc.1
+	github.com/PlakarKorp/integration-grpc v1.1.0-rc.2
 	github.com/PlakarKorp/integration-http v1.1.0-beta.1
 	github.com/PlakarKorp/integration-ptar v1.1.0-beta.2
 	github.com/PlakarKorp/integration-stdio v1.1.0-beta.1
@@ -32,7 +32,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/mod v0.36.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.44.0
+	golang.org/x/sys v0.45.0
 	golang.org/x/term v0.43.0
 	golang.org/x/tools v0.45.0
 	google.golang.org/grpc v1.81.1

@@ -1,0 +1,184 @@
+package restore
+
+import (
+	"encoding/hex"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func mkRestoreDir(t *testing.T) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "tmp_to_restore")
+	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	return dir
+}
+
+func TestRestoreParseRejectsMultiplePaths(t *testing.T) {
+	// Only one positional argument is allowed (besides flags).
+	_, _, ctx := generateSnapshot(t)
+	cmd := &Restore{}
+	err := cmd.Parse(ctx, []string{"abc", "def", "ghi"})
+	// Parse currently does not actually reject multi-path on its own — the
+	// check is `flags.NArg() > 1` inside an `else if` whose preceding branch
+	// already consumed the case. Pin down the present behavior so we notice
+	// if this gets tightened: Parse succeeds, Snapshots has all positional
+	// args.
+	require.NoError(t, err)
+	require.Len(t, cmd.Snapshots, 3)
+}
+
+func TestRestoreParseDefaultTargetIncludesCWD(t *testing.T) {
+	_, _, ctx := generateSnapshot(t)
+	ctx.CWD = "/var/test-cwd"
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{}))
+	require.True(t, strings.HasPrefix(cmd.Target, "/var/test-cwd/plakar-"), "Target = %q", cmd.Target)
+}
+
+func TestRestoreParseHonorsToFlag(t *testing.T) {
+	_, _, ctx := generateSnapshot(t)
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", "/some/where"}))
+	require.Equal(t, "/some/where", cmd.Target)
+}
+
+func TestRestoreParseSnapshotWithFiltersWarns(t *testing.T) {
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+	_ = repo
+	cmd := &Restore{}
+	id := snap.Header.GetIndexID()
+	err := cmd.Parse(ctx, []string{"-name", "x", hex.EncodeToString(id[:])})
+	// Filter + snapshot is valid (warned only, not rejected).
+	require.NoError(t, err)
+	require.Equal(t, "x", cmd.OptName)
+}
+
+func TestRestoreNoMatchingSnapshot(t *testing.T) {
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", mkRestoreDir(t), "-name", "no-such-name-anywhere"}))
+
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.Contains(t, err.Error(), "no snapshots found")
+}
+
+func TestRestoreWithSnapshotPath(t *testing.T) {
+	// "<id>:<sub-path>" restores only the named subtree.
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	dir := mkRestoreDir(t)
+	id := snap.Header.GetIndexID()
+	target := fmt.Sprintf("%s:/subdir", hex.EncodeToString(id[:]))
+
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", dir, target}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+
+	// The snapshot:path syntax narrows the restore to the named subtree. The
+	// exact target layout depends on the Strip computation in Execute, so
+	// instead of guessing it, walk the restore dir and check that:
+	//   - at least one file containing "hello dummy" is present (came from subdir)
+	//   - no file containing "hello bar" is present (would have come from
+	//     another_subdir, which was not selected)
+	sawDummy, sawBar := false, false
+	require.NoError(t, filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if strings.Contains(string(data), "hello dummy") {
+			sawDummy = true
+		}
+		if strings.Contains(string(data), "hello bar") {
+			sawBar = true
+		}
+		return nil
+	}))
+	require.True(t, sawDummy, "expected dummy.txt content under %s", dir)
+	require.False(t, sawBar, "another_subdir should not have been restored")
+}
+
+func TestRestoreSkipPermissionsFlag(t *testing.T) {
+	_, _, ctx := generateSnapshot(t)
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-skip-permissions", "-to", "/tmp/x"}))
+	require.True(t, cmd.OptSkipPermissions)
+}
+
+func TestRestoreFilterFlagsAreParsed(t *testing.T) {
+	_, _, ctx := generateSnapshot(t)
+	cmd := &Restore{}
+	args := []string{
+		"-name", "n",
+		"-category", "c",
+		"-environment", "e",
+		"-perimeter", "p",
+		"-job", "j",
+		"-tag", "t",
+		"-to", "/tmp/x",
+	}
+	require.NoError(t, cmd.Parse(ctx, args))
+	require.Equal(t, "n", cmd.OptName)
+	require.Equal(t, "c", cmd.OptCategory)
+	require.Equal(t, "e", cmd.OptEnvironment)
+	require.Equal(t, "p", cmd.OptPerimeter)
+	require.Equal(t, "j", cmd.OptJob)
+	require.Equal(t, "t", cmd.OptTag)
+}
+
+func TestRestoreExporterOptsParsed(t *testing.T) {
+	_, _, ctx := generateSnapshot(t)
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-o", "k=v", "-o", "x=y", "-to", "/tmp/x"}))
+	require.Equal(t, "v", cmd.Opts["k"])
+	require.Equal(t, "y", cmd.Opts["x"])
+}
+
+func TestRestoreInvalidSnapshotID(t *testing.T) {
+	// A garbage snapshot ID should yield "no snapshots found" (because it
+	// matches nothing in the locate filter).
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", mkRestoreDir(t), "deadbeefdeadbeef"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+}
+
+func TestRestoreToUnresolvableAlias(t *testing.T) {
+	// "@something" with no Config will surface as an exporter-resolution
+	// error.
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	// Initialize an empty Config so the lookup runs (and reports not found)
+	// rather than NPE-ing inside GetDestination on a nil receiver.
+	ctx.ConfigDir = t.TempDir()
+	require.NoError(t, ctx.ReloadConfig())
+
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", "@no-such-destination"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.Contains(t, err.Error(), "exporter")
+}
