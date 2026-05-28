@@ -425,6 +425,8 @@ func (cmd *Maintenance) Lock() (chan bool, error) {
 				cmd.repository.DeleteLock(cmd.maintenanceID)
 				return nil, err
 			}
+
+			continue
 		}
 
 		// There is a lock in place, we need to abort.
