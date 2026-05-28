@@ -1,4 +1,4 @@
-.Dd May 5, 2026
+.Dd May 29, 2026
 .Dt PLAKAR-MOUNT 1
 .Os
 .Sh NAME
@@ -6,6 +6,7 @@
 .Nd Mount Plakar snapshots as read-only filesystem
 .Sh SYNOPSIS
 .Nm plakar mount
+.Op Fl allow-others
 .Op Fl to Ar mountpoint
 .Op Ar snapshotID
 .Sh DESCRIPTION
@@ -27,6 +28,8 @@ to precisely select snapshots.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl allow-others
+Allow other users to access the mounted filesystem.
 .It Fl to Ar mountpoint
 Specify the mount location.
 The
@@ -62,6 +65,11 @@ $ plakar mount -to ~/mnt -latest
 Mount a specific snapshot by ID to a directory:
 .Bd -literal -offset indent
 $ plakar mount -to ~/mnt abc123
+.Ed
+.Pp
+Mount all snapshots allowing access by other users:
+.Bd -literal -offset indent
+$ plakar mount -allow-others -to ~/mnt
 .Ed
 .Pp
 Mount snapshots matching a filter (e.g., snapshots with tag "daily-backup"):

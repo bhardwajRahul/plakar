@@ -35,6 +35,7 @@ type Mount struct {
 
 	Mountpoint    string
 	LocateOptions *locate.LocateOptions
+	AllowOthers   bool
 
 	SnapshotPath string
 
@@ -53,6 +54,7 @@ func (cmd *Mount) Parse(ctx *appcontext.AppContext, args []string) error {
 		fmt.Fprintf(flags.Output(), "Usage: %s [-to PATH] [snapshotID]\n", flags.Name())
 	}
 	flags.StringVar(&cmd.Mountpoint, "to", "", "mount point")
+	flags.BoolVar(&cmd.AllowOthers, "allow-others", false, "allow other users to access the mount")
 	cmd.LocateOptions.InstallLocateFlags(flags)
 	flags.Parse(args)
 
@@ -91,5 +93,5 @@ func (cmd *Mount) Execute(ctx *appcontext.AppContext, repo *repository.Repositor
 	if strings.HasPrefix(cmd.Mountpoint, "http://") {
 		return http.ExecuteHTTP(ctx, repo, cmd.Mountpoint, cmd.LocateOptions, chrootFS)
 	}
-	return fuse.ExecuteFUSE(ctx, repo, cmd.Mountpoint, cmd.LocateOptions, chrootFS)
+	return fuse.ExecuteFUSE(ctx, repo, cmd.Mountpoint, cmd.LocateOptions, chrootFS, cmd.AllowOthers)
 }
