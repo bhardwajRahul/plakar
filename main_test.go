@@ -238,7 +238,7 @@ func TestPkgPreloadHook_AcceptsUnknownProtocols(t *testing.T) {
 }
 
 func TestPkgPreloadHook_RejectsAlreadyRegisteredStorage(t *testing.T) {
-	// "fs" is registered by the integration-fs storage import at the top
+	// "fs" is registered by the integrations/fs storage import at the top
 	// of main.go — pkgpreloadhook should refuse a manifest that tries to
 	// claim it.
 	if !slicesContains(storage.Backends(), "fs") {

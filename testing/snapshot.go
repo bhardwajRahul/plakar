@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/PlakarKorp/integration-fs/importer"
+	_ "github.com/PlakarKorp/integrations/fs/importer"
 
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/objects"

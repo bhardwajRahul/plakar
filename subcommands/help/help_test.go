@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	bfs "github.com/PlakarKorp/integration-fs/storage"
+	bfs "github.com/PlakarKorp/integrations/fs/storage"
 	"github.com/PlakarKorp/kloset/caching"
 	"github.com/PlakarKorp/kloset/caching/pebble"
 	"github.com/PlakarKorp/kloset/hashing"

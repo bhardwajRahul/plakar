@@ -68,14 +68,14 @@ import (
 	_ "github.com/PlakarKorp/plakar/subcommands/ui"
 	_ "github.com/PlakarKorp/plakar/subcommands/version"
 
-	_ "github.com/PlakarKorp/integration-fs/exporter"
-	_ "github.com/PlakarKorp/integration-fs/importer"
-	_ "github.com/PlakarKorp/integration-fs/storage"
-	_ "github.com/PlakarKorp/integration-http/storage"
-	_ "github.com/PlakarKorp/integration-ptar/storage"
-	_ "github.com/PlakarKorp/integration-stdio/exporter"
-	_ "github.com/PlakarKorp/integration-stdio/importer"
-	_ "github.com/PlakarKorp/integration-tar/importer"
+	_ "github.com/PlakarKorp/integrations/fs/exporter"
+	_ "github.com/PlakarKorp/integrations/fs/importer"
+	_ "github.com/PlakarKorp/integrations/fs/storage"
+	_ "github.com/PlakarKorp/integrations/http/storage"
+	_ "github.com/PlakarKorp/integrations/ptar/storage"
+	_ "github.com/PlakarKorp/integrations/stdio/exporter"
+	_ "github.com/PlakarKorp/integrations/stdio/importer"
+	_ "github.com/PlakarKorp/integrations/tar/importer"
 )
 
 var ErrCantUnlock = errors.New("failed to unlock repository")
