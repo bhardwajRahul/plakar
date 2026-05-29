@@ -135,6 +135,23 @@ The filters are:
 > Select snapshot whose environment is
 > *name*.
 
+**-group-by** *key*
+
+> Partition the filtered snapshots by
+> *key*
+> and apply retention matchers
+> (**-days**, **-per-day**, ...)
+> independently within each group instead of across the whole result set.
+> *key*
+> must be one of
+> **name**, **category**, **environment**, **perimeter**, **job**, **tag**, **origin**, **type**
+> or
+> **root**.
+> Multi-valued keys
+> (**tag**, **origin**, **type**, **root**)
+> fan out: a snapshot participates in every group it belongs to and is kept
+> in the result if any group keeps it.
+
 **-job** *name*
 
 > Select snapshot whose job is

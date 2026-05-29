@@ -111,6 +111,21 @@ Select snapshot whose category is
 .It Fl environment Ar name
 Select snapshot whose environment is
 .Ar name .
+.It Fl group-by Ar key
+Partition the filtered snapshots by
+.Ar key
+and apply retention matchers
+.Pq Fl days , Fl per-day , No \&...
+independently within each group instead of across the whole result set.
+.Ar key
+must be one of
+.Cm name , category , environment , perimeter , job , tag , origin , type
+or
+.Cm root .
+Multi-valued keys
+.Pq Cm tag , origin , type , root
+fan out: a snapshot participates in every group it belongs to and is kept
+in the result if any group keeps it.
 .It Fl job Ar name
 Select snapshot whose job is
 .Ar name .
