@@ -8,9 +8,9 @@ PLAKAR(1) - General Commands Manual
 
 **plakar**
 \[**-concurrency**&nbsp;*number*]
-\[**-config**&nbsp;*dir*]
-\[**-cache**&nbsp;*dir*]
-\[**-data**&nbsp;*dir*]
+\[**-configdir**&nbsp;*dir*]
+\[**-cachedir**&nbsp;*dir*]
+\[**-datadir**&nbsp;*dir*]
 \[**-cpu**&nbsp;*number*]
 \[**-json**]
 \[**-keyfile**&nbsp;*path*]
@@ -406,4 +406,4 @@ Remove snapshots older than 30 days:
 
 	$ plakar rm -before 30d
 
-Plakar - May 5, 2026
+Plakar - May 5, 2026 - PLAKAR(1)
