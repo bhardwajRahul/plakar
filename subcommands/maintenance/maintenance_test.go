@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/PlakarKorp/integration-fs/exporter"
+	_ "github.com/PlakarKorp/integrations/fs/exporter"
 	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/kloset/repository"
