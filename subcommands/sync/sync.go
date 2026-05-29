@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/encryption"
@@ -186,7 +185,7 @@ func (cmd *Sync) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	peerCtx := appcontext.NewAppContextFrom(ctx)
 	peerCtx.SetSecret(cmd.PeerRepositorySecret)
 	peerCtx.StoreConfig = storeConfig
-	peerRepository, err := repository.NewNoRebuild(peerCtx.GetInner(), peerCtx.GetSecret(), peerStore, peerStoreSerializedConfig, runtime.GOOS != "windows")
+	peerRepository, err := repository.NewNoRebuild(peerCtx.GetInner(), peerCtx.GetSecret(), peerStore, peerStoreSerializedConfig, true)
 	if err != nil {
 		return 1, fmt.Errorf("could not open peer repository %s: %w", cmd.PeerRepositoryLocation, err)
 	}
