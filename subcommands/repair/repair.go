@@ -17,6 +17,7 @@
 package repair
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -33,6 +34,9 @@ type Repair struct {
 	subcommands.SubcommandBase
 
 	Apply bool
+
+	repository *repository.Repository
+	repairID   objects.MAC
 }
 
 func init() {
@@ -55,6 +59,18 @@ func (cmd *Repair) Parse(ctx *appcontext.AppContext, args []string) error {
 }
 
 func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
+	cmd.repository = repo
+	cmd.repairID = objects.RandomMAC()
+
+	if cmd.Apply {
+		done, err := cmd.Lock()
+		if err != nil {
+			return 1, err
+		}
+
+		defer cmd.Unlock(done)
+	}
+
 	oldCache, err := repo.AppContext().GetCache().Repository(repo.Configuration().RepositoryID)
 	if err != nil {
 		return 1, err
@@ -156,4 +172,94 @@ func (cmd *Repair) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 	}
 
 	return 0, nil
+}
+
+func (cmd *Repair) Lock() (chan bool, error) {
+	lockDone := make(chan bool)
+	lock := repository.NewExclusiveLock(cmd.repository.AppContext().Hostname)
+
+	buffer := &bytes.Buffer{}
+	err := lock.SerializeToStream(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cmd.repository.PutLock(cmd.repairID, buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	// We installed the lock, now let's see if there is a conflicting exclusive lock or not.
+	locksID, err := cmd.repository.GetLocks()
+	if err != nil {
+		// We still need to delete it, and we need to do so manually.
+		cmd.repository.DeleteLock(cmd.repairID)
+		return nil, err
+	}
+
+	for _, lockID := range locksID {
+		if lockID == cmd.repairID {
+			continue
+		}
+
+		rd, err := cmd.repository.GetLock(lockID)
+		if err != nil {
+			cmd.repository.DeleteLock(cmd.repairID)
+			return nil, err
+		}
+
+		lock, err := repository.NewLockFromStream(rd)
+		rd.Close()
+		if err != nil {
+			cmd.repository.DeleteLock(cmd.repairID)
+			return nil, err
+		}
+
+		/* Kick out stale locks */
+		if lock.IsStale() {
+			err := cmd.repository.DeleteLock(lockID)
+			if err != nil {
+				cmd.repository.DeleteLock(cmd.repairID)
+				return nil, err
+			}
+
+			continue
+		}
+
+		// There is a lock in place, we need to abort.
+		err = cmd.repository.DeleteLock(cmd.repairID)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf("Can't take exclusive lock, repository is already locked")
+	}
+
+	// The following bit is a "ping" mechanism, Lock() is a bit badly named at this point,
+	// we are just refreshing the existing lock so that the watchdog doesn't removes us.
+	go func() {
+		for {
+			select {
+			case <-lockDone:
+				cmd.repository.DeleteLock(cmd.repairID)
+				return
+			case <-time.After(repository.LOCK_REFRESH_RATE):
+				lock := repository.NewExclusiveLock(cmd.repository.AppContext().Hostname)
+
+				buffer := &bytes.Buffer{}
+
+				// We ignore errors here on purpose, it's tough to handle them
+				// correctly, and if they happen we will be ripped by the
+				// watchdog anyway.
+				lock.SerializeToStream(buffer)
+				cmd.repository.PutLock(cmd.repairID, buffer)
+			}
+		}
+	}()
+
+	return lockDone, nil
+}
+
+func (cmd *Repair) Unlock(ping chan bool) {
+	close(ping)
 }
