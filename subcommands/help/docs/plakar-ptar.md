@@ -90,4 +90,4 @@ plakar(1),
 plakar-backup(1),
 plakar-create(1)
 
-Plakar - May 5, 2026
+Plakar - May 5, 2026 - PLAKAR-PTAR(1)

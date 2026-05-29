@@ -87,4 +87,4 @@ When a host name is provided,
 uses only one of the IP addresses it resolves to,
 preferably IPv4 .
 
-Plakar - May 5, 2026
+Plakar - May 5, 2026 - PLAKAR-SERVER(1)

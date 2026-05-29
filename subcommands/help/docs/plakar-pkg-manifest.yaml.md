@@ -102,7 +102,7 @@ plugin is as follows:
 	name: fs
 	display_name: file system connector
 	description: file storage but as external plugin
-	homepage: https://github.com/PlakarKorp/integration-fs
+	homepage: https://github.com/PlakarKorp/integrations/fs
 	license: ISC
 	tags: [ fs, filesystem, "local files" ]
 	api_version: 1.0.0
@@ -122,4 +122,4 @@ plugin is as follows:
 
 plakar-pkg-create(1)
 
-Plakar - July 20, 2025
+Plakar - July 20, 2025 - PLAKAR-PKG-MANIFEST.YAML(5)

@@ -7,6 +7,7 @@ PLAKAR-MOUNT(1) - General Commands Manual
 # SYNOPSIS
 
 **plakar&nbsp;mount**
+\[**-allow-others**]
 \[**-to**&nbsp;*mountpoint*]
 \[*snapshotID*]
 
@@ -30,6 +31,10 @@ to precisely select snapshots.
 
 The options are as follows:
 
+**-allow-others**
+
+> Allow other users to access the mounted filesystem.
+
 **-to** *mountpoint*
 
 > Specify the mount location.
@@ -47,43 +52,47 @@ The options are as follows:
 
 *snapshotID*
 
-	Optional.
-	Specifies which snapshot to mount.
-	If not provided, all snapshots are mounted.
+> Optional.
+> Specifies which snapshot to mount.
+> If not provided, all snapshots are mounted.
 
 # EXIT STATUS
 
-The **plakar-mount** utility exits0 on success, and>0 if an error occurs.
+The **plakar-mount** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
 
 # EXAMPLES
 
 Mount all snapshots to a local directory:
 
-> $ plakar mount -to ~/mnt
+	$ plakar mount -to ~/mnt
 
 Mount the latest snapshot to a local directory:
 
-> $ plakar mount -to ~/mnt -latest
+	$ plakar mount -to ~/mnt -latest
 
 Mount a specific snapshot by ID to a directory:
 
-> $ plakar mount -to ~/mnt abc123
+	$ plakar mount -to ~/mnt abc123
+
+Mount all snapshots allowing access by other users:
+
+	$ plakar mount -allow-others -to ~/mnt
 
 Mount snapshots matching a filter (e.g., snapshots with tag "daily-backup"):
 
-> $ plakar mount -to ~/mnt -tag daily-backup
+	$ plakar mount -to ~/mnt -tag daily-backup
 
 Mount a snapshot to an HTTP endpoint:
 
-> $ plakar mount -to http://hostname:8080
+	$ plakar mount -to http://hostname:8080
 
 Mount a specific snapshot to an HTTP endpoint:
 
-> $ plakar mount -to http://hostname:8080 abc123
+	$ plakar mount -to http://hostname:8080 abc123
 
 # SEE ALSO
 
 plakar(1),
 plakar-query(7)
 
-Plakar - May 5, 2026
+Plakar - May 29, 2026 - PLAKAR-MOUNT(1)
