@@ -5,9 +5,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
+	"time"
 
 	_ "github.com/PlakarKorp/integration-fs/exporter"
+	"github.com/PlakarKorp/kloset/locate"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -102,4 +105,107 @@ func TestPrune_Apply_PerMinuteCap(t *testing.T) {
 	// Sanity: ensure it didn't claim to remove the newest one (kept)
 	short2 := hex.EncodeToString(snap2.Header.GetIndexShortID())
 	require.NotContains(t, out, fmt.Sprintf("info: prune: removal of %s completed successfully", short2))
+}
+
+// TestMergePolicyOptions_PreservesPolicyFiltersWhenCLIEmpty is the regression
+// test for https://github.com/PlakarKorp/plakar/issues/1758
+//
+// Before the fix, mergePolicyOptions did `to.Filters = from.Filters`, which
+// overwrote the policy-loaded filters with the (typically empty) CLI override
+// struct. Effect: `-policy daily` (where the policy filters by tag) silently
+// matched every snapshot.
+func TestMergePolicyOptions_PreservesPolicyFiltersWhenCLIEmpty(t *testing.T) {
+	policy := locate.NewDefaultLocateOptions()
+	policy.Filters.Tags = []string{"daily"}
+	policy.Periods.Minute.Keep = 5
+
+	cli := locate.NewDefaultLocateOptions() // user passed no other flags
+
+	mergePolicyOptions(policy, cli)
+
+	require.Equal(t, []string{"daily"}, policy.Filters.Tags,
+		"policy filters must survive an empty CLI override")
+	require.Equal(t, 5, policy.Periods.Minute.Keep,
+		"policy periods must survive an empty CLI override")
+}
+
+// TestMergePolicyOptions_CLIOverridesPolicy pins that explicit CLI flags do
+// take precedence over policy values.
+func TestMergePolicyOptions_CLIOverridesPolicy(t *testing.T) {
+	policy := locate.NewDefaultLocateOptions()
+	policy.Filters.Tags = []string{"daily"}
+	policy.Filters.Name = "policy-name"
+	policy.Periods.Minute.Keep = 5
+
+	cli := locate.NewDefaultLocateOptions()
+	cli.Filters.Tags = []string{"weekly"}
+	cli.Filters.Name = "cli-name"
+	cli.Periods.Minute.Keep = 9
+
+	mergePolicyOptions(policy, cli)
+
+	require.Equal(t, []string{"weekly"}, policy.Filters.Tags)
+	require.Equal(t, "cli-name", policy.Filters.Name)
+	require.Equal(t, 9, policy.Periods.Minute.Keep)
+}
+
+// TestMergeFilters exhaustively covers each field of LocateFilters to make
+// sure mergeFilters keeps `a` when `b` is zero, and adopts `b` when it isn't.
+func TestMergeFilters(t *testing.T) {
+	now := time.Now()
+	later := now.Add(time.Hour)
+
+	t.Run("empty b keeps a", func(t *testing.T) {
+		a := locate.LocateFilters{
+			Before:      now,
+			Since:       now,
+			Name:        "n",
+			Category:    "c",
+			Environment: "e",
+			Perimeter:   "p",
+			Job:         "j",
+			Tags:        []string{"t1"},
+			IgnoreTags:  []string{"!t1"},
+			Latest:      true,
+			IDs:         []string{"id1"},
+			Types:       []string{"fs"},
+			Origins:     []string{"host"},
+			Roots:       []string{"/root"},
+		}
+		want := a
+		b := locate.LocateFilters{}
+		mergeFilters(&a, &b)
+		if !reflect.DeepEqual(a, want) {
+			t.Fatalf("a changed when b was empty:\n got  %#v\n want %#v", a, want)
+		}
+	})
+
+	t.Run("non-zero b wins", func(t *testing.T) {
+		a := locate.LocateFilters{
+			Before:      now,
+			Name:        "old",
+			Tags:        []string{"old"},
+			Latest:      false,
+		}
+		b := locate.LocateFilters{
+			Before:      later,
+			Since:       later,
+			Name:        "new",
+			Category:    "c2",
+			Environment: "e2",
+			Perimeter:   "p2",
+			Job:         "j2",
+			Tags:        []string{"new"},
+			IgnoreTags:  []string{"!new"},
+			Latest:      true,
+			IDs:         []string{"id2"},
+			Types:       []string{"s3"},
+			Origins:     []string{"host2"},
+			Roots:       []string{"/r2"},
+		}
+		mergeFilters(&a, &b)
+		if !reflect.DeepEqual(a, b) {
+			t.Fatalf("merge with all-non-zero b should equal b:\n got  %#v\n want %#v", a, b)
+		}
+	})
 }

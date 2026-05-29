@@ -702,10 +702,9 @@ func TestExecuteConflictingLockAborts(t *testing.T) {
 		"SAFETY: maintenance must not modify the store if it could not acquire the lock")
 }
 
-func TestExecuteStaleLockStillAborts(t *testing.T) {
-	// Current behaviour: a stale lock is deleted by Lock() but maintenance
-	// still aborts on the same iteration. This pins that contract so future
-	// refactors are intentional.
+func TestExecuteStaleLock(t *testing.T) {
+	// If we have a stale lock it's expected we remove it and just proceed as
+	// usual.
 	resetEnv(t)
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
@@ -716,9 +715,8 @@ func TestExecuteStaleLockStillAborts(t *testing.T) {
 	stale := preInstallExclusiveLock(t, repo, "ghost-host", time.Now().Add(-30*time.Minute))
 
 	status, err, _, _ := runMaintenance(t, ctx, repo, bufOut, bufErr)
-	require.Error(t, err, "stale lock must still cause this run to abort")
-	require.Equal(t, 1, status)
-	require.Contains(t, err.Error(), "Can't take exclusive lock")
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
 
 	// Stale lock got cleared by the kick-out path.
 	requireLockGone(t, repo, stale)
@@ -878,4 +876,3 @@ func TestNoStrayMessagesWhenNothingToDo(t *testing.T) {
 	require.NotContains(t, errOut, "Concurrent backup",
 		"no concurrent-backup warning when nothing was coloured")
 }
-

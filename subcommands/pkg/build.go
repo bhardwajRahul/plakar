@@ -62,7 +62,7 @@ func (cmd *PkgBuild) Parse(ctx *appcontext.AppContext, args []string) error {
 	if !namere.Match([]byte(cmd.Recipe.Name)) {
 		return fmt.Errorf("not a valid plugin name: %s", cmd.Recipe.Name)
 	}
-	if !semver.IsValid(cmd.Recipe.Version) {
+	if !semver.IsValid(cmd.Recipe.Semver()) {
 		return fmt.Errorf("not a valid version string: %s", cmd.Recipe.Version)
 	}
 
@@ -72,7 +72,7 @@ func (cmd *PkgBuild) Parse(ctx *appcontext.AppContext, args []string) error {
 func (cmd *PkgBuild) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
 	recipe := &cmd.Recipe
 
-	pattern := fmt.Sprintf("build-%s-%s-*", recipe.Name, recipe.Version)
+	pattern := fmt.Sprintf("build-%s-%s-*", recipe.Name, recipe.Semver())
 	datadir, err := os.MkdirTemp("", pattern)
 	if err != nil {
 		return 1, fmt.Errorf("failed to create a temp dir: %w", err)
@@ -80,10 +80,11 @@ func (cmd *PkgBuild) Execute(ctx *appcontext.AppContext, repo *repository.Reposi
 	defer os.RemoveAll(datadir)
 
 	if err := clone(datadir, recipe); err != nil {
-		return 1, fmt.Errorf("failed to clone %s: %s: %w", recipe.Repository, recipe.Version, err)
+		return 1, fmt.Errorf("failed to clone %s: %s: %w", recipe.Repository, recipe.Tag(), err)
 	}
 
-	args := []string{"-C", datadir}
+	builddir := filepath.Join(datadir, recipe.Subdir())
+	args := []string{"-C", builddir}
 
 	if os.Getenv("GOOS") == "windows" || runtime.GOOS == "windows" {
 		args = append(args, "EXT=.exe")
@@ -97,12 +98,12 @@ func (cmd *PkgBuild) Execute(ctx *appcontext.AppContext, repo *repository.Reposi
 		return 1, fmt.Errorf("make failed: %w", err)
 	}
 
-	manifest := filepath.Join(datadir, "manifest.yaml")
+	manifest := filepath.Join(builddir, "manifest.yaml")
 
 	// a bit hacky, needed until we move the plugin routines from
 	// commands to a lib:
 	create := PkgCreate{}
-	if err := create.Parse(ctx, []string{manifest, recipe.Version}); err != nil {
+	if err := create.Parse(ctx, []string{manifest, recipe.Semver()}); err != nil {
 		return 1, err
 	}
 	create.Out = recipe.PkgName()
@@ -120,10 +121,24 @@ func clone(destdir string, recipe *pkg.Recipe) error {
 		recipe.Repository = parsedUrl.String()
 	}
 
-	git := exec.Command("git", "clone", "--depth=1", "--branch", recipe.Version,
-		recipe.Repository, destdir)
+	subdir := recipe.Subdir()
+	cloneArgs := []string{"clone", "--depth=1", "--branch", recipe.Tag()}
+	if subdir != "." {
+		// For a mono-repo recipe we only need one subdirectory of the tree.
+		cloneArgs = append(cloneArgs, "--filter=blob:none", "--sparse")
+	}
+	cloneArgs = append(cloneArgs, recipe.Repository, destdir)
+
+	git := exec.Command("git", cloneArgs...)
 	if err := git.Run(); err != nil {
 		return fmt.Errorf("git clone failed: %w", err)
+	}
+
+	if subdir != "." {
+		sparse := exec.Command("git", "-C", destdir, "sparse-checkout", "set", subdir)
+		if err := sparse.Run(); err != nil {
+			return fmt.Errorf("git sparse-checkout failed: %w", err)
+		}
 	}
 
 	// TODO: how to check the checksum?  should it be the commit
