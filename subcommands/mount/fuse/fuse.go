@@ -36,7 +36,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions, chrootfs fs.FS) (int, error) {
+func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountpoint string, locateOptions *locate.LocateOptions, chrootfs fs.FS, allowOthers bool) (int, error) {
 	if mountpoint == "" {
 		mountpoint = filepath.Join(ctx.CWD, uuid.New().String())
 		if err := os.MkdirAll(mountpoint, 0700); err != nil {
@@ -53,12 +53,15 @@ func ExecuteFUSE(ctx *appcontext.AppContext, repo *repository.Repository, mountp
 		}
 	}
 
-	c, err := fuse.Mount(
-		mountpoint,
+	mountOptions := []fuse.MountOption{
 		fuse.FSName("plakar"),
 		fuse.Subtype("plakarfs"),
 		fuse.LocalVolume(),
-	)
+	}
+	if allowOthers {
+		mountOptions = append(mountOptions, fuse.AllowOther())
+	}
+	c, err := fuse.Mount(mountpoint, mountOptions...)
 	if err != nil {
 		return 1, fmt.Errorf("mount: %v", err)
 	}
