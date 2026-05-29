@@ -430,8 +430,8 @@ func entryPoint() int {
 			return exitcodes.AuthFailure
 		}
 
-		// Actual rebuild is done by cached, unless we are on windows.
-		repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig, runtime.GOOS != "windows")
+		// Actual rebuild is always done by cached
+		repo, err = repository.NewNoRebuild(ctx.GetInner(), ctx.GetSecret(), store, serializedConfig, true)
 		if err != nil {
 			logger.Stderr("%s: %s\n", flag.CommandLine.Name(), err)
 			return 1
