@@ -7,10 +7,10 @@ github.com/PlakarKorp/go-cdc-chunkers v1.0.3 h1:6ozBFcNMHvGe6IsbPcAZUUEAExCgcNx3
 github.com/PlakarKorp/go-cdc-chunkers v1.0.3/go.mod h1:y7ag92JABKPBDoSOPwedssQ5NIOgjRm4Mu6yTBpmUMY=
 github.com/PlakarKorp/go-human2duration v0.1.6 h1:pRPAU3yX4ROV7RihXihPkwyjoQNI1lnemjAMFdWRwi8=
 github.com/PlakarKorp/go-human2duration v0.1.6/go.mod h1:1kg75kTlYCYURVyciaeO2GFdLgGDMhIfBTBpfydv1sk=
+github.com/PlakarKorp/integration-grpc v1.1.0-rc.5 h1:4tyPe+YcJ8FOEJdavCtCE/0MbZfLzpnAbaxxyFlDqLw=
+github.com/PlakarKorp/integration-grpc v1.1.0-rc.5/go.mod h1:l0viBAu2FioWQQ2CrerS0A/ukLtuUNf1+lhR8HDOl8I=
 github.com/PlakarKorp/integrations/fs v1.1.0-beta.8 h1:47marFt/qP6CKZ/kvEQo7+YnV/F2aO9+j0pPn0wVdAc=
 github.com/PlakarKorp/integrations/fs v1.1.0-beta.8/go.mod h1:SN3SnfDT3aSTJaDmirY5Kajy4tIeeBla1pdKvYut8Ac=
-github.com/PlakarKorp/integrations/grpc v1.1.0-rc.4 h1:QR3NMFWgA0jyiQkx288DRtkDcrSUIJ/qZ68hDDNDXT4=
-github.com/PlakarKorp/integrations/grpc v1.1.0-rc.4/go.mod h1:KEaxmYaldnpTgggiZgtBdnScVHwfErqrqk6uteLGg2o=
 github.com/PlakarKorp/integrations/http v1.1.0-beta.2 h1:zCsXCVeJksacd0wem6+Ms3idFWvgokLVVmTsGKYtopM=
 github.com/PlakarKorp/integrations/http v1.1.0-beta.2/go.mod h1:JtiSdSOMtx28WSskVkKszZ8FqLmZQvm+9Im+1YWplOM=
 github.com/PlakarKorp/integrations/ptar v1.1.0-beta.4 h1:E9Cnq0/hwaG+XXEhDX4B+MfxrxfegbgAK2fY93wpH80=
@@ -21,10 +21,6 @@ github.com/PlakarKorp/integrations/tar v1.1.0-beta.2 h1:Zae8EcoZtS5HrTTRyX0/OAe8
 github.com/PlakarKorp/integrations/tar v1.1.0-beta.2/go.mod h1:cHgWuyzJI9qAq4ANw11483QZ1V77udiXDHCecRe1M24=
 github.com/PlakarKorp/kloset v1.1.0-rc.4 h1:MhrA9IOIRNdCm0xmt9MYssIE12vxogMSE/m+1rHZKIk=
 github.com/PlakarKorp/kloset v1.1.0-rc.4/go.mod h1:02ph7uocfK3Urz4Z7Kz0MUWFCXX9Pe/MGK3OMVItQI4=
-github.com/PlakarKorp/pkg v1.1.0-beta.9 h1:UBCfFze3hUXgDj6uSaHzSTEqgxxvBAEoESqEJD5ar8Q=
-github.com/PlakarKorp/pkg v1.1.0-beta.9/go.mod h1:1LFcnfM+PnxRoNo8E84sEwM3Bb4paRCWwgFHvjSPBlI=
-github.com/PlakarKorp/pkg v1.1.0-beta.11 h1:5Rl0ozyIDs4tjZ1GrhR4hvmeXCUNKXZN2URTdARUWZ0=
-github.com/PlakarKorp/pkg v1.1.0-beta.11/go.mod h1:1LFcnfM+PnxRoNo8E84sEwM3Bb4paRCWwgFHvjSPBlI=
 github.com/PlakarKorp/pkg v1.1.0-beta.12 h1:8Gd117HmmjsSczFI+8ST3HxX7fkJLGsylqjxnCqzEkQ=
 github.com/PlakarKorp/pkg v1.1.0-beta.12/go.mod h1:1LFcnfM+PnxRoNo8E84sEwM3Bb4paRCWwgFHvjSPBlI=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
