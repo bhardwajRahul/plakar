@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	grpc_exporter "github.com/PlakarKorp/integrations/grpc/exporter"
-	grpc_importer "github.com/PlakarKorp/integrations/grpc/importer"
-	grpc_storage "github.com/PlakarKorp/integrations/grpc/storage"
+	grpc_exporter "github.com/PlakarKorp/integration-grpc/exporter"
+	grpc_importer "github.com/PlakarKorp/integration-grpc/importer"
+	grpc_storage "github.com/PlakarKorp/integration-grpc/storage"
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/connectors/exporter"
 	"github.com/PlakarKorp/kloset/connectors/importer"
