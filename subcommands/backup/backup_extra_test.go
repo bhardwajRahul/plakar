@@ -156,6 +156,39 @@ func TestBackupIgnoreFileFlag(t *testing.T) {
 	require.NotContains(t, bufOut.String(), "/subdir/")
 }
 
+func TestBackupMultipleIgnoreFileFlags(t *testing.T) {
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
+
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	t.Cleanup(func() { renderer.Wait() })
+	t.Cleanup(ctx.Close)
+	ctx.MaxConcurrency = 1
+
+	ignoreDir := t.TempDir()
+	macOSIgnoreFile := filepath.Join(ignoreDir, "macos-ignore")
+	sourceIgnoreFile := filepath.Join(ignoreDir, "source-ignore")
+	require.NoError(t, os.WriteFile(macOSIgnoreFile, []byte(".DS_Store\n"), 0o600))
+	require.NoError(t, os.WriteFile(sourceIgnoreFile, []byte("**/subdir\n"), 0o600))
+
+	cmd := &Backup{}
+	require.NoError(t, cmd.Parse(ctx, []string{
+		"-ignore-file", macOSIgnoreFile,
+		"-ignore-file", sourceIgnoreFile,
+		"-ignore", "**/another_subdir",
+		tmpBackupDir,
+	}))
+	require.Equal(t, []string{".DS_Store", "**/subdir", "**/another_subdir"}, cmd.Excludes)
+
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.NotContains(t, bufOut.String(), "/subdir/")
+	require.NotContains(t, bufOut.String(), "/another_subdir/")
+}
+
 func TestBackupIgnoreFileMissing(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
