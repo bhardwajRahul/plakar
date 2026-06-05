@@ -168,7 +168,7 @@ func (report *Report) WithRepository(repository *repository.Repository) {
 func (report *Report) WithSnapshotID(snapshotId objects.MAC) {
 	snap, err := snapshot.Load(report.repo, snapshotId)
 	if err != nil {
-		report.logger.Warn("failed to load snapshot: %s", err)
+		//report.logger.Warn("failed to load snapshot: %s", err)
 		return
 	}
 	report.WithSnapshot(snap)
