@@ -273,28 +273,15 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		)
 
 		importerKey := typ + ":" + orig
-		if _, exists := sourcesPerOrig[importerKey]; !exists {
-			sourcesPerOrig[importerKey] = []importer.Importer{imp}
+		sourcesPerOrig[importerKey] = append(sourcesPerOrig[importerKey], imp)
 
-			if !cmd.NoProgress && (imp.Flags()&location.FLAG_STREAM) == 0 {
-				imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
-				if err != nil {
-					return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
-				}
-				defer imp.Close(ctx)
-				sourcesPerOrigForStats[importerKey] = []importer.Importer{imp}
+		if !cmd.NoProgress && (imp.Flags()&location.FLAG_STREAM) == 0 {
+			imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
+			if err != nil {
+				return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
 			}
-		} else {
-			sourcesPerOrig[importerKey] = append(sourcesPerOrig[importerKey], imp)
-
-			if !cmd.NoProgress && (imp.Flags()&location.FLAG_STREAM) == 0 {
-				imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
-				if err != nil {
-					return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
-				}
-				defer imp.Close(ctx)
-				sourcesPerOrigForStats[importerKey] = append(sourcesPerOrigForStats[importerKey], imp)
-			}
+			defer imp.Close(ctx)
+			sourcesPerOrigForStats[importerKey] = append(sourcesPerOrigForStats[importerKey], imp)
 		}
 	}
 
