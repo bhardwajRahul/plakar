@@ -8,7 +8,7 @@ require (
 	github.com/PlakarKorp/integrations/fs v1.1.0-beta.8
 	github.com/PlakarKorp/integrations/http v1.1.0
 	github.com/PlakarKorp/integrations/ptar v1.1.0-beta.4
-	github.com/PlakarKorp/integrations/stdio v1.1.0-beta.2
+	github.com/PlakarKorp/integrations/stdio v1.1.0
 	github.com/PlakarKorp/integrations/tar v1.1.0-beta.2
 	github.com/PlakarKorp/kloset v1.1.0
 	github.com/PlakarKorp/pkg v1.1.0-beta.12
