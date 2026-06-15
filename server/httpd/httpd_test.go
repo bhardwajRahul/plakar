@@ -6,15 +6,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/location"
 	"github.com/PlakarKorp/kloset/objects"
+	ptesting "github.com/PlakarKorp/plakar/testing"
 )
 
 // fakeStore is a minimal storage.Store that records the calls the httpd
@@ -28,8 +32,9 @@ type fakeStore struct {
 	listResources map[storage.StorageResource][]objects.MAC
 	listErr       error
 
-	getData map[storage.StorageResource]map[objects.MAC][]byte
-	getErr  error
+	getData   map[storage.StorageResource]map[objects.MAC][]byte
+	getErr    error
+	getReader io.ReadCloser // if set, returned by Get instead of getData
 
 	deleteErr error
 	putErr    error
@@ -60,6 +65,9 @@ func (f *fakeStore) Get(ctx context.Context, typ storage.StorageResource, mac ob
 	f.lastGetType, f.lastGetMAC, f.lastGetRng = typ, mac, rg
 	if f.getErr != nil {
 		return nil, f.getErr
+	}
+	if f.getReader != nil {
+		return f.getReader, nil
 	}
 	data := f.getData[typ][mac]
 	return io.NopCloser(bytes.NewReader(data)), nil
@@ -242,6 +250,15 @@ func TestGetRange_EndEqualStart(t *testing.T) {
 	req.Header.Set("Range", "bytes=50-50")
 	if _, err := getRange(req); !errors.Is(err, ErrInvalidRange) {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestGetRange_LengthOverflowsUint32(t *testing.T) {
+	// A range whose length exceeds math.MaxUint32 is rejected.
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set("Range", "bytes=0-4294967296") // length = 2^32 > MaxUint32
+	if _, err := getRange(req); !errors.Is(err, ErrInvalidRange) {
+		t.Fatalf("err = %v, want ErrInvalidRange", err)
 	}
 }
 
@@ -435,6 +452,26 @@ func TestGetResourceHandler_StoreError(t *testing.T) {
 	}
 }
 
+// errReadCloser fails on Read so io.ReadAll in getResource returns an error.
+type errReadCloser struct{}
+
+func (errReadCloser) Read([]byte) (int, error) { return 0, errors.New("read failed") }
+func (errReadCloser) Close() error             { return nil }
+
+func TestGetResourceHandler_ReadError(t *testing.T) {
+	mac := makeMAC(0x42)
+	store := &fakeStore{getReader: errReadCloser{}}
+	mux := newTestMux(store, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", rec.Code)
+	}
+}
+
 func TestPutResource_Ok(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
@@ -563,5 +600,72 @@ func TestDeleteResource_StoreError(t *testing.T) {
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d", rec.Code)
+	}
+}
+
+// freePort asks the kernel for an unused TCP port and returns it as a string.
+func freePort(t *testing.T) string {
+	t.Helper()
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	addr := l.Addr().(*net.TCPAddr)
+	_ = l.Close()
+	return fmt.Sprintf("127.0.0.1:%d", addr.Port)
+}
+
+func TestServer_StartServeAndShutdown(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, nil, nil, nil)
+
+	addr := freePort(t)
+	errCh := make(chan error, 1)
+	go func() {
+		// noDelete=false, no TLS — exercises the plain ListenAndServe path.
+		errCh <- Server(ctx, repo, addr, false, "", "")
+	}()
+
+	// Wait until the server accepts connections, then make one request so the
+	// wired routes are exercised through a real listener.
+	base := "http://" + addr
+	var resp *http.Response
+	deadline := 2 * time.Second
+	for waited := time.Duration(0); waited < deadline; waited += 20 * time.Millisecond {
+		r, err := http.Get(base + "/")
+		if err == nil {
+			resp = r
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if resp == nil {
+		t.Fatal("server never became reachable")
+	}
+	_ = resp.Body.Close()
+
+	// Cancelling the context triggers the goroutine inside Server() to call
+	// Shutdown, which makes ListenAndServe return.
+	ctx.GetInner().Cancel(nil)
+
+	select {
+	case err := <-errCh:
+		// http.ErrServerClosed is the expected return after a graceful Shutdown.
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			t.Fatalf("Server returned %v, want ErrServerClosed or nil", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Server did not return after context cancellation")
+	}
+}
+
+func TestServer_TLSConfigErrors(t *testing.T) {
+	// With cert/key set but pointing at nonexistent files, ListenAndServeTLS
+	// returns an error immediately — this covers the TLS branch of Server().
+	repo, ctx := ptesting.GenerateRepository(t, nil, nil, nil)
+
+	addr := freePort(t)
+	err := Server(ctx, repo, addr, false, "/nonexistent/cert.pem", "/nonexistent/key.pem")
+	if err == nil {
+		t.Fatal("expected error from ListenAndServeTLS with missing cert/key")
 	}
 }

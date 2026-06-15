@@ -318,6 +318,115 @@ func TestValidateServiceConfigurationKnownService(t *testing.T) {
 	}
 }
 
+// badRequestConnector returns a connector whose endpoint contains a control
+// character, so http.NewRequest fails before any network call is made.
+func badRequestConnector(t *testing.T) *ServiceConnector {
+	t.Helper()
+	ctx := appcontext.NewAppContext()
+	sc := NewServiceConnector(ctx, "tok")
+	sc.endpoint = "http://\x7f" // ASCII DEL makes the URL invalid for NewRequest
+	return sc
+}
+
+func TestNewRequestErrorPropagates(t *testing.T) {
+	if _, err := badRequestConnector(t).GetServiceList(); err == nil {
+		t.Fatal("GetServiceList: expected NewRequest error, got nil")
+	}
+	if _, err := badRequestConnector(t).GetServiceStatus("x"); err == nil {
+		t.Fatal("GetServiceStatus: expected NewRequest error, got nil")
+	}
+	if err := badRequestConnector(t).SetServiceStatus("x", true); err == nil {
+		t.Fatal("SetServiceStatus: expected NewRequest error, got nil")
+	}
+	if _, err := badRequestConnector(t).GetServiceConfiguration("x"); err == nil {
+		t.Fatal("GetServiceConfiguration: expected NewRequest error, got nil")
+	}
+}
+
+func TestSetServiceConfigurationNewRequestError(t *testing.T) {
+	// getServicesList must succeed (so validation passes) before the bad URL is
+	// hit on the configuration PUT. Point the services-list lookup at a working
+	// server but the configuration write at an invalid URL.
+	sc, _ := newTestConnector(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `[{"name":"alerting"}]`)
+	}), "tok")
+	// Prime the cached services list, then break the endpoint.
+	if _, err := sc.GetServiceList(); err != nil {
+		t.Fatalf("priming services list: %v", err)
+	}
+	sc.endpoint = "http://\x7f"
+	if err := sc.SetServiceConfiguration("alerting", map[string]string{"k": "v"}); err == nil {
+		t.Fatal("expected NewRequest error, got nil")
+	}
+}
+
+func TestSetServiceConfigurationNetworkError(t *testing.T) {
+	sc, _ := newTestConnector(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `[{"name":"alerting"}]`)
+	}), "tok")
+	if _, err := sc.GetServiceList(); err != nil {
+		t.Fatalf("priming services list: %v", err)
+	}
+	sc.endpoint = "http://127.0.0.1:0" // unreachable
+	if err := sc.SetServiceConfiguration("alerting", map[string]string{"k": "v"}); err == nil {
+		t.Fatal("expected network error, got nil")
+	}
+}
+
+// shortBodyHandler claims a large Content-Length but writes fewer bytes and
+// closes the connection, so io.ReadAll on the client fails with an unexpected
+// EOF.
+func shortBodyHandler(w http.ResponseWriter, r *http.Request) {
+	hj, ok := w.(http.Hijacker)
+	if !ok {
+		return
+	}
+	conn, bufrw, err := hj.Hijack()
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	_, _ = bufrw.WriteString("HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nshort")
+	_ = bufrw.Flush()
+	// connection closes here with body shorter than Content-Length
+}
+
+func TestReadBodyErrorPropagates(t *testing.T) {
+	sc, _ := newTestConnector(t, http.HandlerFunc(shortBodyHandler), "tok")
+
+	if _, err := sc.GetServiceList(); err == nil {
+		t.Fatal("GetServiceList: expected read-body error, got nil")
+	}
+	if _, err := sc.GetServiceStatus("x"); err == nil {
+		t.Fatal("GetServiceStatus: expected read-body error, got nil")
+	}
+	if _, err := sc.GetServiceConfiguration("x"); err == nil {
+		t.Fatal("GetServiceConfiguration: expected read-body error, got nil")
+	}
+}
+
+func TestValidateServiceConfigurationListError(t *testing.T) {
+	// getServicesList fails (server returns non-200), so the error must surface.
+	sc, _ := newTestConnector(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}), "tok")
+	if err := sc.ValidateServiceConfiguration("alerting", nil); err == nil {
+		t.Fatal("expected getServicesList error to propagate, got nil")
+	}
+}
+
+func TestSetServiceConfigurationValidationError(t *testing.T) {
+	// SetServiceConfiguration first validates, which calls getServicesList; a
+	// failing list lookup must abort with the wrapped "invalid configuration"
+	// error before any write request is made.
+	sc, _ := newTestConnector(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}), "tok")
+	if err := sc.SetServiceConfiguration("alerting", map[string]string{"k": "v"}); err == nil {
+		t.Fatal("expected validation error, got nil")
+	}
+}
+
 func TestRequestNetworkErrorPropagates(t *testing.T) {
 	ctx := appcontext.NewAppContext()
 	sc := NewServiceConnector(ctx, "tok")

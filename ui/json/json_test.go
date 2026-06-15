@@ -11,6 +11,7 @@ import (
 
 	"github.com/PlakarKorp/kloset/events"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/google/uuid"
 )
 
 func TestSanitizeDataPreservesPrimitives(t *testing.T) {
@@ -73,13 +74,14 @@ func TestRunDrainsEventsAndExitsOnBusClose(t *testing.T) {
 	ctx := appcontext.NewAppContext()
 	u := New(ctx)
 
-	// Replace os.Stdout temporarily so the renderer's encoder writes go to a pipe
-	// we can read after the run completes. The renderer captured stdout in New(),
-	// so we have to reach into the type — keep this test scoped to ensuring the
-	// goroutine exits cleanly when the bus closes.
 	if err := u.Run(); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
+
+	// Publish an event so the goroutine's loop body runs and dispatches through
+	// handleEvent before the bus is closed.
+	emitter := ctx.Events().NewRepositoryEmitter(uuid.Nil, "test")
+	emitter.PathOk("/x")
 
 	// Closing the events bus closes the channel returned by Listen(), which
 	// terminates the renderer goroutine.
@@ -92,6 +94,22 @@ func TestRunDrainsEventsAndExitsOnBusClose(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("Wait did not return after bus close")
 	}
+}
+
+// failWriter always fails, so the encoder's Encode returns an error.
+type failWriter struct{}
+
+func (failWriter) Write([]byte) (int, error) { return 0, errors.New("write failed") }
+
+func TestHandleEvent_EncodeErrorIsSwallowed(t *testing.T) {
+	ctx := appcontext.NewAppContext()
+	r := &jsonRenderer{
+		ctx:     ctx,
+		encoder: encjson.NewEncoder(failWriter{}),
+	}
+
+	// handleEvent must return cleanly even when the underlying writer errors.
+	r.handleEvent(&events.Event{Level: "info", Type: "path.ok", Data: map[string]any{"path": "/x"}})
 }
 
 func TestJSONEventEncodes(t *testing.T) {
