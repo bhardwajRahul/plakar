@@ -80,6 +80,60 @@ func TestExecuteCmdRmWithSnapshot(t *testing.T) {
 	require.NotContains(t, output, "rm: would remove these")
 }
 
+func TestRmParseNoFilterRejected(t *testing.T) {
+	_, snap, ctx := generateSnapshot(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil))
+	defer snap.Close()
+
+	cmd := &Rm{}
+	err := cmd.Parse(ctx, []string{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not going to remove everything")
+}
+
+func TestRmExecuteNoMatches(t *testing.T) {
+	// A filter that matches nothing logs an informational line and returns 0.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	cmd := &Rm{}
+	require.NoError(t, cmd.Parse(ctx, []string{"deadbeefdeadbeef"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Contains(t, bufOut.String()+bufErr.String(), "no snapshots matched")
+}
+
+func TestRm_DryRun_MultipleSnapshotsSorted(t *testing.T) {
+	// With two matching snapshots the dry-run plan exercises the sort comparator
+	// across distinct timestamps.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, ctx := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
+	snap1 := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
+		ptesting.NewMockFile("a.txt", 0644, "a"),
+	})
+	defer snap1.Close()
+	snap2 := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
+		ptesting.NewMockFile("b.txt", 0644, "b"),
+	})
+	defer snap2.Close()
+
+	id1 := snap1.Header.GetIndexID()
+	id2 := snap2.Header.GetIndexID()
+	cmd := &Rm{}
+	require.NoError(t, cmd.Parse(ctx, []string{
+		hex.EncodeToString(id1[:]),
+		hex.EncodeToString(id2[:]),
+	}))
+
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Contains(t, bufOut.String(), "rm: would remove these 2 snapshot(s)")
+}
+
 func TestRm_DryRun_ShowsPlan(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)

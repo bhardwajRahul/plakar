@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	_ "github.com/PlakarKorp/integrations/fs/exporter"
@@ -14,6 +15,70 @@ import (
 
 func init() {
 	os.Setenv("TZ", "UTC")
+}
+
+func TestArchiveParseNoSnapshot(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	_ = repo
+	cmd := &Archive{}
+	err := cmd.Parse(ctx, []string{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "at least one snapshot")
+}
+
+func TestArchiveParseUnsupportedFormat(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	_ = repo
+	cmd := &Archive{}
+	err := cmd.Parse(ctx, []string{"-format", "rar", "abc"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported format")
+}
+
+func TestArchiveParseDefaultOutputName(t *testing.T) {
+	// With no -output, Parse derives a plakar-<ts>.<ext> filename from the
+	// format.
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	_ = repo
+	cmd := &Archive{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-format", "zip", "abc"}))
+	require.Contains(t, cmd.Output, "plakar-")
+	require.Contains(t, cmd.Output, ".zip")
+}
+
+func TestArchiveExecuteBadSnapshot(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	snap := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
+		ptesting.NewMockFile("a.txt", 0644, "a"),
+	})
+	defer snap.Close()
+
+	cmd := &Archive{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-output", filepath.Join(t.TempDir(), "x.tar.gz"), "deadbeefdeadbeef"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.Contains(t, err.Error(), "could not open snapshot")
+}
+
+func TestArchiveExecuteOutputCreateError(t *testing.T) {
+	// An output path under a nonexistent directory makes os.Create fail.
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	snap := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
+		ptesting.NewMockFile("a.txt", 0644, "a"),
+	})
+	defer snap.Close()
+
+	indexId := snap.Header.GetIndexID()
+	cmd := &Archive{}
+	require.NoError(t, cmd.Parse(ctx, []string{
+		"-output", "/nonexistent-dir-xyz/sub/archive.tar.gz",
+		hex.EncodeToString(indexId[:]),
+	}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.Contains(t, err.Error(), "failed to create")
 }
 
 func TestExecuteCmdArchiveDefault(t *testing.T) {

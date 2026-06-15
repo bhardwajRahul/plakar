@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -159,6 +160,116 @@ func TestRestoreInvalidSnapshotID(t *testing.T) {
 
 	cmd := &Restore{}
 	require.NoError(t, cmd.Parse(ctx, []string{"-to", mkRestoreDir(t), "deadbeefdeadbeef"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+}
+
+func TestRestoreMultipleSnapshotsFound(t *testing.T) {
+	// Two snapshots match the (default, latest-less) locate filter, so Execute
+	// must refuse with "multiple snapshots found".
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+	snap2 := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
+		ptesting.NewMockDir("subdir"),
+		ptesting.NewMockFile("subdir/dummy.txt", 0644, "hello dummy"),
+	})
+	defer snap2.Close()
+
+	id1 := snap.Header.GetIndexID()
+	id2 := snap2.Header.GetIndexID()
+
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{
+		"-to", mkRestoreDir(t),
+		hex.EncodeToString(id1[:]) + ":",
+		hex.EncodeToString(id2[:]) + ":",
+	}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.Contains(t, err.Error(), "multiple snapshots found")
+}
+
+func TestRestoreToAliasWithLocation(t *testing.T) {
+	// A destination alias that resolves to a usable fs:// location restores
+	// successfully — exercises the alias success branch in Execute.
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	dir := mkRestoreDir(t)
+	ctx.ConfigDir = t.TempDir()
+	require.NoError(t, ctx.ReloadConfig())
+	ctx.Config.Destinations["mydest"] = map[string]string{"location": "fs://" + dir}
+
+	id := snap.Header.GetIndexID()
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", "@mydest", hex.EncodeToString(id[:]) + ":"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	checkRestored(t, dir)
+}
+
+func TestRestoreSkipPermissionsExecutes(t *testing.T) {
+	// Drive a real restore with -skip-permissions so the SkipPermissions branch
+	// in Execute is taken.
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	dir := mkRestoreDir(t)
+	id := snap.Header.GetIndexID()
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-skip-permissions", "-to", dir, hex.EncodeToString(id[:]) + ":"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	checkRestored(t, dir)
+}
+
+func TestRestoreSubtreeWithTrailingSlashStrip(t *testing.T) {
+	// "<id>:/subdir/" (with a trailing slash) takes the Strip == pathname branch
+	// rather than path.Dir(pathname).
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	dir := mkRestoreDir(t)
+	id := snap.Header.GetIndexID()
+	target := fmt.Sprintf("%s:/subdir/", hex.EncodeToString(id[:]))
+
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", dir, target}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+
+	// The subdir contents land directly under the restore dir when the whole
+	// subdir path is stripped.
+	sawDummy := false
+	require.NoError(t, filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if strings.Contains(string(data), "hello dummy") {
+			sawDummy = true
+		}
+		return nil
+	}))
+	require.True(t, sawDummy, "expected dummy.txt content under %s", dir)
+}
+
+func TestRestoreInvalidExporterLocation(t *testing.T) {
+	// An unknown exporter scheme makes NewExporter fail inside Execute.
+	repo, snap, ctx := generateSnapshot(t)
+	defer snap.Close()
+
+	id := snap.Header.GetIndexID()
+	cmd := &Restore{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-to", "bogusscheme://nowhere", hex.EncodeToString(id[:]) + ":"}))
 	status, err := cmd.Execute(ctx, repo)
 	require.Error(t, err)
 	require.Equal(t, 1, status)

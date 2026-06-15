@@ -117,6 +117,35 @@ func _TestParseCmdHelpDefault(t *testing.T) {
 	require.Contains(t, output, "# FILES")
 }
 
+func TestHelpExecuteUnknownCommand(t *testing.T) {
+	// An unknown command has no embedded doc, so ReadFile fails and Execute
+	// returns 1.
+	ctx := appcontext.NewAppContext()
+	cmd := &Help{}
+	require.NoError(t, cmd.Parse(ctx, []string{"no-such-command"}))
+	status, err := cmd.Execute(ctx, &repository.Repository{})
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+}
+
+func TestHelpExecuteNoColor(t *testing.T) {
+	// NO_COLOR forces the ascii (disableColors) rendering branch.
+	t.Setenv("NO_COLOR", "1")
+
+	old := os.Stdout
+	_, w, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stdout = w
+	defer func() { os.Stdout = old; w.Close() }()
+
+	ctx := appcontext.NewAppContext()
+	cmd := &Help{}
+	require.NoError(t, cmd.Parse(ctx, []string{}))
+	status, err := cmd.Execute(ctx, &repository.Repository{})
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+}
+
 func TestParseCmdHelpCommand(t *testing.T) {
 	// Create a pipe to capture stdout
 	old := os.Stdout

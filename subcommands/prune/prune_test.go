@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -105,6 +106,93 @@ func TestPrune_Apply_PerMinuteCap(t *testing.T) {
 	// Sanity: ensure it didn't claim to remove the newest one (kept)
 	short2 := hex.EncodeToString(snap2.Header.GetIndexShortID())
 	require.NotContains(t, out, fmt.Sprintf("info: prune: removal of %s completed successfully", short2))
+}
+
+func TestPrune_NoFilterRejected(t *testing.T) {
+	// With no positional args and no filters, Parse must refuse rather than
+	// prune everything.
+	repo, snap1, snap2, ctx := generateRepoAndTwoSnaps(t, nil, nil)
+	defer snap1.Close()
+	defer snap2.Close()
+	_ = repo
+
+	cmd := &Prune{}
+	err := cmd.Parse(ctx, []string{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not going to prune everything")
+}
+
+func TestPrune_PolicyNotFound(t *testing.T) {
+	// A -policy referencing an unknown policy (no policies.yml present) reports
+	// "policy not found".
+	repo, snap1, snap2, ctx := generateRepoAndTwoSnaps(t, nil, nil)
+	defer snap1.Close()
+	defer snap2.Close()
+	_ = repo
+
+	ctx.ConfigDir = t.TempDir()
+
+	cmd := &Prune{}
+	err := cmd.Parse(ctx, []string{"-policy", "nope"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not found")
+}
+
+func TestPrune_PolicyLoadError(t *testing.T) {
+	// A malformed policies.yml surfaces as a load error.
+	repo, snap1, snap2, ctx := generateRepoAndTwoSnaps(t, nil, nil)
+	defer snap1.Close()
+	defer snap2.Close()
+	_ = repo
+
+	dir := t.TempDir()
+	ctx.ConfigDir = dir
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "policies.yml"),
+		[]byte("this: : : not valid yaml\n  - broken"), 0644))
+
+	cmd := &Prune{}
+	err := cmd.Parse(ctx, []string{"-policy", "any"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to load policies config")
+}
+
+func TestPrune_PolicyApplied(t *testing.T) {
+	// A valid policy is loaded and applied: -per-minute cap from the policy
+	// drives the dry-run plan.
+	bufOut := bytes.NewBuffer(nil)
+	repo, snap1, snap2, ctx := generateRepoAndTwoSnaps(t, bufOut, bytes.NewBuffer(nil))
+	defer snap1.Close()
+	defer snap2.Close()
+
+	dir := t.TempDir()
+	ctx.ConfigDir = dir
+	policyYAML := "version: v1.0.0\npolicies:\n  keepone:\n    periods:\n      minute:\n        cap: 1\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "policies.yml"), []byte(policyYAML), 0644))
+
+	cmd := &Prune{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-policy", "keepone"}))
+
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Contains(t, bufOut.String(), "prune: would keep 1 and delete 1 snapshot(s)")
+}
+
+func TestPrune_ApplyNothingToDelete(t *testing.T) {
+	// -apply with a filter that keeps everything deletes nothing and returns 0.
+	bufOut := bytes.NewBuffer(nil)
+	repo, snap1, snap2, ctx := generateRepoAndTwoSnaps(t, bufOut, bytes.NewBuffer(nil))
+	defer snap1.Close()
+	defer snap2.Close()
+
+	// A high per-minute cap keeps both snapshots, so toDelete is empty.
+	cmd := &Prune{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-apply", "--per-minute=100"}))
+
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.NotContains(t, bufOut.String(), "prune: removal of")
 }
 
 // TestMergePolicyOptions_PreservesPolicyFiltersWhenCLIEmpty is the regression

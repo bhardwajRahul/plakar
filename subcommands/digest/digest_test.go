@@ -66,6 +66,61 @@ func TestExecuteCmdDigestDefault(t *testing.T) {
 	}
 }
 
+func TestExecuteCmdDigestBadSnapshotPath(t *testing.T) {
+	// An unresolvable snapshot path is logged as an error and skipped; Execute
+	// still returns 0.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	cmd := &Digest{}
+	require.NoError(t, cmd.Parse(ctx, []string{"deadbeefdeadbeef:/nope"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Contains(t, bufErr.String(), "digest:")
+}
+
+func TestExecuteCmdDigestSingleFile(t *testing.T) {
+	// Targeting one regular file exercises the GetEntry + non-dir path that
+	// produces a single digest line.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	indexId := snap.Header.GetIndexID()
+	id := hex.EncodeToString(indexId[:])
+	cmd := &Digest{}
+	require.NoError(t, cmd.Parse(ctx, []string{id + ":/subdir/dummy.txt"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Contains(t, bufOut.String(), "dummy.txt")
+	require.Equal(t, 1, len(strings.Split(strings.Trim(bufOut.String(), "\n"), "\n")))
+}
+
+func TestExecuteCmdDigestCancelledContext(t *testing.T) {
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	indexId := snap.Header.GetIndexID()
+	id := hex.EncodeToString(indexId[:])
+	cmd := &Digest{}
+	require.NoError(t, cmd.Parse(ctx, []string{id}))
+
+	ctx.GetInner().Cancel(nil)
+	// displayDigests bails on ctx.Err(); Execute swallows it and still returns 0,
+	// but produces no digest output.
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Empty(t, strings.TrimSpace(bufOut.String()))
+}
+
 func TestExecuteCmdDigestNoParam(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)
