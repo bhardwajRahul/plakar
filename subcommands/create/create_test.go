@@ -94,6 +94,54 @@ func TestExecuteCmdCreateDefaultWithoutEncryption(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCreateParseWeakPassphraseWithKeyfile(t *testing.T) {
+	// -weak-passphrase lowers the entropy requirement; combined with a keyfile
+	// it parses without prompting.
+	ctx := appcontext.NewAppContext()
+	defer ctx.Close()
+	ctx.KeyFromFile = "weak"
+
+	cmd := &Create{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-weak-passphrase"}))
+	require.Equal(t, []byte("weak"), cmd.RepositorySecret)
+}
+
+func TestCreateParseTooManyParameters(t *testing.T) {
+	ctx := appcontext.NewAppContext()
+	defer ctx.Close()
+	cmd := &Create{}
+	err := cmd.Parse(ctx, []string{"-plaintext", "extra-arg"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "too many parameters")
+}
+
+func TestCreateParseUnknownHashing(t *testing.T) {
+	ctx := appcontext.NewAppContext()
+	defer ctx.Close()
+	cmd := &Create{}
+	err := cmd.Parse(ctx, []string{"-plaintext", "-hashing", "NOTAHASH"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unknown hashing algorithm")
+}
+
+func TestExecuteCmdCreateUnknownHashingConfig(t *testing.T) {
+	// Execute looks up the hashing default configuration; an unknown algorithm
+	// that slips past Parse (set directly on the struct) makes it fail.
+	tmpRepoDirRoot, err := os.MkdirTemp("", "tmp_repo")
+	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(tmpRepoDirRoot) })
+	ctx := appcontext.NewAppContext()
+	defer ctx.Close()
+
+	repo, err := repository.Inexistent(ctx.GetInner(), map[string]string{"location": tmpRepoDirRoot + "/repo"})
+	require.NoError(t, err)
+
+	cmd := &Create{NoEncryption: true, Hashing: "NOTAHASH"}
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+}
+
 func TestExecuteCmdCreateDefaultWithKeyfile(t *testing.T) {
 	tmpRepoDirRoot, err := os.MkdirTemp("", "tmp_repo")
 	require.NoError(t, err)

@@ -24,6 +24,14 @@ func TestParseCmdVersion(t *testing.T) {
 	require.NotNil(t, subcommand)
 }
 
+func TestParseCmdVersionTooManyArgs(t *testing.T) {
+	ctx := &appcontext.AppContext{}
+	subcommand := &Version{}
+	err := subcommand.Parse(ctx, []string{"extra"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Too many arguments")
+}
+
 func TestExecuteCmdVersion(t *testing.T) {
 	// Create a pipe to capture stdout
 	old := os.Stdout

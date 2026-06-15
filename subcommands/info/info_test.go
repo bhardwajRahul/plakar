@@ -86,6 +86,33 @@ func TestExecuteCmdInfoDefault(t *testing.T) {
 	require.Contains(t, output, "Snapshots: 1")
 }
 
+func TestInfoParseTooManyArguments(t *testing.T) {
+	_, snap, ctx := generateSnapshot(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil))
+	defer snap.Close()
+
+	cmd := &Info{}
+	err := cmd.Parse(ctx, []string{"a", "b"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "too many arguments")
+}
+
+func TestExecuteCmdInfoSnapshotErrors(t *testing.T) {
+	// "-errors <snapshot>" dispatches to executeErrors.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	indexId := snap.Header.GetIndexID()
+	cmd := &Info{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-errors", hex.EncodeToString(indexId[:])}))
+	require.True(t, cmd.Errors)
+
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+}
+
 func TestExecuteCmdInfoSnapshot(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)

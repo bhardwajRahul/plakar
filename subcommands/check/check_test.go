@@ -76,6 +76,59 @@ func TestExecuteCmdCheckDefault(t *testing.T) {
 	require.Contains(t, lastline, "check completed without errors")
 }
 
+func TestCheckParseSnapshotWithFiltersWarns(t *testing.T) {
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	_, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	cmd := &Check{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-name", "x", "abc"}))
+	require.Contains(t, bufErr.String(), "filters will be ignored")
+}
+
+func TestCheckExecuteInvalidPrefix(t *testing.T) {
+	// A non-hex snapshot prefix is rejected before any locate.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	defer renderer.Wait()
+	defer ctx.Close()
+
+	cmd := &Check{}
+	require.NoError(t, cmd.Parse(ctx, []string{"nothex!:/"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.Contains(t, err.Error(), "invalid snapshot prefix")
+}
+
+func TestExecuteCmdCheckFast(t *testing.T) {
+	// -fast exercises the FastCheck option path.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, snap, ctx := generateSnapshot(t, bufOut, bufErr)
+	defer snap.Close()
+
+	renderer := stdio.New(ctx)
+	renderer.Run()
+	defer renderer.Wait()
+	defer ctx.Close()
+
+	indexId := snap.Header.GetIndexID()
+	cmd := &Check{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-fast", hex.EncodeToString(indexId[:])}))
+	require.True(t, cmd.FastCheck)
+
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+}
+
 func TestExecuteCmdCheckSpecificSnapshot(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)

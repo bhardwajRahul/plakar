@@ -22,6 +22,48 @@ func init() {
 	os.Setenv("TZ", "UTC")
 }
 
+func TestServerParseAllowDelete(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	defer ctx.Close()
+	_ = repo
+
+	cmd := &Server{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-allow-delete"}))
+	require.False(t, cmd.NoDelete, "-allow-delete should clear NoDelete")
+}
+
+func TestServerParseDefaultsToNoDelete(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	defer ctx.Close()
+	_ = repo
+
+	cmd := &Server{}
+	require.NoError(t, cmd.Parse(ctx, []string{}))
+	require.True(t, cmd.NoDelete, "delete must be disabled by default")
+}
+
+func TestServerExecuteTLSErrorReturns1(t *testing.T) {
+	// cert+key set (https protocol branch) but pointing at missing files, so
+	// httpd.Server returns immediately with an error and Execute reports 1.
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, ctx := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
+	defer ctx.Close()
+
+	cmd := &Server{}
+	require.NoError(t, cmd.Parse(ctx, []string{
+		"-listen", "127.0.0.1:0",
+		"-cert", "/nonexistent/cert.pem",
+		"-key", "/nonexistent/key.pem",
+	}))
+
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	// The https protocol branch was taken when logging the listen line.
+	require.Contains(t, bufOut.String()+bufErr.String(), "https://")
+}
+
 func TestExecuteCmdServerDefault(t *testing.T) {
 	bufOut := bytes.NewBuffer(nil)
 	bufErr := bytes.NewBuffer(nil)

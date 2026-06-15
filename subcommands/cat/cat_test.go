@@ -2,6 +2,7 @@ package cat
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -149,6 +150,39 @@ func TestExecuteCmdCatErrorUnknownFile(t *testing.T) {
 
 	outputErr := bufErr.String()
 	require.Contains(t, outputErr, "cat: /unknown: no such file")
+}
+
+func TestCatParseNoArgs(t *testing.T) {
+	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
+	_ = repo
+	cmd := &Cat{}
+	err := cmd.Parse(ctx, []string{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "at least one parameter")
+}
+
+func TestExecuteCmdCatDecompressGzip(t *testing.T) {
+	// A gzip-compressed file with -decompress is transparently inflated.
+	var gzBuf bytes.Buffer
+	gz := gzip.NewWriter(&gzBuf)
+	_, err := gz.Write([]byte("hello compressed"))
+	require.NoError(t, err)
+	require.NoError(t, gz.Close())
+
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, ctx := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
+	snap := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
+		ptesting.NewMockFile("data.gz", 0644, gzBuf.String()),
+	})
+	snap.Close()
+
+	cmd := &Cat{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-decompress", ":data.gz"}))
+	status, err := cmd.Execute(ctx, repo)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+	require.Contains(t, bufOut.String(), "hello compressed")
 }
 
 func TestExecuteCmdCatHighlight(t *testing.T) {
