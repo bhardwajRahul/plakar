@@ -10,9 +10,18 @@ import (
 
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/kloset/repository"
+	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
 	"github.com/stretchr/testify/require"
 )
+
+func TestVersionRegisteredFactory(t *testing.T) {
+	// Looking the command up through the registry invokes the factory closure
+	// registered in init().
+	cmd, _, _ := subcommands.Lookup([]string{"version"})
+	require.NotNil(t, cmd)
+	require.IsType(t, &Version{}, cmd)
+}
 
 func TestParseCmdVersion(t *testing.T) {
 	ctx := &appcontext.AppContext{}
