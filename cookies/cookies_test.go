@@ -114,6 +114,129 @@ func TestFirstRunOperations(t *testing.T) {
 	require.False(t, isFirstRun)
 }
 
+func TestNewManagerMkdirPanics(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Point the base dir at a path whose parent is a regular file, so MkdirAll
+	// fails with ENOTDIR and NewManager panics.
+	blocker := filepath.Join(tmpDir, "blocker")
+	require.NoError(t, os.WriteFile(blocker, []byte{}, 0600))
+
+	require.Panics(t, func() {
+		NewManager(filepath.Join(blocker, "sub"))
+	})
+}
+
+func TestCloseAndGetDir(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	require.NoError(t, manager.Close())
+	require.Equal(t, filepath.Join(tmpDir, "cookies", COOKIES_VERSION), manager.GetDir())
+}
+
+func TestGetAuthTokenFromEnv(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	t.Setenv("PLAKAR_TOKEN", "env-token")
+	token, err := manager.GetAuthToken()
+	require.NoError(t, err)
+	require.Equal(t, "env-token", token)
+}
+
+func TestGetAuthTokenEmptyFile(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	// An empty token file is treated as "no token".
+	require.NoError(t, manager.PutAuthToken(""))
+	_, err = manager.GetAuthToken()
+	require.Error(t, err)
+}
+
+func TestGetAuthTokenReadError(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	// Make .auth-token a directory so ReadFile fails with a non-NotExist error.
+	require.NoError(t, os.Mkdir(filepath.Join(manager.cookiesDir, ".auth-token"), 0700))
+	_, err = manager.GetAuthToken()
+	require.Error(t, err)
+	require.False(t, os.IsNotExist(err))
+}
+
+func TestDeleteAuthTokenFromEnv(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	t.Setenv("PLAKAR_TOKEN", "env-token")
+	err = manager.DeleteAuthToken()
+	require.ErrorIs(t, err, ErrDeleteEnvToken)
+}
+
+func TestDeleteAuthTokenNotLoggedIn(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	// No token file present: deleting reports ErrNotLoggedIn.
+	err = manager.DeleteAuthToken()
+	require.ErrorIs(t, err, ErrNotLoggedIn)
+}
+
+func TestPutRepositoryCookieMkdirError(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+	repoID := uuid.New()
+
+	// Create a regular file where the per-repository directory is expected, so
+	// MkdirAll fails.
+	require.NoError(t, os.WriteFile(filepath.Join(manager.cookiesDir, repoID.String()), []byte{}, 0600))
+	err = manager.PutRepositoryCookie(repoID, "cookie")
+	require.Error(t, err)
+}
+
+func TestIsFirstRunStatError(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cookies_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	manager := NewManager(tmpDir)
+
+	// Make .first-run unstattable by placing it under a non-directory path
+	// component: create a file "blocker" and point cookiesDir's child through it.
+	// Simpler: replace cookiesDir with a path whose parent is a file, forcing a
+	// non-NotExist stat error (ENOTDIR).
+	blocker := filepath.Join(tmpDir, "blocker")
+	require.NoError(t, os.WriteFile(blocker, []byte{}, 0600))
+	manager.cookiesDir = filepath.Join(blocker, "sub")
+
+	require.False(t, manager.IsFirstRun())
+}
+
 func TestSecurityCheckOperations(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir, err := os.MkdirTemp("", "cookies_test")

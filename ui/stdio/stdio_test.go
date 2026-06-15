@@ -10,6 +10,7 @@ import (
 	"github.com/PlakarKorp/kloset/logging"
 	"github.com/PlakarKorp/kloset/objects"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/google/uuid"
 )
 
 // newCtxWithBufferedLogger returns a context whose logger writes to the given
@@ -49,11 +50,18 @@ func TestStopAndSetRepositoryNoOps(t *testing.T) {
 }
 
 func TestRunDrainsEventsAndExitsOnBusClose(t *testing.T) {
-	ctx := appcontext.NewAppContext()
+	var out, errBuf bytes.Buffer
+	ctx := newCtxWithBufferedLogger(t, &out, &errBuf)
 	u := New(ctx)
 	if err := u.Run(); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
+
+	// Publish at least one event so the goroutine loop body runs and dispatches
+	// through HandleEvent before the bus is closed.
+	emitter := ctx.Events().NewRepositoryEmitter(uuid.Nil, "test")
+	emitter.PathOk("/x")
+
 	ctx.Events().Close()
 
 	done := make(chan error, 1)
