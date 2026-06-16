@@ -70,6 +70,7 @@ This option can be repeated.
 .It Fl ignore-file Ar file
 Specify a file containing gitignore exclusion patterns, one per line, to
 ignore files or directories in the backup.
+This option can be repeated.
 .It Fl job Ar job
 Name the snapshot job.
 .It Fl name Ar name
@@ -117,9 +118,9 @@ Create a snapshot of the current directory with two tags:
 $ plakar backup -tag daily-backup,production
 .Ed
 .Pp
-Ignore files using patterns in a given file:
+Ignore files using patterns in one or more files:
 .Bd -literal -offset indent
-$ plakar backup -ignore-file ~/my-ignore-file /var/www
+$ plakar backup -ignore-file ~/common-ignore -ignore-file ~/project-ignore /var/www
 .Ed
 .Pp
 or by using patterns specified inline:

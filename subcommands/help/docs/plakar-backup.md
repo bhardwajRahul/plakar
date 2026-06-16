@@ -88,6 +88,7 @@ The options are as follows:
 
 > Specify a file containing gitignore exclusion patterns, one per line, to
 > ignore files or directories in the backup.
+> This option can be repeated.
 
 **-job** *job*
 
@@ -154,9 +155,9 @@ Create a snapshot of the current directory with two tags:
 
 	$ plakar backup -tag daily-backup,production
 
-Ignore files using patterns in a given file:
+Ignore files using patterns in one or more files:
 
-	$ plakar backup -ignore-file ~/my-ignore-file /var/www
+	$ plakar backup -ignore-file ~/common-ignore -ignore-file ~/project-ignore /var/www
 
 or by using patterns specified inline:
 
