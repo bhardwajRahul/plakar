@@ -25,4 +25,15 @@ check: test
 test:
 	${GO} test ./...
 
-.PHONY: all plakar install check test
+# coverage runs the test suite and reports total statement coverage with the
+# testing/ support packages (mocks, fixtures) excluded, matching the Codecov
+# `ignore` config. Go has no package-level coverage exclude, so we filter the
+# profile after the fact: the `mode:` header line is kept, and every block
+# belonging to a testing/ package is dropped before `go tool cover` totals it.
+COVERPROFILE = coverage.out
+coverage:
+	${GO} test -covermode=atomic -coverprofile=${COVERPROFILE} ./...
+	@grep -v '/plakar/testing/' ${COVERPROFILE} > ${COVERPROFILE}.tmp && mv ${COVERPROFILE}.tmp ${COVERPROFILE}
+	@${GO} tool cover -func=${COVERPROFILE} | tail -1
+
+.PHONY: all plakar install check test coverage
