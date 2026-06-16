@@ -10,5 +10,4 @@ coverage:
 comment: false
 
 ignore:
-  - "testing/**/*"
-  - "testing/*"
+  - "testing"

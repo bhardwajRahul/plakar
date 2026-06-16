@@ -2,3 +2,4 @@
 /plakar
 **/vendor
 /dist
+/coverage.out
