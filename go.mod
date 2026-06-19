@@ -10,7 +10,7 @@ require (
 	github.com/PlakarKorp/integrations/ptar v1.1.0
 	github.com/PlakarKorp/integrations/stdio v1.1.0
 	github.com/PlakarKorp/integrations/tar v1.1.0
-	github.com/PlakarKorp/kloset v1.1.0
+	github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260616212757-90a8f211d1fe
 	github.com/PlakarKorp/pkg v1.1.1
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.2
@@ -112,7 +112,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
-	github.com/tink-crypto/tink-go/v2 v2.6.0 // indirect
+	github.com/tink-crypto/tink-go/v2 v2.7.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.8.2 // indirect
