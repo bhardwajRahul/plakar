@@ -94,6 +94,23 @@ Remove the
 for the store entry identified by
 .Ar name .
 .El
+.Ss HTTP AND HTTPS STORE OPTIONS
+When using an
+.Cm http://
+or
+.Cm https://
+location, the following additional options are available:
+.Bl -tag -width tls_no_verify
+.It Cm auth_token
+Bearer token sent in the
+.Dq Authorization
+header for every request.
+.It Cm tls_no_verify
+Set to
+.Cm true
+to disable TLS certificate verification.
+Useful when the server uses a self-signed certificate.
+.El
 .Sh EXIT STATUS
 .Ex -std
 .Sh SEE ALSO
