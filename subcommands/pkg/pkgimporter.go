@@ -88,14 +88,12 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 
 	fp, err := os.Open(absolute)
 	if err != nil {
-		ch <- connectors.NewError(name, fmt.Errorf("Failed to open file: %w", err))
-		return nil
+		return fmt.Errorf("Failed to open file: %w", err)
 	}
 
 	fi, err := fp.Stat()
 	if err != nil {
-		ch <- connectors.NewError(name, fmt.Errorf("Failed to stat file: %w", err))
-		return nil
+		return fmt.Errorf("Failed to stat file: %w", err)
 	}
 
 	switch it {
@@ -108,19 +106,16 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 		}
 
 		if !isexe {
-			ch <- connectors.NewError(name, fmt.Errorf("Not executable: %s", absolute))
-			return nil
+			return fmt.Errorf("Not executable: %s", absolute)
 		}
 
 	case itjson:
 		content := make(map[string]any)
 		if err := json.NewDecoder(fp).Decode(&content); err != nil {
-			ch <- connectors.NewError(name, fmt.Errorf("invalid json: %s: %w", absolute, err))
-			return nil
+			return fmt.Errorf("invalid json: %s: %w", absolute, err)
 		}
 		if _, err := fp.Seek(0, io.SeekStart); err != nil {
-			ch <- connectors.NewError(name, fmt.Errorf("seek failed: %w", err))
-			return nil
+			return fmt.Errorf("seek failed: %w", err)
 		}
 	}
 
