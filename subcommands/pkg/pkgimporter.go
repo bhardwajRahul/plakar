@@ -129,37 +129,34 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 	return nil
 }
 
-func (imp *pkgerImporter) scan(ch chan<- *connectors.Record) error {
+func (imp *pkgerImporter) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
+	defer close(records)
+
 	info := objects.NewFileInfo("/", 0, 0700|os.ModeDir, time.Unix(0, 0), 0, 0, 0, 0, 1)
-	ch <- &connectors.Record{
+	records <- &connectors.Record{
 		Pathname: "/",
 		FileInfo: info,
 	}
 
-	if err := imp.dofile(imp.manifestPath, ch, itextra); err != nil {
+	if err := imp.dofile(imp.manifestPath, records, itextra); err != nil {
 		return err
 	}
 	for _, conn := range imp.manifest.Connectors {
-		if err := imp.dofile(conn.Executable, ch, itexe); err != nil {
+		if err := imp.dofile(conn.Executable, records, itexe); err != nil {
 			return err
 		}
 		if conn.Validator != "" {
-			if err := imp.dofile(conn.Validator, ch, itjson); err != nil {
+			if err := imp.dofile(conn.Validator, records, itjson); err != nil {
 				return err
 			}
 		}
 		for _, file := range conn.ExtraFiles {
-			if err := imp.dofile(file, ch, itextra); err != nil {
+			if err := imp.dofile(file, records, itextra); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
-}
-
-func (imp *pkgerImporter) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
-	defer close(records)
-	return imp.scan(records)
 }
 
 func (imp *pkgerImporter) Ping(ctx context.Context) error {
