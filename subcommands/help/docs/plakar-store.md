@@ -110,6 +110,27 @@ The subcommands are as follows:
 > for the store entry identified by
 > *name*.
 
+## HTTP AND HTTPS STORE OPTIONS
+
+When using an
+**http://**
+or
+**https://**
+location, the following additional options are available:
+
+**auth\_token**
+
+> Bearer token sent in the
+> "Authorization"
+> header for every request.
+
+**tls\_no\_verify**
+
+> Set to
+> **true**
+> to disable TLS certificate verification.
+> Useful when the server uses a self-signed certificate.
+
 # EXIT STATUS
 
 The **plakar-store** utility exits&#160;0 on success, and&#160;&gt;0 if an error occurs.
