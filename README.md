@@ -8,7 +8,7 @@
 
 Back up anything, store anywhere, restore everywhere, with zero-trust encryption and no vendor lock-in.
 
-[![Join our Discord community](https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/A2yvjS6r2C)
+[![Join our Discord community](https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/uuegtnF2Q5)
 [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?logo=youtube&logoColor=white&style=for-the-badge)](https://www.youtube.com/@PlakarKorp)
 [![Join our Subreddit](https://img.shields.io/badge/Reddit-Join%20r%2Fplakar-orange?logo=reddit&logoColor=white&style=for-the-badge)](https://www.reddit.com/r/plakar/)
 
@@ -158,7 +158,7 @@ Plakar is open source and community-driven. Contributions, integrations, and iss
 
 ## 💬 Community
 
-- 🗨️ Join our very active [Discord](https://discord.gg/A2yvjS6r2C)
+- 🗨️ Join our very active [Discord](https://discord.gg/uuegtnF2Q5)
 - 𝕏 Follow us on [X](https://x.com/PlakarKorp)
 - 💼 Connect on [LinkedIn](https://www.linkedin.com/company/plakarkorp)
 - 🦋 Find us on [Bluesky](https://bsky.app/profile/plakar.bsky.social)
