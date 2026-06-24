@@ -1,8 +1,12 @@
 <div align="center">
 
-<img src="./docs/assets/Plakar_Logo_Simple_Pirmary.png" alt="Plakar Backup & Restore Solution" width="200"/>
+<img src="./docs/assets/Plakar_Logo_Simple_Pirmary.png" alt="Plakar: open source backup engine" width="200"/>
 
-# plakar - Effortless backup & more
+# Plakar: open source backup engine
+
+**Encrypted, deduplicated, verifiable, and scalable.**
+
+Back up anything, store anywhere, restore everywhere, with zero-trust encryption and no vendor lock-in.
 
 [![Join our Discord community](https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/A2yvjS6r2C)
 [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?logo=youtube&logoColor=white&style=for-the-badge)](https://www.youtube.com/@PlakarKorp)
@@ -22,63 +26,23 @@
 
 </div>
 
-## 🔄 Latest Release
-
-[![Join Plakar v1.1.0 Beta](https://www.plakar.io/readme/plakar-v1.0.1-beta-video-cover.png)](https://www.youtube.com/watch?v=RK9RYNbjQUk)
-
-### **V1.1.0-beta.1 - Beta Release: Performance, UI, and Architecture** *(January 2026)*
-
-- **New Terminal UI**: Completely reworked terminal output with a new `tui` renderer for better visibility during long-running operations, alongside the classic `stdio` renderer for verbose output.
-- **Dramatic Performance Improvements**:
-  - Restore operations: ~95% faster (from ~60 minutes to ~3 minutes for 1M items)
-  - Backup operations: up to 33% faster with optimizations
-  - Sync operations: ~20% faster
-- **Significant RAM Reduction**:
-  - Backup: -43% (from ~3.0 GiB to ~1.3 GiB)
-  - Restore: -66% (from ~2.3 GiB to ~800 MiB)
-  - Sync: -30% (from ~3.6 GiB to ~2.5 GiB)
-  - Check: -40% (from ~1.3 GiB to ~800 MiB)
-- **Reduced Cache Footprint**: -55% on-disk cache usage (from 4 GiB to 1.8 GiB for 1M items) by removing VFS cache and trading bandwidth for disk space.
-- **Architecture Redesign**: Replaced the agent with `cached`, a lightweight process dedicated exclusively to cache maintenance and locking. Commands now execute directly in the CLI.
-- **Multi-directory Support**: Back up multiple directories in a single snapshot (e.g., `plakar backup /etc /home`).
-- **Improved FUSE Support**: Completely rewritten for better reliability on both Linux and macOS, including support for FUSE-T. New capabilities to mount specific snapshots, directories, or serve them over HTTP.
-- **New Package Manager**: Brand new package manager with simpler interface and support for integration updates.
-- **Redesigned Integration Interfaces**: Simpler and more explicit importer, exporter, and storage interfaces, lowering the barrier for third-party integrations.
-
-[📝 Release article](https://www.plakar.io/posts/2026-01-26/plakar-v1.1.0-beta-the-foundation-for-whats-next/)
-
-### **V1.0.6 - Bugfix Release: State Synchronization and Memory Fixes** *(November 2025)*
-
-- **Critical Fix**: Resolved state-synchronization bug that could cause snapshots to appear correct on the backup machine but not on others. Introduced two-stage commit to guarantee remote state updates before local visibility.
-- **New Repair Tool**: Added `plakar repair` command to detect and fix state inconsistencies. Recommended for all users to run once after upgrading.
-- **Memory Leak Fixes**: Fixed storage API memory leak in go-kloset-sdk affecting all third-party integrations (SFTP, S3, etc.) during list, check, and restore operations.
-- **Improved Memory Usage**: Resolved large buffer retention issue during restore and check operations with external integrations, significantly reducing RAM usage for large snapshots on S3 and SFTP backends.
-- **Integration Updates**: Users should reinstall integrations (`plakar pkg rm`/`plakar pkg add`) to benefit from the corrected go-kloset-sdk.
-
-[📝 Release article](https://www.plakar.io/posts/2025-11-30/release-v1.0.6-bugfix-and-memory-usage-improvement/)
-
 ## 🧭 Introduction
 
-plakar provides an intuitive, powerful, and scalable backup solution.
+Plakar is an open source backup engine that goes beyond file-level backups. It captures your data with its full context and turns it into encrypted, deduplicated, and verifiable snapshots you can store anywhere and restore everywhere.
 
-Plakar goes beyond file-level backups. It captures application data with its full context.
+Data and context are stored in [Kloset](https://www.plakar.io/posts/2025-04-29/kloset-the-immutable-data-store/), an open source, immutable data store that makes advanced data protection scenarios possible. Everything is deduplicated, compressed, and encrypted **at the source, before it leaves your perimeter**, so you get high storage efficiency without ever exposing your data or your keys to the storage infrastructure.
 
-Data and context are stored using [Kloset](https://www.plakar.io/posts/2025-04-29/kloset-the-immutable-data-store/), an open-source, immutable data store that enables the implementation of advanced data protection scenarios.
+Plakar's strengths and capabilities:
+- **Secure**: Audited end-to-end encryption for data *and* metadata, with zero-trust by design: keys never leave your environment, and storage providers stay mathematically blind. See our latest [crypto audit report](https://www.plakar.io/posts/2025-02-28/audit-of-plakar-cryptography/).
+- **Efficient**: Deduplication and compression happen *before* encryption: high density on fully encrypted data means more restore points and less storage, thanks to Kloset's unmatched [deduplication](https://www.plakar.io/posts/2025-07-11/introducing-go-cdc-chunkers-chunk-and-deduplicate-everything/).
+- **Verifiable**: Immutable, content-addressed snapshots with built-in cryptographic integrity checks. Don't assume your backups work. Prove it.
+- **Portable, no lock-in**: Backups live in the open Kloset and [ptar](https://www.plakar.io/posts/2025-06-27/it-doesnt-make-sense-to-wrap-modern-data-in-a-1979-format-introducing-.ptar/) formats, readable without Plakar. Connect any source or backend (file systems, object stores, SaaS apps…), restore across storage types and platforms, and distribute copies with the 3-2-1 rule or push/pull/sync strategies.
+- **Scalable**: Vertically scalable (very large datasets with limited RAM) and horizontally scalable (high concurrency, multiple backup types in a single Kloset). Engineered for exabytes with a minimal footprint.
+- **Instant recovery**: Mount large backups on any device without full restoration, then browse, search, and compare snapshots in the Plakar UI to restore an entire snapshot or just a subset.
+- **Effortless and production-safe**: Easy to use, with clean defaults. Plakar automatically adjusts backup speed to protect production workloads and runs lock-free garbage collection without interrupting backups or restores. Start with our [quick start guide](https://www.plakar.io/docs/).
+- **Open source and actively maintained**: Open source forever, maintained by [Plakar Korp](https://www.plakar.io), and a member of the Linux Foundation and the CNCF.
 
-Plakar's main strengths:
-- **Effortless**: Easy to use, clean default. Check out our [quick start guide](https://www.plakar.io/docs/v1.0.4/quickstart/).
-- **Secure**: Provide audited end-to-end encryption for data and metadata. See our latest [crypto audit report](https://www.plakar.io/posts/2025-02-28/audit-of-plakar-cryptography/).
-- **Reliable**: Backups are stored in Kloset, an open-source immutable data store. Learn more about [Kloset](https://www.plakar.io/posts/2025-04-29/kloset-the-immutable-data-store/).
-- **Vertically scalable**: Backup and restore very large datasets with limited RAM usage.
-- **Horizontally scalable**: Support high concurrency and multiple backups type in a single Kloset.
-- **Browsable**: Browse, sort, search, and compare backups using the Plakar UI.
-- **Fast**: backup, check, sync and restore are operations optimized for large-scale data.
-- **Efficient**: more restore points, less storage, thanks to Kloset's unmatched [deduplication](https://www.plakar.io/posts/2025-07-11/introducing-go-cdc-chunkers-chunk-and-deduplicate-everything/) and compression.
-- **Open Source and actively maintained**: open source forever and now maintained by [Plakar Korp](https://www.plakar.io)
-
-Simplicity and efficiency are plakar's main priorities.
-
-Our mission is to set a new standard for effortless secure data protection. 
+Our mission is to set a new, open standard for effortless, secure, zero-trust data resilience.
 
 ## 🖥️ Plakar UI
 
@@ -104,9 +68,6 @@ Navigate the contents of each snapshot to inspect, compare, or selectively resto
 
 ![Snapshot browser](https://www.plakar.io/readme/snapshot-browser.png)
 
-
-
-
 ## 📦 Installing the CLI
 
 ### From binaries
@@ -124,45 +85,94 @@ go install github.com/PlakarKorp/plakar@latest
 
 ## 🚀 Quickstart
 
-plakar quickstart: https://www.plakar.io/docs/v1.0.6/quickstart/
+plakar quickstart: https://www.plakar.io/docs/
 
 A taste of plakar (please follow the quickstart to begin):
 ```
 $ plakar at /var/backups create                             # Create a repository
 $ plakar at /var/backups backup /private/etc                # Backup /private/etc
-$ plakar at /var/backups ls                                 # List all repository backup
+$ plakar at /var/backups ls                                 # List all repository backups
 $ plakar at /var/backups restore -to /tmp/restore 9abc3294  # Restore a backup to /tmp/restore
 $ plakar at /var/backups ui                                 # Start the UI
 $ plakar at /var/backups sync to @s3                        # Synchronise a backup repository to S3
 
 ```
 
-## 🧠 Notable Capabilities
+## 🗄️ Plakar archive format: ptar
 
-- **Instant recovery**: Instantly mount large backups on any devices without full restoration.
-- **Distributed backup**: Kloset can be easily distributed to implement 3,2,1 rule or advanced strategies (push, pull, sync) across heterogeneous environments.
-- **Granular restore**: Restore a complete snapshot or only a subset of your data.
-- **Cross-storage restore**: Back up from one storage type (e.g., S3-compatible object store) and restore to another (e.g., file system)..
-- **Production safe-guarding**: Automatically adjusts backup speed to avoid impacting production workloads.
-- **Lock-free maintenance**: Perform garbage collection without interrupting backup or restore operations.
-- **Integrations**: back up and restore from and to any source (file systems, object stores, SaaS applications...) with the right integration.
-
-## 🗄️ Plakar archive format : ptar
-
-[ptar](https://www.plakar.io/posts/2025-06-27/it-doesnt-make-sense-to-wrap-modern-data-in-a-1979-format-introducing-.ptar/) is Plakar’s lightweight, high-performance archive format for secure and efficient backup snapshots.
+[ptar](https://www.plakar.io/posts/2025-06-27/it-doesnt-make-sense-to-wrap-modern-data-in-a-1979-format-introducing-.ptar/) is Plakar's lightweight, high-performance archive format for secure and efficient backup snapshots.
 
 [Kapsul](https://www.plakar.io/posts/2025-07-07/kapsul-a-tool-to-create-and-manage-deduplicated-compressed-and-encrypted-ptar-vaults/) is a companion tool that lets you run most plakar sub-commands directly on a .ptar archive without extracting it.
 It mounts the archive in memory as a read-only Plakar repository, enabling transparent and efficient inspection, restoration, and diffing of snapshots.
 
 For installation, usage examples, and full documentation, see the [Kapsul repository](https://github.com/PlakarKorp/kapsul).
 
+## 🔌 Integrations
+
+Plakar writes to the storage you control and protects every source across your estate. Click a connector for its setup guide:
+
+<div align="center">
+
+**Writes to storage you control**
+
+[![Amazon S3](https://img.shields.io/badge/Amazon%20S3-569A31?logo=amazons3&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/s3/)
+[![Azure Blob](https://img.shields.io/badge/Azure%20Blob-0078D4?logo=microsoftazure&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/azblob/)
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-4285F4?logo=googlecloud&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/gcs/)
+[![MinIO](https://img.shields.io/badge/MinIO-C72E49?logo=minio&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/s3/)
+[![Backblaze B2](https://img.shields.io/badge/Backblaze%20B2-E21E29?logo=backblaze&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/s3/)
+[![Cloudflare R2](https://img.shields.io/badge/Cloudflare%20R2-F38020?logo=cloudflare&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/s3/)
+[![NetApp](https://img.shields.io/badge/NetApp-0067C5?logo=netapp&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/s3/)
+[![Local disk](https://img.shields.io/badge/Local%20disk-555555)](https://www.plakar.io/docs/)
+
+**Protects every source**
+
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/postgres/)
+[![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/mysql/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/kubernetes/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/)
+[![Proxmox](https://img.shields.io/badge/Proxmox-E57000?logo=proxmox&logoColor=white)](https://www.plakar.io/docs/community/v1.1.0/integrations/proxmox/)
+
+</div>
+
+See the full list in the [integrations docs](https://www.plakar.io/docs/community/v1.1.0/integrations/).
+
+## 🛰️ Plakar Control Plane
+
+Managing backups across a fleet, not just one machine? **[Plakar Control Plane](https://www.plakar.io/docs/control-plane/intro/)** is a self-hosted management platform built on the open source engine: unified inventory across providers, first-class integrations, centralized policies and scheduling (from the UI, resource tags, or as code), and secrets you can delegate to AWS Secrets Manager, HashiCorp Vault, GCP, or Scaleway. Deployed as an appliance on your own infrastructure. Your data never leaves your environment.
+
+A **free plan** (fully functional, no time limit) is available.
+
+[**Download & deploy →**](https://www.plakar.io/download/) · [Control Plane docs](https://www.plakar.io/docs/control-plane/intro/)
+
 ## 📚 Documentation
 
-For the latest information,
-you can read the documentation available at https://www.plakar.io/docs/v1.0.6/
+For the latest information, read the documentation at https://www.plakar.io/docs/
+
+## 🤝 Contributing
+
+Plakar is open source and community-driven. Contributions, integrations, and issues are welcome.
+
+- Read our [Contributing guide](CONTRIBUTING.md) to get started.
+- Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+- Found a security issue? See our [Security policy](SECURITY.md) for responsible disclosure.
 
 ## 💬 Community
 
-- 🗨️ Join our very active [Discord](https://discord.gg/uqdP9Wfzx3)
+- 🗨️ Join our very active [Discord](https://discord.gg/A2yvjS6r2C)
+- 𝕏 Follow us on [X](https://x.com/PlakarKorp)
+- 💼 Connect on [LinkedIn](https://www.linkedin.com/company/plakarkorp)
+- 🦋 Find us on [Bluesky](https://bsky.app/profile/plakar.bsky.social)
 - 📣 Follow our subreddit [r/plakar](https://www.reddit.com/r/plakar/)
 - ▶️ Subscribe to our YouTube channel [@PlakarKorp](https://www.youtube.com/@PlakarKorp)
+
+## ⭐ Support Plakar
+
+If Plakar is useful to you, please [give us a star](https://github.com/PlakarKorp/plakar) or leave a review on [SourceForge](https://sourceforge.net/software/product/Plakar/reviews/new) or [G2](https://www.g2.com/products/plakar/review_modalities/new). It really helps the project grow.
+
+## 📄 License
+
+plakar is distributed under the terms of the [ISC License](LICENSE).
+
+## 📰 Releases
+
+See the [Releases page](https://github.com/PlakarKorp/plakar/releases) for the changelog, and the [Plakar blog](https://www.plakar.io/posts/) for release deep-dives.
