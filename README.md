@@ -62,7 +62,7 @@ plakar at /var/backups restore -to /tmp/restore <snapshot-id>
 plakar at /var/backups ui
 ```
 
-Prebuilt binaries are available at https://www.plakar.io/download. For a full walkthrough, see the [quickstart guide](https://www.plakar.io/docs/v1.0.6/quickstart/first-backup).
+Prebuilt binaries are available at https://www.plakar.io/download. For a full walkthrough, see the [quickstart guide](https://www.plakar.io/docs/v1.1.0/quickstart/first-backup).
 
 ## Installation
 
@@ -80,7 +80,7 @@ go install github.com/PlakarKorp/plakar@latest
 
 ## More with Plakar
 
-**Archives.** You can export a snapshot as a `.ptar` archive using `plakar ptar`. A `.ptar` file is a self-contained, deduplicated, compressed, and encrypted archive. [Kapsul](https://github.com/PlakarKorp/kapsul) is a companion tool that lets you inspect, diff, and restore from a `.ptar` file directly without extracting it.
+**Archives.** You can export one or more snapshots as a `.ptar` archive using `plakar ptar`. A `.ptar` file is a self-contained, deduplicated, compressed, and encrypted archive.
 
 **Integrations.** Plakar supports additional backup sources and storage backends through its package manager. Available integrations include PostgreSQL, MySQL, etcd, Kubernetes, S3-compatible object stores, and more.
 
@@ -100,8 +100,8 @@ See the [documentation](https://www.plakar.io/docs) for the full list of support
 
 https://www.plakar.io/docs
 
-- [Quickstart](https://www.plakar.io/docs/v1.0.6/quickstart/first-backup)
-- [Command reference](https://www.plakar.io/docs/v1.0.6/references/commands)
+- [Quickstart](https://www.plakar.io/docs/v1.1.0/quickstart/first-backup)
+- [Command reference](https://www.plakar.io/docs/v1.1.0/references/commands)
 - [Integrations](https://www.plakar.io/integrations)
 
 ## Contributing and reporting issues
