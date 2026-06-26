@@ -62,6 +62,15 @@ var behaviors = map[string]mockedBackendBehavior{
 		header:        nil,
 		packfilesMACs: nil,
 	},
+	// orphanBrokenGetPackfile lists packfiles that are NOT referenced by any
+	// state (orphans), so callers that walk orphaned packfiles try to load the
+	// packfile body via Get(Packfile, rg==nil) -- which this behavior fails.
+	// Used to exercise the orphan-load error branch of maintenance colourPass.
+	"orphanBrokenGetPackfile": {
+		statesMACs:    nil,
+		header:        nil,
+		packfilesMACs: []objects.MAC{{0x07}, {0x08}},
+	},
 }
 
 // MockBackend implements the Backend interface for testing purposes
@@ -166,7 +175,7 @@ func (mb *MockBackend) Get(ctx context.Context, res storage.StorageResource, mac
 	switch res {
 	case storage.StorageResourcePackfile:
 		if rg == nil {
-			if mb.behavior == "brokenGetPackfile" {
+			if mb.behavior == "brokenGetPackfile" || mb.behavior == "orphanBrokenGetPackfile" {
 				return nil, errors.New("broken get packfile")
 			}
 
