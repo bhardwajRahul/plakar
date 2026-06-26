@@ -1,10 +1,14 @@
 <div align="center">
 
-<img src="./docs/assets/Plakar_Logo_Simple_Primary.png" alt="Plakar Backup & Restore Solution" width="200"/>
+<img src="./docs/assets/Plakar_Logo_Simple_Pirmary.png" alt="Plakar: open source backup engine" width="200"/>
 
-# plakar - Effortless backup & more
+# Plakar: open source backup engine
 
-[![Join our Discord community](https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/A2yvjS6r2C)
+**Encrypted, deduplicated, verifiable, and scalable.**
+
+Back up anything, store anywhere, restore everywhere, with zero-trust encryption and no vendor lock-in.
+
+[![Join our Discord community](https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/uuegtnF2Q5)
 [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?logo=youtube&logoColor=white&style=for-the-badge)](https://www.youtube.com/@PlakarKorp)
 [![Join our Subreddit](https://img.shields.io/badge/Reddit-Join%20r%2Fplakar-orange?logo=reddit&logoColor=white&style=for-the-badge)](https://www.reddit.com/r/plakar/)
 
