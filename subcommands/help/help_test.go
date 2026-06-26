@@ -91,6 +91,7 @@ func _TestParseCmdHelpDefault(t *testing.T) {
 	logger.EnableInfo()
 	ctx.SetLogger(logger)
 	repo, err := repository.New(ctx.GetInner(), nil, r, serializedConfig)
+	require.NoError(t, err)
 	args := []string{"-style", "notty"}
 
 	subcommand := &Help{}
@@ -216,6 +217,7 @@ func TestParseCmdHelpCommand(t *testing.T) {
 	logger.EnableInfo()
 	ctx.SetLogger(logger)
 	repo, err := repository.New(ctx.GetInner(), nil, r, serializedConfig)
+	require.NoError(t, err)
 	args := []string{"-style", "notty", "version"}
 
 	subcommand := &Help{}

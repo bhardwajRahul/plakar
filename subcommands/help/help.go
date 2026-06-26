@@ -79,7 +79,7 @@ func (cmd *Help) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 		disableColors = true
 	}
 
-	options := []glamour.TermRendererOption{}
+	var options []glamour.TermRendererOption
 	if disableColors {
 		options = []glamour.TermRendererOption{
 			glamour.WithColorProfile(termenv.Ascii),
