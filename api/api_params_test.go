@@ -1,24 +1,9 @@
 package api
 
 import (
-	"bytes"
-	"io"
 	"net/http"
-	"os"
 	"reflect"
 	"testing"
-
-	"github.com/PlakarKorp/kloset/caching"
-	"github.com/PlakarKorp/kloset/caching/pebble"
-	"github.com/PlakarKorp/kloset/hashing"
-	"github.com/PlakarKorp/kloset/logging"
-	"github.com/PlakarKorp/kloset/repository"
-	"github.com/PlakarKorp/kloset/resources"
-	"github.com/PlakarKorp/kloset/connectors/storage"
-	"github.com/PlakarKorp/kloset/versioning"
-	"github.com/PlakarKorp/plakar/appcontext"
-	ptesting "github.com/PlakarKorp/plakar/testing"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPathParamToID(t *testing.T) {
@@ -272,82 +257,6 @@ func TestQueryParamToSortKeys(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("QueryParamToSortKeys() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func _TestSnapshotPathParam(t *testing.T) {
-	testCases := []struct {
-		name     string
-		id       string
-		config   *storage.Configuration
-		location string
-		err      string
-	}{
-		{
-			name:     "empty id",
-			id:       "",
-			location: "mock:///test/location",
-			config:   ptesting.NewConfiguration(),
-			err:      "invalid_params: Invalid parameter",
-		},
-		{
-			name:     "empty id",
-			id:       "12345:/dummy",
-			location: "mock:///test/location?behavior=oneState",
-			config:   ptesting.NewConfiguration(),
-			err:      "invalid_params: Invalid parameter",
-		},
-		{
-			name:     "working",
-			id:       "1000000000000000000000000000000000000000000000000000000000000000:/dummy",
-			location: "mock:///test/location?behavior=oneState",
-			config:   ptesting.NewConfiguration(),
-		},
-	}
-
-	ctx := appcontext.NewAppContext()
-
-	for _, c := range testCases {
-		t.Run(c.name, func(t *testing.T) {
-			tmpCacheDir, err := os.MkdirTemp("", "tmp_cache")
-			require.NoError(t, err)
-			t.Cleanup(func() {
-				os.RemoveAll(tmpCacheDir)
-			})
-
-			serializedConfig, err := c.config.ToBytes()
-			require.NoError(t, err)
-
-			hasher := hashing.GetHasher("SHA256")
-			wrappedConfigRd, err := storage.Serialize(hasher, resources.RT_CONFIG, versioning.GetCurrentVersion(resources.RT_CONFIG), bytes.NewReader(serializedConfig))
-			require.NoError(t, err)
-
-			wrappedConfig, err := io.ReadAll(wrappedConfigRd)
-			require.NoError(t, err)
-
-			lstore, err := storage.Create(ctx.GetInner(), map[string]string{"location": c.location}, wrappedConfig)
-			require.NoError(t, err, "creating storage")
-
-			cache := caching.NewManager(pebble.Constructor(tmpCacheDir))
-			defer cache.Close()
-			ctx.SetCache(cache)
-			ctx.CacheDir = tmpCacheDir
-			ctx.SetLogger(logging.NewLogger(os.Stdout, os.Stderr))
-			repo, err := repository.New(ctx.GetInner(), nil, lstore, wrappedConfig)
-			require.NoError(t, err, "creating repository")
-
-			req, err := http.NewRequest("GET", "/path/{id}", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			req.SetPathValue("id", c.id)
-
-			_, _, err = SnapshotPathParam(req, repo, "id")
-			if c.err != "" {
-				require.Error(t, err)
 			}
 		})
 	}
