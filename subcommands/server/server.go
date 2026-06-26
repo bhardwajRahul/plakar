@@ -46,10 +46,7 @@ func (cmd *Server) Parse(ctx *appcontext.AppContext, args []string) error {
 
 	flags.Parse(args)
 
-	noDelete := true
-	if opt_allowdelete {
-		noDelete = false
-	}
+	noDelete := !opt_allowdelete
 
 	cmd.RepositorySecret = ctx.GetSecret()
 	cmd.NoDelete = noDelete

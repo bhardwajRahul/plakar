@@ -63,6 +63,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		p.Parse(args)
 
 		if len(args) < 1 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name> [<key>=<value>...]", cmd, p.Name())
 		}
 
@@ -74,6 +75,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		for _, kv := range args[1:] {
 			key, val, found := strings.Cut(kv, "=")
 			if !found || key == "" {
+				//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 				return fmt.Errorf("Usage: plakar %s %s <name> [<key>=<value>...]", cmd, p.Name())
 			}
 			if err := config.Set(name, key, val); err != nil {
@@ -91,6 +93,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		p.Parse(args)
 
 		if len(args) != 1 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name>", cmd, p.Name())
 		}
 
@@ -110,6 +113,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		p.Parse(args)
 
 		if len(args) < 2 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name> <key>=<value>...", cmd, p.Name())
 		}
 		name := normalizeName(args[0])
@@ -161,6 +165,7 @@ func dispatchPolicy(ctx *appcontext.AppContext, cmd, subcmd string, args []strin
 		p.Parse(args)
 
 		if len(args) < 2 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name> <key>...", cmd, p.Name())
 		}
 		name := normalizeName(args[0])

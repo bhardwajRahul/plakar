@@ -30,7 +30,7 @@ func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Version{} }, subcommands.BeforeRepositoryOpen, "version")
 }
 
-func (_ *Version) Parse(ctx *appcontext.AppContext, args []string) error {
+func (*Version) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags := flag.NewFlagSet("version", flag.ExitOnError)
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "Usage: %s\n", flags.Name())
@@ -40,7 +40,7 @@ func (_ *Version) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Parse(args)
 
 	if flags.NArg() > 0 {
-		return fmt.Errorf("Too many arguments")
+		return fmt.Errorf("too many arguments")
 	}
 
 	return nil

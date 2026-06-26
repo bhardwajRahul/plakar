@@ -119,10 +119,8 @@ func applyRootOverride(location string, rootOverride string) (string, error) {
 		return location, nil
 	}
 
-	localPath := false
-	if strings.HasPrefix(location, "/") {
-		localPath = true
-	}
+	localPath := strings.HasPrefix(location, "/")
+
 	if localPath {
 		if strings.HasPrefix(rootOverride, "/") {
 			location = rootOverride

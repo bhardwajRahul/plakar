@@ -153,9 +153,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 		if err != nil {
 			return err
 		}
-		for _, line := range lines {
-			excludes = append(excludes, line)
-		}
+		excludes = append(excludes, lines...)
 	}
 
 	for _, item := range opt_ignore {

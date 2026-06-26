@@ -133,7 +133,7 @@ func (cmd *Maintenance) updateCache(ctx *appcontext.AppContext, cache *caching.M
 }
 
 func (cmd *Maintenance) colourPass(ctx *appcontext.AppContext, cache *caching.MaintenanceCache) error {
-	var packfiles map[objects.MAC]struct{} = make(map[objects.MAC]struct{})
+	var packfiles = make(map[objects.MAC]struct{})
 	for packfileMAC := range cmd.repository.ListPackfiles() {
 		packfiles[packfileMAC] = struct{}{}
 	}
@@ -435,7 +435,7 @@ func (cmd *Maintenance) Lock() (chan bool, error) {
 			return nil, err
 		}
 
-		return nil, fmt.Errorf("Can't take exclusive lock, repository is already locked")
+		return nil, fmt.Errorf("can't take exclusive lock, repository is already locked")
 	}
 
 	// The following bit is a "ping" mechanism, Lock() is a bit badly named at this point,

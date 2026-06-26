@@ -16,9 +16,9 @@ import (
 	"github.com/PlakarKorp/kloset/repository"
 )
 
-var ErrInvalidResourceType = fmt.Errorf("Invalid resource type")
-var ErrInvalidMAC = fmt.Errorf("Invalid MAC")
-var ErrInvalidRange = fmt.Errorf("Invalid range")
+var ErrInvalidResourceType = fmt.Errorf("invalid resource type")
+var ErrInvalidMAC = fmt.Errorf("invalid MAC")
+var ErrInvalidRange = fmt.Errorf("invalid range")
 
 type server struct {
 	store    storage.Store

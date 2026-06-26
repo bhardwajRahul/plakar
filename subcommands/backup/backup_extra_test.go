@@ -19,6 +19,8 @@ import (
 //
 // The stdio renderer is started here too, mirroring the production wiring:
 // without it nothing drains the event bus and Backup.Execute deadlocks.
+//
+//nolint:staticcheck // ST1008: test helper, error kept in fixed position alongside other outputs
 func runBackup(t *testing.T, args []string, mutate func(*Backup)) (int, error, *bytes.Buffer, *appcontext.AppContext) {
 	t.Helper()
 	bufOut := bytes.NewBuffer(nil)

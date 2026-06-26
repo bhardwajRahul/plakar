@@ -43,7 +43,7 @@ type Service struct {
 	subcommands.SubcommandBase
 }
 
-func (_ *Service) Parse(ctx *appcontext.AppContext, args []string) error {
+func (*Service) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags := flag.NewFlagSet("service", flag.ExitOnError)
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "Usage: %s\n", flags.Name())

@@ -91,7 +91,7 @@ func (mb *MockBackend) Create(ctx context.Context, configuration []byte) error {
 		return errors.New("creating error")
 	}
 	mb.configuration = configuration
-	fmt.Println("CONFIG", mb.configuration)
+	fmt.Println("CONFIG", string(mb.configuration))
 
 	mb.behavior = "default"
 
@@ -113,7 +113,7 @@ func (mb *MockBackend) Open(ctx context.Context) ([]byte, error) {
 	if strings.Contains(mb.location, "musterror") {
 		return nil, errors.New("opening error")
 	}
-	fmt.Println("CONFIG", mb.configuration)
+	fmt.Println("CONFIG", string(mb.configuration))
 	return mb.configuration, nil
 }
 

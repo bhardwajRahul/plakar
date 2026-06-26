@@ -72,17 +72,18 @@ func (flow *loginFlow) Poll(pollID string, iterations int, delay time.Duration, 
 				return "", fmt.Errorf("the /auth/login/github/poll API endpoint failed: %w", err)
 			}
 			// leaking resp for now
-			if resp.StatusCode == http.StatusOK {
+			switch resp.StatusCode {
+			case http.StatusOK:
 				var tokenResponse TokenResponse
 				if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
 					return "", fmt.Errorf("failed to decode response JSON: %v", err)
 				}
 				return tokenResponse.Token, nil
-			} else if resp.StatusCode == http.StatusNotFound {
+			case http.StatusNotFound:
 				return "", fmt.Errorf("unknown ID")
-			} else if resp.StatusCode == http.StatusAccepted {
+			case http.StatusAccepted:
 				progressCb()
-			} else {
+			default:
 				return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 			}
 		}
@@ -221,6 +222,7 @@ func (flow *loginFlow) handleGithubResponseUI(resp *http.Response) (string, erro
 		token, _ := flow.Poll(respData.PollID, 10, time.Second*5, func() {})
 		if token != "" {
 			if err := flow.appCtx.GetCookies().PutAuthToken(token); err != nil {
+				flow.appCtx.GetLogger().Error("failed to store auth token: %v", err)
 			}
 		}
 
@@ -241,6 +243,7 @@ func (flow *loginFlow) handleEmailResponseUI(resp *http.Response) (string, error
 		token, _ := flow.Poll(respData.PollID, 10, time.Second*5, func() {})
 		if token != "" {
 			if err := flow.appCtx.GetCookies().PutAuthToken(token); err != nil {
+				flow.appCtx.GetLogger().Error("failed to store auth token: %v", err)
 			}
 		}
 	}()

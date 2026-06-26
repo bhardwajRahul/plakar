@@ -42,7 +42,7 @@ func (cmd *TokenCreate) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Parse(args)
 
 	if flags.NArg() > 0 {
-		return fmt.Errorf("Too many arguments")
+		return fmt.Errorf("too many arguments")
 	}
 	return nil
 }

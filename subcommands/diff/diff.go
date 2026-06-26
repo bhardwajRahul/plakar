@@ -123,8 +123,8 @@ func (cmd *Diff) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 	}
 
 	var (
-		out     io.Writer = ctx.Stdout
-		builder           = strings.Builder{}
+		out     = ctx.Stdout
+		builder = strings.Builder{}
 	)
 	if cmd.Highlight {
 		out = &builder
