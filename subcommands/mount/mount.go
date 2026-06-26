@@ -38,8 +38,6 @@ type Mount struct {
 	AllowOthers   bool
 
 	SnapshotPath string
-
-	fs fs.FS
 }
 
 func init() {
