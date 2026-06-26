@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -33,15 +34,21 @@ type TokenResponse struct {
 	Token string `json:"token"`
 }
 
+// defaultBaseURL is the plakar.io auth API root. It is overridable per-flow
+// (via the baseURL field) so tests can point the login flow at a local server.
+const defaultBaseURL = "https://api.plakar.io"
+
 type loginFlow struct {
 	appCtx  *appcontext.AppContext
 	noSpawn bool
+	baseURL string
 }
 
 func NewLoginFlow(appCtx *appcontext.AppContext, noSpawn bool) (*loginFlow, error) {
 	flow := &loginFlow{
 		appCtx:  appCtx,
 		noSpawn: noSpawn,
+		baseURL: defaultBaseURL,
 	}
 	return flow, nil
 }
@@ -53,7 +60,7 @@ func (flow *loginFlow) Poll(pollID string, iterations int, delay time.Duration, 
 		case <-flow.appCtx.Done():
 			return "", flow.appCtx.Err()
 		case <-tick:
-			reqUrl := "https://api.plakar.io/v1/auth/poll/" + pollID
+			reqUrl := flow.baseURL + "/v1/auth/poll/" + pollID
 			req, err := http.NewRequestWithContext(flow.appCtx, "POST", reqUrl, nil)
 			if err != nil {
 				return "", fmt.Errorf("the /auth/login/github/poll API endpoint failed: %w", err)
@@ -90,9 +97,9 @@ func (flow *loginFlow) Run(provider string, parameters map[string]string) (strin
 
 	switch provider {
 	case "github":
-		url = "https://api.plakar.io/v1/auth/login/github"
+		url = flow.baseURL + "/v1/auth/login/github"
 	case "email":
-		url = "https://api.plakar.io/v1/auth/login/email"
+		url = flow.baseURL + "/v1/auth/login/email"
 	default:
 		return "", fmt.Errorf("unsupported provider: %s", provider)
 	}
@@ -167,9 +174,9 @@ func (flow *loginFlow) RunUI(provider string, parameters map[string]string) (str
 
 	switch provider {
 	case "github":
-		url = "https://api.plakar.io/v1/auth/login/github"
+		url = flow.baseURL + "/v1/auth/login/github"
 	case "email":
-		url = "https://api.plakar.io/v1/auth/login/email"
+		url = flow.baseURL + "/v1/auth/login/email"
 	default:
 		return "", fmt.Errorf("unsupported provider: %s", provider)
 	}
@@ -251,7 +258,11 @@ func DeriveToken(ctx *appcontext.AppContext) (string, error) {
 		return "", err
 	}
 
-	url := "https://api.plakar.io/v1/account/derive-token"
+	base := os.Getenv("PLAKAR_API_URL")
+	if base == "" {
+		base = defaultBaseURL
+	}
+	url := base + "/v1/account/derive-token"
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		return "", err
