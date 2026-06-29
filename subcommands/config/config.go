@@ -93,6 +93,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		p.Parse(args)
 
 		if len(args) < 2 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name> <location> [<key>=<value>...]", cmd, p.Name())
 		}
 
@@ -106,6 +107,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		for _, kv := range args[2:] {
 			key, val, found := strings.Cut(kv, "=")
 			if !found || key == "" {
+				//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 				return fmt.Errorf("Usage: plakar %s %s <name> <location> [<key>=<value>...]", cmd, p.Name())
 			}
 			cfgMap[name][key] = val
@@ -175,7 +177,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 		flags.Parse(args)
 
-		var rd io.Reader = ctx.Stdin
+		var rd = ctx.Stdin
 		if opt_config != "" {
 			if strings.HasPrefix(opt_config, "http://") || strings.HasPrefix(opt_config, "https://") {
 				resp, err := http.Get(opt_config)
@@ -312,6 +314,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		p.Parse(args)
 
 		if len(args) != 1 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name>", cmd, p.Name())
 		}
 
@@ -331,6 +334,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		p.Parse(args)
 
 		if len(args) < 2 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name> <key>=<value>...", cmd, p.Name())
 		}
 		name := normalizeName(args[0])
@@ -435,6 +439,7 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		p.Parse(args)
 
 		if len(args) < 2 {
+			//nolint:staticcheck // ST1005: user-facing usage string, kept verbatim
 			return fmt.Errorf("Usage: plakar %s %s <name> <key>...", cmd, p.Name())
 		}
 		name := normalizeName(args[0])

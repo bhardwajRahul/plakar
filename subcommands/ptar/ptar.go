@@ -200,7 +200,9 @@ func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
 	return nil
 }
 
-func (cmd *Ptar) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
+// Execute builds a brand-new ptar archive from scratch, so the repository
+// passed in by the caller is intentionally unused.
+func (cmd *Ptar) Execute(ctx *appcontext.AppContext, _ *repository.Repository) (int, error) {
 	storageConfiguration := storage.NewConfiguration()
 	storageConfiguration.RepositoryID = cmd.KlosetUUID
 
@@ -276,7 +278,7 @@ func (cmd *Ptar) Execute(ctx *appcontext.AppContext, repo *repository.Repository
 		return 1, err
 	}
 
-	repo, err = repository.New(ctx.GetInner(), key, st, wrappedConfig)
+	repo, err := repository.New(ctx.GetInner(), key, st, wrappedConfig)
 	if err != nil {
 		return 1, err
 	}

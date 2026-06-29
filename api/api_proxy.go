@@ -213,9 +213,9 @@ func (ui *uiserver) servicesGetIntegrationId(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	return fmt.Errorf("Not found")
+	return fmt.Errorf("not found")
 }
 
 func (ui *uiserver) servicesGetIntegrationPath(w http.ResponseWriter, r *http.Request) error {
-	return fmt.Errorf("Not implemented")
+	return fmt.Errorf("not implemented")
 }

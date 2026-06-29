@@ -58,7 +58,7 @@ func TestCov80RepairApplyConflictingLockAborts(t *testing.T) {
 	status, err := cmd.Execute(ctx, repo)
 	require.Error(t, err)
 	require.Equal(t, 1, status)
-	require.Contains(t, err.Error(), "Can't take exclusive lock")
+	require.Contains(t, err.Error(), "can't take exclusive lock")
 
 	// The stranger's lock must remain untouched.
 	require.True(t, lockExists(t, repo, stranger), "conflicting lock must be preserved")

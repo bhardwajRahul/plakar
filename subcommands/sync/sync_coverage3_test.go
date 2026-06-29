@@ -28,7 +28,7 @@ func cov3ParseCtx(t *testing.T) *appcontext.AppContext {
 func TestCov3SyncParseTooManyArgs(t *testing.T) {
 	err := (&Sync{}).Parse(cov3ParseCtx(t), []string{"a", "to", "b", "c"})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Too many arguments")
+	require.Contains(t, err.Error(), "too many arguments")
 }
 
 func TestCov3SyncParseNoArgs(t *testing.T) {
