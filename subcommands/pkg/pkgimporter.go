@@ -88,14 +88,12 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 
 	fp, err := os.Open(absolute)
 	if err != nil {
-		ch <- connectors.NewError(name, fmt.Errorf("Failed to open file: %w", err))
-		return nil
+		return fmt.Errorf("Failed to open file: %w", err)
 	}
 
 	fi, err := fp.Stat()
 	if err != nil {
-		ch <- connectors.NewError(name, fmt.Errorf("Failed to stat file: %w", err))
-		return nil
+		return fmt.Errorf("Failed to stat file: %w", err)
 	}
 
 	switch it {
@@ -108,19 +106,16 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 		}
 
 		if !isexe {
-			ch <- connectors.NewError(name, fmt.Errorf("Not executable: %s", absolute))
-			return nil
+			return fmt.Errorf("Not executable: %s", absolute)
 		}
 
 	case itjson:
 		content := make(map[string]any)
 		if err := json.NewDecoder(fp).Decode(&content); err != nil {
-			ch <- connectors.NewError(name, fmt.Errorf("invalid json: %s: %w", absolute, err))
-			return nil
+			return fmt.Errorf("invalid json: %s: %w", absolute, err)
 		}
 		if _, err := fp.Seek(0, io.SeekStart); err != nil {
-			ch <- connectors.NewError(name, fmt.Errorf("seek failed: %w", err))
-			return nil
+			return fmt.Errorf("seek failed: %w", err)
 		}
 	}
 
@@ -134,37 +129,34 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 	return nil
 }
 
-func (imp *pkgerImporter) scan(ch chan<- *connectors.Record) error {
+func (imp *pkgerImporter) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
+	defer close(records)
+
 	info := objects.NewFileInfo("/", 0, 0700|os.ModeDir, time.Unix(0, 0), 0, 0, 0, 0, 1)
-	ch <- &connectors.Record{
+	records <- &connectors.Record{
 		Pathname: "/",
 		FileInfo: info,
 	}
 
-	if err := imp.dofile(imp.manifestPath, ch, itextra); err != nil {
+	if err := imp.dofile(imp.manifestPath, records, itextra); err != nil {
 		return err
 	}
 	for _, conn := range imp.manifest.Connectors {
-		if err := imp.dofile(conn.Executable, ch, itexe); err != nil {
+		if err := imp.dofile(conn.Executable, records, itexe); err != nil {
 			return err
 		}
 		if conn.Validator != "" {
-			if err := imp.dofile(conn.Validator, ch, itjson); err != nil {
+			if err := imp.dofile(conn.Validator, records, itjson); err != nil {
 				return err
 			}
 		}
 		for _, file := range conn.ExtraFiles {
-			if err := imp.dofile(file, ch, itextra); err != nil {
+			if err := imp.dofile(file, records, itextra); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
-}
-
-func (imp *pkgerImporter) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
-	defer close(records)
-	return imp.scan(records)
 }
 
 func (imp *pkgerImporter) Ping(ctx context.Context) error {
