@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -271,12 +272,10 @@ func TestDofileNotExecutable(t *testing.T) {
 
 	imp := &pkgerImporter{cwd: dir}
 	ch := make(chan *connectors.Record, 32)
-	require.NoError(t, imp.dofile(plain, ch, itexe))
+	err := imp.dofile(plain, ch, itexe)
 	close(ch)
-	recs := drain(ch)
-	require.Len(t, recs, 1)
-	require.NotNil(t, recs[0].Err)
-	require.Contains(t, recs[0].Err.Error(), "Not executable")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Not executable")
 }
 
 func TestDofileJSONValidAndInvalid(t *testing.T) {
@@ -291,29 +290,22 @@ func TestDofileJSONValidAndInvalid(t *testing.T) {
 	ch := make(chan *connectors.Record, 32)
 	require.NoError(t, imp.dofile(good, ch, itjson))
 	close(ch)
-	for _, r := range drain(ch) {
-		require.Nil(t, r.Err)
-	}
 
 	ch2 := make(chan *connectors.Record, 32)
-	require.NoError(t, imp.dofile(bad, ch2, itjson))
+	err := imp.dofile(bad, ch2, itjson)
 	close(ch2)
-	recs := drain(ch2)
-	require.Len(t, recs, 1)
-	require.NotNil(t, recs[0].Err)
-	require.Contains(t, recs[0].Err.Error(), "invalid json")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid json")
 }
 
 func TestDofileMissingFile(t *testing.T) {
 	dir := t.TempDir()
 	imp := &pkgerImporter{cwd: dir}
 	ch := make(chan *connectors.Record, 32)
-	require.NoError(t, imp.dofile(filepath.Join(dir, "ghost"), ch, itextra))
+	err := imp.dofile(filepath.Join(dir, "ghost"), ch, itextra)
 	close(ch)
-	recs := drain(ch)
-	require.Len(t, recs, 1)
-	require.NotNil(t, recs[0].Err)
-	require.Contains(t, recs[0].Err.Error(), "Failed to open file")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Failed to open file")
 }
 
 func TestDofileNotBelowManifest(t *testing.T) {
@@ -352,8 +344,7 @@ func TestPkgerImporterScan(t *testing.T) {
 	imp := &pkgerImporter{cwd: dir, manifest: m, manifestPath: manifest}
 
 	ch := make(chan *connectors.Record, 128)
-	require.NoError(t, imp.scan(ch))
-	close(ch)
+	require.NoError(t, imp.Import(context.Background(), ch, nil))
 	recs := drain(ch)
 
 	seen := map[string]bool{}

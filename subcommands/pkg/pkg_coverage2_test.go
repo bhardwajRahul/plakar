@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -85,7 +86,7 @@ func TestPkgCreateExecuteFailsOnBadConnector(t *testing.T) {
 	status, err := cmd.Execute(ctx, nil)
 	require.Error(t, err)
 	require.Equal(t, 1, status)
-	require.Contains(t, err.Error(), "failed to package all the files")
+	require.Contains(t, err.Error(), "failed to populate the snapshot: Not executable:")
 }
 
 // ---------------------------------------------------------------------------
@@ -164,12 +165,10 @@ func TestDofileWindowsExeBranch(t *testing.T) {
 	require.NoError(t, os.WriteFile(plain, []byte("x"), 0755))
 	imp := &pkgerImporter{cwd: dir}
 	ch := make(chan *connectors.Record, 32)
-	require.NoError(t, imp.dofile(plain, ch, itexe))
+	err := imp.dofile(plain, ch, itexe)
 	close(ch)
-	recs := drainRecords(ch)
-	require.Len(t, recs, 1)
-	require.NotNil(t, recs[0].Err)
-	require.Contains(t, recs[0].Err.Error(), "Not executable")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Not executable")
 
 	// A .exe file is considered executable regardless of mode bits.
 	exe := filepath.Join(dir, "tool.exe")
@@ -192,8 +191,8 @@ func drainRecords(ch <-chan *connectors.Record) []*connectors.Record {
 
 // ---------------------------------------------------------------------------
 // pkgerImporter.scan: error propagation when a connector executable is missing.
-// scan returns nil but emits an error record for the missing file; when the
-// manifest path itself is below cwd this still walks the connector loop.
+// Import returns an error for the missing file; when the manifest path itself
+// is below cwd this still walks the connector loop.
 // ---------------------------------------------------------------------------
 
 func TestScanEmitsErrorForMissingConnectorFiles(t *testing.T) {
@@ -204,25 +203,18 @@ func TestScanEmitsErrorForMissingConnectorFiles(t *testing.T) {
 	m := &ppkg.Manifest{
 		Name: "myplugin",
 		Connectors: []ppkg.ManifestConnector{{
-			Executable: "ghost-exe",        // missing
-			Validator:  "ghost-validator.json", // missing
+			Executable: "ghost-exe",                 // missing
+			Validator:  "ghost-validator.json",      // missing
 			ExtraFiles: []string{"ghost-extra.dat"}, // missing
 		}},
 	}
 	imp := &pkgerImporter{cwd: dir, manifest: m, manifestPath: manifest}
 
 	ch := make(chan *connectors.Record, 128)
-	require.NoError(t, imp.scan(ch))
-	close(ch)
+	err := imp.Import(context.Background(), ch, nil)
 
-	var errCount int
-	for _, r := range drainRecords(ch) {
-		if r.Err != nil {
-			errCount++
-		}
-	}
-	// One error record each for the missing executable, validator and extra file.
-	require.Equal(t, 3, errCount)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
 }
 
 // TestScanPropagatesNotBelowManifestError checks scan returns the hard error
@@ -252,8 +244,7 @@ func TestScanPropagatesNotBelowManifestError(t *testing.T) {
 	imp := &pkgerImporter{cwd: sub, manifest: m, manifestPath: manifest}
 
 	ch := make(chan *connectors.Record, 64)
-	err := imp.scan(ch)
-	close(ch)
+	err := imp.Import(context.Background(), ch, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not below the manifest")
 }

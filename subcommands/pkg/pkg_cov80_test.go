@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -39,8 +40,7 @@ func TestScanManifestPathEscapesCwd_cov80(t *testing.T) {
 		manifestPath: outsideManifest,
 	}
 	ch := make(chan *connectors.Record, 16)
-	err := imp.scan(ch)
-	close(ch)
+	err := imp.Import(context.Background(), ch, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not below the manifest")
 }
@@ -93,12 +93,10 @@ func TestDofileOpenErrorNotDir_cov80(t *testing.T) {
 
 	imp := &pkgerImporter{cwd: dir}
 	ch := make(chan *connectors.Record, 16)
-	require.NoError(t, imp.dofile(target, ch, itextra))
+	err := imp.dofile(target, ch, itextra)
 	close(ch)
-	recs := drainRecords(ch)
-	require.Len(t, recs, 1)
-	require.NotNil(t, recs[0].Err)
-	require.Contains(t, recs[0].Err.Error(), "Failed to open file")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Failed to open file")
 }
 
 // ---------------------------------------------------------------------------
