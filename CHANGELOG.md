@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1.4 — 2026-06-30
+
+### Added
+
+- **Dirpack prefetcher for backup walks.** Warms directory metadata ahead of time instead of loading on demand, speeding up backups on remote/high-latency backends.
+
+### Fixed
+
+- `prune -group-by` was being dropped when merged with a retention policy, causing per-day/per-minute caps to apply globally instead of per group. Now carries through correctly.
+
 ## v1.1.3 — 2026-06-25
 
 This is the largest release we have ever published. v1.1.3 is the final, stable outcome of the v1.1.0-beta cycle that started in January, hardened through three release candidates and several thousand additional snapshots of real-world testing.
