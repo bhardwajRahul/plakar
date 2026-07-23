@@ -36,11 +36,6 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-const (
-	configNamePathSeparator     = "/"
-	invalidConfigurationNameFmt = "invalid configuration name %q: names cannot contain %q"
-)
-
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &ConfigStoreCmd{} },
 		subcommands.BeforeRepositoryOpen, "store")
@@ -52,15 +47,26 @@ func init() {
 		subcommands.BeforeRepositoryOpen, "policy")
 }
 
-func normalizeName(name string) string {
-	return strings.TrimPrefix(name, "@")
+func validAliasName(name string) bool {
+	if name == "" || name[0] == '-' {
+		return false
+	}
+	for _, r := range name {
+		switch {
+		case r == '_' || r == '-',
+			r >= 'a' && r <= 'z',
+			r >= 'A' && r <= 'Z',
+			r >= '0' && r <= '9':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
 }
 
-func validateConfigName(name string) error {
-	if strings.Contains(name, configNamePathSeparator) {
-		return fmt.Errorf(invalidConfigurationNameFmt, name, configNamePathSeparator)
-	}
-	return nil
+func normalizeName(name string) string {
+	return strings.TrimPrefix(name, "@")
 }
 
 func normalizeLocation(location string) string {
@@ -110,8 +116,8 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 
 		name, location := normalizeName(args[0]), normalizeLocation(args[1])
-		if err := validateConfigName(name); err != nil {
-			return err
+		if !validAliasName(name) {
+			return fmt.Errorf("invalid configuration name %q", name)
 		}
 
 		if hasFunc(name) {
