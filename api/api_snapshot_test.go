@@ -575,13 +575,28 @@ func TestSnapshotReaderRenderVariants(t *testing.T) {
 	id := hex.EncodeToString(indexID[:])
 	base := "/api/snapshot/reader/" + id + ":"
 
-	for _, render := range []string{"", "text", "text_styled", "code"} {
+	for _, render := range []string{"", "auto", "text", "text_styled", "code"} {
 		u := base + "/subdir/dummy.txt"
 		if render != "" {
 			u += "?render=" + render
 		}
 		w := get(t, mux, u)
 		require.Equal(t, http.StatusOK, w.Code, "render=%s body=%s", render, w.Body.String())
+
+		switch render {
+		case "", "auto":
+			require.Contains(t, w.Header().Get("Content-type"), "text/plain")
+			require.Contains(t, w.Body.String(), "hello dummy")
+		case "text":
+			require.Contains(t, w.Header().Get("Content-type"), "text/plain")
+			require.Contains(t, w.Body.String(), "hello dummy")
+		case "text_styled":
+			require.Contains(t, w.Header().Get("Content-type"), "text/html")
+			require.Contains(t, w.Body.String(), "<pre>")
+		case "code":
+			require.Contains(t, w.Header().Get("Content-type"), "text/html")
+			require.Contains(t, w.Body.String(), "<!DOCTYPE html>")
+		}
 
 		// "noext" has no file extension
 		w = get(t, mux, strings.Replace(u, "dummy.txt", "noext", 1))
