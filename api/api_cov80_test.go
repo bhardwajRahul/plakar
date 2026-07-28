@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,45 +10,9 @@ import (
 
 	_ "github.com/PlakarKorp/integrations/fs/exporter"
 	"github.com/PlakarKorp/pkg"
-	"github.com/PlakarKorp/kloset/repository"
-	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/plakar/appcontext"
-	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
 )
-
-// cov80Server builds a real fs-backed repository with a single rich snapshot and
-// wires SetupRoutes with norefresh=true. Distinct helper name so it does not
-// clash with the team's other coverage helpers.
-func cov80Server(t *testing.T) (*http.ServeMux, *repository.Repository, *snapshot.Snapshot, *appcontext.AppContext) {
-	t.Helper()
-	repo, ctx := ptesting.GenerateRepository(t, bytes.NewBuffer(nil), bytes.NewBuffer(nil), nil)
-	snap := ptesting.GenerateSnapshot(t, repo, []ptesting.MockFile{
-		ptesting.NewMockDir("d"),
-		ptesting.NewMockFile("d/one.txt", 0644, "one"),
-		ptesting.NewMockFile("d/two.txt", 0644, "two"),
-		ptesting.NewMockFile("d/three.txt", 0644, "three"),
-		ptesting.NewMockFile("d/four.txt", 0644, "four"),
-		ptesting.NewMockFile("top.txt", 0644, "top"),
-	})
-	mux := http.NewServeMux()
-	SetupRoutes(mux, repo, ctx, "", true /* norefresh */)
-	return mux, repo, snap, ctx
-}
-
-func cov80GET(t *testing.T, mux *http.ServeMux, url string) *httptest.ResponseRecorder {
-	t.Helper()
-	req, err := http.NewRequest("GET", url, nil)
-	require.NoError(t, err)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-	return w
-}
-
-func cov80SnapID(snap *snapshot.Snapshot) string {
-	id := snap.Header.GetIndexID()
-	return hex.EncodeToString(id[:])
-}
 
 // attachPkgManager installs a real (but empty, hermetic) pkg.Manager onto ctx so
 // the integration/uninstall handlers have a backend that resolves locally
@@ -68,11 +31,11 @@ func attachPkgManager(t *testing.T, ctx *appcontext.AppContext) {
 // --- Alerting service config: unauthenticated 401 branches -----------------
 
 func TestCov80AlertingGetUnauthorized(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	// No auth token in the cookie jar -> handler returns a 401 JSON body.
-	w := cov80GET(t, mux, "/api/proxy/v1/account/services/alerting")
+	w := get(t, mux, "/api/proxy/v1/account/services/alerting")
 	require.Equal(t, http.StatusUnauthorized, w.Code, "body=%s", w.Body.String())
 
 	var resp map[string]string
@@ -81,7 +44,7 @@ func TestCov80AlertingGetUnauthorized(t *testing.T) {
 }
 
 func TestCov80AlertingSetUnauthorized(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	body := `{"enabled":true,"email_report":true}`
@@ -98,10 +61,10 @@ func TestCov80AlertingSetUnauthorized(t *testing.T) {
 // --- servicesGetIntegrationPath: always Not implemented --------------------
 
 func TestCov80GetIntegrationPathNotImplemented(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
-	w := cov80GET(t, mux, "/api/proxy/v1/integration/some-id/some/path")
+	w := get(t, mux, "/api/proxy/v1/integration/some-id/some/path")
 	// Returns a plain error -> mapped to 500 by handleError.
 	require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
 }
@@ -109,7 +72,7 @@ func TestCov80GetIntegrationPathNotImplemented(t *testing.T) {
 // --- integrationsInstall: malformed JSON body (pre-PkgManager) -------------
 
 func TestCov80IntegrationsInstallBadBody(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	// Malformed body fails the JSON decode before any package manager call.
@@ -129,7 +92,7 @@ func TestCov80IntegrationsInstallBadBody(t *testing.T) {
 // --- integrationsUninstall: unknown plugin via a real empty PkgManager -----
 
 func TestCov80IntegrationsUninstall(t *testing.T) {
-	mux, _, snap, ctx := cov80Server(t)
+	mux, _, snap, ctx := server(t, "")
 	defer snap.Close()
 	attachPkgManager(t, ctx)
 
@@ -147,13 +110,13 @@ func TestCov80IntegrationsUninstall(t *testing.T) {
 // --- snapshotVFSSearch: HasNext pagination + name pattern ------------------
 
 func TestCov80VFSSearchHasNext(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
-	id := cov80SnapID(snap)
+	id := snapid(snap)
 
 	// "d" holds four .txt files; recursive search with limit=1 forces the
 	// "one extra item -> HasNext" branch (limit is incremented internally).
-	w := cov80GET(t, mux, "/api/snapshot/vfs/search/"+id+":/d?recursive=true&limit=1&pattern=txt")
+	w := get(t, mux, "/api/snapshot/vfs/search/"+id+":/subdir?recursive=true&limit=1&pattern=txt")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 
 	var page ItemsPage[json.RawMessage]
@@ -163,12 +126,12 @@ func TestCov80VFSSearchHasNext(t *testing.T) {
 }
 
 func TestCov80VFSSearchMimeFilter(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
-	id := cov80SnapID(snap)
+	id := snapid(snap)
 
 	// A single mime filter exercises the Mimes pass-through (not the >20 cap).
-	w := cov80GET(t, mux, "/api/snapshot/vfs/search/"+id+":/d?recursive=true&mime=text/plain")
+	w := get(t, mux, "/api/snapshot/vfs/search/"+id+":/subdir?recursive=true&mime=text/plain")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	require.Contains(t, w.Body.String(), "has_next")
 }
@@ -176,13 +139,13 @@ func TestCov80VFSSearchMimeFilter(t *testing.T) {
 // --- snapshotVFSErrors: paging window break branch -------------------------
 
 func TestCov80VFSErrorsWindowBreak(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
-	id := cov80SnapID(snap)
+	id := snapid(snap)
 
 	// offset 0 / limit 1 over a clean directory exercises the i>=offset+limit
 	// break path in the error iterator window arithmetic.
-	w := cov80GET(t, mux, "/api/snapshot/vfs/errors/"+id+":/d?offset=0&limit=1")
+	w := get(t, mux, "/api/snapshot/vfs/errors/"+id+":/subdir?offset=0&limit=1")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	require.Contains(t, w.Body.String(), "total")
 }
@@ -190,12 +153,12 @@ func TestCov80VFSErrorsWindowBreak(t *testing.T) {
 // --- snapshotVFSDownloaderSigned: default generated name (no name param) ---
 
 func TestCov80DownloaderSignedDefaultName(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
-	id := cov80SnapID(snap)
+	id := snapid(snap)
 
-	body := `{"name":"dl","items":[{"pathname":"/d/one.txt"}]}`
-	req, _ := http.NewRequest("POST", "/api/snapshot/vfs/downloader/"+id+":/d", bytes.NewBufferString(body))
+	body := `{"name":"dl","items":[{"pathname":"/subdir/dummy.txt"}]}`
+	req, _ := http.NewRequest("POST", "/api/snapshot/vfs/downloader/"+id+":/subdir", bytes.NewBufferString(body))
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
@@ -206,7 +169,7 @@ func TestCov80DownloaderSignedDefaultName(t *testing.T) {
 	require.NotEmpty(t, resp.Id)
 
 	// No name query param -> handler synthesizes "snapshot-<id>-<ts>" + ext.
-	w = cov80GET(t, mux, "/api/snapshot/vfs/downloader-sign-url/"+resp.Id+"?format=zip")
+	w = get(t, mux, "/api/snapshot/vfs/downloader-sign-url/"+resp.Id+"?format=zip")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	require.Contains(t, w.Header().Get("Content-Disposition"), "snapshot-")
 	require.Contains(t, w.Header().Get("Content-Disposition"), ".zip")
@@ -215,12 +178,12 @@ func TestCov80DownloaderSignedDefaultName(t *testing.T) {
 // --- snapshotVFSDownloader: bad snapshot id in path ------------------------
 
 func TestCov80DownloaderBadSnapshotID(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	// Empty snapshot id segment -> SnapshotPathParam returns a 400.
-	body := `{"name":"dl","items":[{"pathname":"/d/one.txt"}]}`
-	req, _ := http.NewRequest("POST", "/api/snapshot/vfs/downloader/:/d", bytes.NewBufferString(body))
+	body := `{"name":"dl","items":[{"pathname":"/subdir/dummy.txt}]}`
+	req, _ := http.NewRequest("POST", "/api/snapshot/vfs/downloader/:/subdir", bytes.NewBufferString(body))
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 	require.Equal(t, http.StatusBadRequest, w.Code, "body=%s", w.Body.String())
@@ -229,13 +192,13 @@ func TestCov80DownloaderBadSnapshotID(t *testing.T) {
 // --- repositoryLocatePathname: exact offset/limit window -------------------
 
 func TestCov80LocatePathnameExactWindow(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	// A resource that resolves in the single snapshot. With limit=1 and offset=0,
 	// offset+limit == len(locations), exercising the exact-window slice branch
 	// (locations[offset:offset+limit]) rather than the tail branch.
-	w := cov80GET(t, mux, "/api/repository/locate-pathname?resource=/d/one.txt&limit=1&offset=0")
+	w := get(t, mux, "/api/repository/locate-pathname?resource=/subdir/dummy.txt&limit=1&offset=0")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	var items Items[json.RawMessage]
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
@@ -243,11 +206,11 @@ func TestCov80LocatePathnameExactWindow(t *testing.T) {
 }
 
 func TestCov80LocatePathnameDefaultSortAsc(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	// No explicit sort -> default ascending Timestamp sortFunc branch.
-	w := cov80GET(t, mux, "/api/repository/locate-pathname?resource=/d/one.txt")
+	w := get(t, mux, "/api/repository/locate-pathname?resource=/subdir/dummy.txt")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	require.Contains(t, w.Body.String(), "total")
 }
@@ -255,12 +218,12 @@ func TestCov80LocatePathnameDefaultSortAsc(t *testing.T) {
 // --- repositorySnapshots: exact offset/limit window ------------------------
 
 func TestCov80RepositorySnapshotsExactWindow(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
 	// limit=1 with a single snapshot drives offset+limit == len(headers), the
 	// exact-window slice branch of repositorySnapshots.
-	w := cov80GET(t, mux, "/api/repository/snapshots?limit=1&offset=0")
+	w := get(t, mux, "/api/repository/snapshots?limit=1&offset=0")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	var items Items[json.RawMessage]
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
@@ -271,10 +234,10 @@ func TestCov80RepositorySnapshotsExactWindow(t *testing.T) {
 
 func TestCov80ApiInfoDemoMode(t *testing.T) {
 	t.Setenv("PLAKAR_DEMO_MODE", "true")
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
-	w := cov80GET(t, mux, "/api/info")
+	w := get(t, mux, "/api/info")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	var resp struct {
 		DemoMode bool `json:"demo_mode"`
@@ -286,11 +249,11 @@ func TestCov80ApiInfoDemoMode(t *testing.T) {
 // --- snapshotVFSChildren: descending sort + paging over a real dir ---------
 
 func TestCov80VFSChildrenDescSort(t *testing.T) {
-	mux, _, snap, _ := cov80Server(t)
+	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
-	id := cov80SnapID(snap)
+	id := snapid(snap)
 
-	w := cov80GET(t, mux, "/api/snapshot/vfs/children/"+id+":/d?sort=-Name&offset=0&limit=2")
+	w := get(t, mux, "/api/snapshot/vfs/children/"+id+":/subdir?sort=-Name&offset=0&limit=2")
 	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	var items Items[json.RawMessage]
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
