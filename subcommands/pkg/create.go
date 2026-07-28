@@ -143,19 +143,11 @@ func (cmd *PkgCreate) Execute(ctx *appcontext.AppContext, _ *repository.Reposito
 		return 1, fmt.Errorf("failed to create ptar: %w", err)
 	}
 
-	identifier := objects.RandomMAC()
-	scanCache, err := repo.AppContext().GetCache().Scan(identifier)
-	if err != nil {
-		return 1, fmt.Errorf("failed to get the scan cache: %w", err)
-	}
-
-	repoWriter := repo.NewRepositoryWriter(scanCache, identifier, repository.PtarType, "")
 	imp := &pkgerImporter{
 		manifestPath: cmd.ManifestPath,
 		manifest:     &cmd.Manifest,
 		cwd:          cmd.Base,
 	}
-
 	source, err := snapshot.NewSource(ctx, imp)
 	if err != nil {
 		return 1, err
@@ -163,29 +155,20 @@ func (cmd *PkgCreate) Execute(ctx *appcontext.AppContext, _ *repository.Reposito
 
 	backupOptions := &snapshot.BuilderOptions{
 		NoCheckpoint: true,
-		NoCommit:     true,
 	}
 
-	snap, err := snapshot.CreateWithRepositoryWriter(repoWriter, backupOptions, objects.NilMac)
+	snap, err := snapshot.Create(repo, repository.PtarType, "", objects.NilMac, backupOptions)
 	if err != nil {
 		return 1, fmt.Errorf("failed to create snapshot: %w", err)
 	}
+	defer snap.Close()
 
-	err = snap.Backup(source)
-	if err != nil {
+	if err = snap.Backup(source); err != nil {
 		return 1, fmt.Errorf("failed to populate the snapshot: %w", err)
 	}
 
-	_, err = snap.PutSnapshot()
-	if err != nil {
+	if err = snap.Commit(); err != nil {
 		return 1, fmt.Errorf("failed to commit snapshot: %w", err)
-	}
-
-	// We are done with everything we can now stop the backup routines.
-	repoWriter.PackerManager.Wait()
-	err = repoWriter.CommitTransaction(identifier)
-	if err != nil {
-		return 1, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	if err := st.Close(ctx); err != nil {
