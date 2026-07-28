@@ -10,7 +10,7 @@ require (
 	github.com/PlakarKorp/integrations/ptar v1.1.0
 	github.com/PlakarKorp/integrations/stdio v1.1.0
 	github.com/PlakarKorp/integrations/tar v1.1.0
-	github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260616212757-90a8f211d1fe
+	github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260728134607-9310b71c3adc
 	github.com/PlakarKorp/pkg v1.1.2
 	github.com/alecthomas/chroma v0.10.0
 	github.com/anacrolix/fuse v0.3.3-0.20260723023734-9e1272bc0085
@@ -126,8 +126,8 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.73.3 // indirect
+	modernc.org/libc v1.73.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.52.0 // indirect
+	modernc.org/sqlite v1.53.0 // indirect
 )
