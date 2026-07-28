@@ -3,12 +3,15 @@ package api
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
+	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/appcontext"
 	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
@@ -46,4 +49,37 @@ func get(t *testing.T, mux *http.ServeMux, url string) *httptest.ResponseRecorde
 func snapid(snap *snapshot.Snapshot) string {
 	id := snap.Header.GetIndexID()
 	return hex.EncodeToString(id[:])
+}
+
+// signReader posts to the sign endpoint (auth via Bearer token) and returns the
+// JWT signature for a snapshot path.
+func signReader(t *testing.T, mux *http.ServeMux, token, snapPath string) string {
+	t.Helper()
+	req, _ := http.NewRequest("POST", "/api/snapshot/reader-sign-url/"+snapPath, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
+	var resp struct {
+		Item struct {
+			Signature string `json:"signature"`
+		} `json:"item"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.NotEmpty(t, resp.Item.Signature)
+	return resp.Item.Signature
+}
+
+// attachPkgManager installs a real (but empty, hermetic) pkg.Manager onto ctx so
+// the integration/uninstall handlers have a backend that resolves locally
+// against an empty temp directory without touching the network.
+func attachPkgManager(t *testing.T, ctx *appcontext.AppContext) {
+	t.Helper()
+	dir := t.TempDir()
+	backend, err := pkg.NewFlatBackend(ctx.GetInner(),
+		filepath.Join(dir, "plugins"), filepath.Join(dir, "cache"), &pkg.FlatBackendOptions{})
+	require.NoError(t, err)
+	mgr, err := pkg.New(backend, &pkg.Options{})
+	require.NoError(t, err)
+	ctx.SetPkgManager(mgr)
 }
