@@ -27,7 +27,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/location"
@@ -59,18 +58,6 @@ func absolutify(cwd, path string) string {
 		return filepath.Clean(path)
 	}
 	return filepath.Join(cwd, path)
-}
-
-func mkstruct(p string, ch chan<- *connectors.Record) {
-	dir := path.Dir(p)
-	for dir != "/" {
-		fi := objects.FileInfo{
-			Lname: path.Base(dir),
-			Lmode: 0700 | os.ModeDir,
-		}
-		ch <- connectors.NewRecord(dir, "", fi, nil, nil)
-		dir = path.Dir(dir)
-	}
 }
 
 func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it itemtype) error {
@@ -119,7 +106,6 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 		}
 	}
 
-	mkstruct(name, ch)
 	ch <- &connectors.Record{
 		Pathname: name,
 		FileInfo: objects.FileInfoFromStat(fi),
@@ -131,12 +117,6 @@ func (imp *pkgerImporter) dofile(p string, ch chan<- *connectors.Record, it item
 
 func (imp *pkgerImporter) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
 	defer close(records)
-
-	info := objects.NewFileInfo("/", 0, 0700|os.ModeDir, time.Unix(0, 0), 0, 0, 0, 0, 1)
-	records <- &connectors.Record{
-		Pathname: "/",
-		FileInfo: info,
-	}
 
 	if err := imp.dofile(imp.manifestPath, records, itextra); err != nil {
 		return err
