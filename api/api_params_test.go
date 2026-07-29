@@ -1,9 +1,12 @@
 package api
 
 import (
+	"encoding/hex"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestPathParamToID(t *testing.T) {
@@ -260,4 +263,30 @@ func TestQueryParamToSortKeys(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestQueryParamToString(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/?present=value", nil)
+
+	v, ok, err := QueryParamToString(req, "present")
+	require.NoError(t, err)
+	require.True(t, ok)
+	require.Equal(t, "value", v)
+
+	v, ok, err = QueryParamToString(req, "absent")
+	require.NoError(t, err)
+	require.False(t, ok)
+	require.Empty(t, v)
+}
+
+// TestPathParamToIDValid covers the success branch of PathParamToID
+// with a well-formed 32-byte hex id.
+func TestPathParamToIDValid(t *testing.T) {
+	const hexID = "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+	req, _ := http.NewRequest("GET", "/path/{id}", nil)
+	req.SetPathValue("id", hexID)
+
+	id, err := PathParamToID(req, "id")
+	require.NoError(t, err)
+	require.Equal(t, hexID, hex.EncodeToString(id[:]))
 }
