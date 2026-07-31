@@ -24,7 +24,7 @@ func TestHandleErrorMapping(t *testing.T) {
 	}{
 		{"not-readable -> 400", repository.ErrNotReadable, http.StatusBadRequest},
 		{"blob-not-found -> 404", repository.ErrBlobNotFound, http.StatusNotFound},
-		{"packfile-not-found -> 404", repository.ErrPackfileNotFound, http.StatusNotFound},
+		{"packfile-not-found -> 500", repository.ErrPackfileNotFound, http.StatusInternalServerError},
 		{"fs-not-exist -> 404", fs.ErrNotExist, http.StatusNotFound},
 		{"snapshot-not-found -> 404", snapshot.ErrNotFound, http.StatusNotFound},
 		{"non-wrapped fs-not-exist -> 500", errors.New("boom: " + fs.ErrNotExist.Error()), http.StatusInternalServerError},
