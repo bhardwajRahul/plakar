@@ -392,6 +392,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 
 		if err := snap.Backup(source); err != nil {
+			err = ctx.ErrorCause(err)
 			if err := executeHook(ctx, cmd.FailHook); err != nil {
 				ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
 			}
@@ -400,6 +401,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 	}
 
 	if err := snap.Commit(); err != nil {
+		err = ctx.ErrorCause(err)
 		if err := executeHook(ctx, cmd.FailHook); err != nil {
 			ctx.GetLogger().Warn("post-backup fail hook failed: %s", err)
 		}

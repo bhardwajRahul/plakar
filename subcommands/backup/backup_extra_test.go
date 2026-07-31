@@ -2,6 +2,8 @@ package backup
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -163,9 +165,6 @@ func TestBackupMultipleIgnoreFileFlags(t *testing.T) {
 	bufErr := bytes.NewBuffer(nil)
 	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
 
-	renderer := stdio.New(ctx)
-	renderer.Run()
-	t.Cleanup(func() { renderer.Wait() })
 	t.Cleanup(ctx.Close)
 	ctx.MaxConcurrency = 1
 
@@ -271,6 +270,27 @@ func TestBackupPackfilesMemory(t *testing.T) {
 	status, err, _, _ := runBackup(t, []string{"-packfiles", "memory"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, 0, status)
+}
+
+func TestBackupPropagatesContextCause(t *testing.T) {
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	repo, tmpBackupDir, ctx := generateFixtures(t, bufOut, bufErr)
+
+	t.Cleanup(ctx.Close)
+	ctx.MaxConcurrency = 1
+
+	cause := errors.New("packfile temp creation failed")
+	ctx.Cancel(cause)
+
+	cmd := &Backup{}
+	require.NoError(t, cmd.Parse(ctx, []string{tmpBackupDir}))
+
+	status, err := cmd.Execute(ctx, repo)
+	require.Error(t, err)
+	require.Equal(t, 1, status)
+	require.NotErrorIs(t, err, context.Canceled)
+	require.ErrorIs(t, err, cause)
 }
 
 func TestBackupParsesMultipleIgnoreFlags(t *testing.T) {
