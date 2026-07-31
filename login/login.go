@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -38,6 +39,23 @@ type TokenResponse struct {
 // (via the baseURL field) so tests can point the login flow at a local server.
 const defaultBaseURL = "https://api.plakar.io"
 
+const plakarAPIURLEnv = "PLAKAR_API_URL"
+
+const rateLimitErrorMarker = "limit-reached"
+
+type HTTPStatusError struct {
+	StatusCode int
+	Body       string
+}
+
+func (err *HTTPStatusError) Error() string {
+	return fmt.Sprintf("unexpected status code: %d : %s", err.StatusCode, err.Body)
+}
+
+func (err *HTTPStatusError) RateLimited() bool {
+	return err.StatusCode == http.StatusTooManyRequests || strings.Contains(err.Body, rateLimitErrorMarker)
+}
+
 type loginFlow struct {
 	appCtx  *appcontext.AppContext
 	noSpawn bool
@@ -45,12 +63,29 @@ type loginFlow struct {
 }
 
 func NewLoginFlow(appCtx *appcontext.AppContext, noSpawn bool) (*loginFlow, error) {
+	baseURL := defaultBaseURL
+	if envURL := os.Getenv(plakarAPIURLEnv); envURL != "" {
+		baseURL = envURL
+	}
+
 	flow := &loginFlow{
 		appCtx:  appCtx,
 		noSpawn: noSpawn,
-		baseURL: defaultBaseURL,
+		baseURL: baseURL,
 	}
 	return flow, nil
+}
+
+func unexpectedStatusError(resp *http.Response) error {
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read error response body: %w", err)
+	}
+	return &HTTPStatusError{
+		StatusCode: resp.StatusCode,
+		Body:       string(data),
+	}
 }
 
 func (flow *loginFlow) Poll(pollID string, iterations int, delay time.Duration, progressCb func()) (string, error) {
@@ -71,20 +106,22 @@ func (flow *loginFlow) Poll(pollID string, iterations int, delay time.Duration, 
 			if err != nil {
 				return "", fmt.Errorf("the /auth/login/github/poll API endpoint failed: %w", err)
 			}
-			// leaking resp for now
 			switch resp.StatusCode {
 			case http.StatusOK:
+				defer resp.Body.Close()
 				var tokenResponse TokenResponse
 				if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
 					return "", fmt.Errorf("failed to decode response JSON: %v", err)
 				}
 				return tokenResponse.Token, nil
 			case http.StatusNotFound:
+				resp.Body.Close()
 				return "", fmt.Errorf("unknown ID")
 			case http.StatusAccepted:
+				resp.Body.Close()
 				progressCb()
 			default:
-				return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+				return "", unexpectedStatusError(resp)
 			}
 		}
 		tick = time.After(delay)
@@ -115,12 +152,11 @@ func (flow *loginFlow) Run(provider string, parameters map[string]string) (strin
 	if err != nil {
 		return "", fmt.Errorf("unable to get the login URL: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("unexpected status code: %d : %s", resp.StatusCode, data)
+		return "", unexpectedStatusError(resp)
 	}
+	defer resp.Body.Close()
 
 	switch provider {
 	case "github":
@@ -192,12 +228,11 @@ func (flow *loginFlow) RunUI(provider string, parameters map[string]string) (str
 	if err != nil {
 		return "", fmt.Errorf("unable to get the login URL: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("unexpected status code: %d : %s", resp.StatusCode, data)
+		return "", unexpectedStatusError(resp)
 	}
+	defer resp.Body.Close()
 
 	switch provider {
 	case "github":
@@ -261,7 +296,7 @@ func DeriveToken(ctx *appcontext.AppContext) (string, error) {
 		return "", err
 	}
 
-	base := os.Getenv("PLAKAR_API_URL")
+	base := os.Getenv(plakarAPIURLEnv)
 	if base == "" {
 		base = defaultBaseURL
 	}
