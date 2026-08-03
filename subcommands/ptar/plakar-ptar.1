@@ -40,6 +40,18 @@ flag is given,
 .Nm plakar ptar
 refuses to replace an existing archive.
 .Pp
+In addition to the flags described below,
+.Nm plakar ptar
+supports the location flags documented in
+.Xr plakar-query 7
+to precisely select which snapshots of the
+.Fl k
+klosets are bundled.
+Without any of them every snapshot is included.
+They do not affect the
+.Ar path
+arguments, which are always backed up in full.
+.Pp
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl plaintext
@@ -66,6 +78,7 @@ May be specified multiple times.
 .It Fl k Ar location , Fl kloset Ar location
 Add a kloset repository to include in the archive.
 May be specified multiple times to bundle several repositories.
+The location flags apply to each of them.
 .It Fl o Ar file.ptar
 Path of the archive to create.
 This option is required.

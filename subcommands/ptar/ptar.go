@@ -60,6 +60,8 @@ type Ptar struct {
 	SyncSecrets   [][]byte
 	BackupTargets listFlag
 	Excludes      []string
+
+	LocateOptions *locate.LocateOptions
 }
 
 func init() {
@@ -82,6 +84,7 @@ func (l *listFlag) Set(value string) error {
 
 func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
 	cmd.KlosetUUID = uuid.Must(uuid.NewRandom())
+	cmd.LocateOptions = locate.NewDefaultLocateOptions()
 	var optIgnoreFiles listFlag
 	var optIgnore listFlag
 	excludes := []string{}
@@ -102,6 +105,7 @@ func (cmd *Ptar) Parse(ctx *appcontext.AppContext, args []string) error {
 	flags.Var(&optIgnoreFiles, "ignore-file", "path to a file containing newline-separated gitignore patterns, treated as -ignore; can be specified multiple times")
 	flags.Var(&optIgnore, "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
 	flags.StringVar(&cmd.KlosetPath, "o", "", "name of the ptar archive to create")
+	cmd.LocateOptions.InstallLocateFlags(flags)
 	flags.Parse(args)
 
 	if cmd.KlosetPath == "" {
@@ -410,8 +414,7 @@ func (cmd *Ptar) backup(ctx *appcontext.AppContext, repo *repository.RepositoryW
 }
 
 func (cmd *Ptar) synchronize(ctx *appcontext.AppContext, srcRepository *repository.Repository, dstRepository *repository.RepositoryWriter) error {
-	srcLocateOptions := locate.NewDefaultLocateOptions()
-	srcSnapshotIDs, err := locate.LocateSnapshotIDs(srcRepository, srcLocateOptions)
+	srcSnapshotIDs, err := locate.LocateSnapshotIDs(srcRepository, cmd.LocateOptions)
 	if err != nil {
 		return err
 	}
