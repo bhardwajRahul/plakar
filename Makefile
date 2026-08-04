@@ -25,6 +25,10 @@ check: test
 test:
 	${GO} test ./...
 
+junit:
+	${GO} test -v -p 4 -coverprofile=coverage.out -covermode=atomic -timeout 2m -json ./... \
+		| ${GO} tool go-junit-report -parser gojson -set-exit-code > junit.xml
+
 # coverage runs the test suite and reports total statement coverage with the
 # testing/ support packages (mocks, fixtures) excluded, matching the Codecov
 # `ignore` config. Go has no package-level coverage exclude, so we filter the
@@ -36,4 +40,4 @@ coverage:
 	@grep -v '/plakar/testing/' ${COVERPROFILE} > ${COVERPROFILE}.tmp && mv ${COVERPROFILE}.tmp ${COVERPROFILE}
 	@${GO} tool cover -func=${COVERPROFILE} | tail -1
 
-.PHONY: all plakar install check test coverage
+.PHONY: all plakar install check test coverage junit
