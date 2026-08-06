@@ -82,8 +82,7 @@ func (ui *uiserver) servicesLoginEmail(w http.ResponseWriter, r *http.Request) e
 }
 
 func loginFlowError(err error) error {
-	var statusErr *login.HTTPStatusError
-	if errors.As(err, &statusErr) && statusErr.RateLimited() {
+	if errors.Is(err, login.ErrRateLimited) {
 		return &ApiError{
 			HttpCode: http.StatusTooManyRequests,
 			ErrCode:  "rate-limited",

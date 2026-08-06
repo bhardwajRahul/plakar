@@ -4,20 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	_ "github.com/PlakarKorp/integrations/fs/exporter"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
+	"github.com/PlakarKorp/plakar/login"
 	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
 )
-
-const loginLimitReachedResponse = `{"error":"OpError[limit-reached] Limit reached"}`
 
 func TestHandleErrorMapping(t *testing.T) {
 	cases := []struct {
@@ -124,25 +123,19 @@ func TestApiInfoAuthenticated(t *testing.T) {
 	require.NotEmpty(t, resp.RepositoryId)
 }
 
-func TestServicesLoginEmailRateLimitReturnsTooManyRequests(t *testing.T) {
-	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/v1/auth/login/email", r.URL.Path)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, err := w.Write([]byte(loginLimitReachedResponse))
-		require.NoError(t, err)
-	}))
-	defer authServer.Close()
+func TestLoginFlowErrorMapsRateLimitTo429(t *testing.T) {
+	err := loginFlowError(fmt.Errorf("failed to run login flow: %w", login.ErrRateLimited))
 
-	t.Setenv("PLAKAR_API_URL", authServer.URL)
+	var apiErr *ApiError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, http.StatusTooManyRequests, apiErr.HttpCode)
+	require.Equal(t, "rate-limited", apiErr.ErrCode)
+}
 
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
+func TestLoginFlowErrorPassesThroughOtherErrors(t *testing.T) {
+	err := loginFlowError(errors.New("boom"))
 
-	req, err := http.NewRequest("POST", "/api/authentication/login/email", strings.NewReader(`{"email":"user@example.com"}`))
-	require.NoError(t, err)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-
-	require.Equal(t, http.StatusTooManyRequests, w.Code, "body=%s", w.Body.String())
-	require.Contains(t, w.Body.String(), "rate-limited")
+	var apiErr *ApiError
+	require.False(t, errors.As(err, &apiErr), "non-rate-limit error must not be mapped to an ApiError")
+	require.ErrorContains(t, err, "boom")
 }
