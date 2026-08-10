@@ -19,11 +19,13 @@ package login
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/PlakarKorp/plakar/appcontext"
@@ -38,6 +40,13 @@ type TokenResponse struct {
 // (via the baseURL field) so tests can point the login flow at a local server.
 const defaultBaseURL = "https://api.plakar.io"
 
+const rateLimitErrorMarker = "limit-reached"
+
+// ErrRateLimited marks a login failure caused by the auth API rate limiting the
+// caller. It is wrapped into the returned error so callers can react to it with
+// errors.Is without depending on a concrete error type or HTTP status code.
+var ErrRateLimited = errors.New("rate limited")
+
 type loginFlow struct {
 	appCtx  *appcontext.AppContext
 	noSpawn bool
@@ -51,6 +60,22 @@ func NewLoginFlow(appCtx *appcontext.AppContext, noSpawn bool) (*loginFlow, erro
 		baseURL: defaultBaseURL,
 	}
 	return flow, nil
+}
+
+// unexpectedStatusError reads resp.Body to build a descriptive error for a
+// non-OK response. It does not close resp.Body; the caller owns closing it.
+// When the response signals rate limiting, the returned error wraps
+// ErrRateLimited so callers can detect it via errors.Is.
+func unexpectedStatusError(resp *http.Response) error {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read error response body: %w", err)
+	}
+	statusErr := fmt.Errorf("unexpected status code: %d : %s", resp.StatusCode, data)
+	if resp.StatusCode == http.StatusTooManyRequests || strings.Contains(string(data), rateLimitErrorMarker) {
+		return fmt.Errorf("%w: %w", ErrRateLimited, statusErr)
+	}
+	return statusErr
 }
 
 func (flow *loginFlow) Poll(pollID string, iterations int, delay time.Duration, progressCb func()) (string, error) {
@@ -71,20 +96,25 @@ func (flow *loginFlow) Poll(pollID string, iterations int, delay time.Duration, 
 			if err != nil {
 				return "", fmt.Errorf("the /auth/login/github/poll API endpoint failed: %w", err)
 			}
-			// leaking resp for now
 			switch resp.StatusCode {
 			case http.StatusOK:
 				var tokenResponse TokenResponse
-				if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
-					return "", fmt.Errorf("failed to decode response JSON: %v", err)
+				decodeErr := json.NewDecoder(resp.Body).Decode(&tokenResponse)
+				resp.Body.Close()
+				if decodeErr != nil {
+					return "", fmt.Errorf("failed to decode response JSON: %v", decodeErr)
 				}
 				return tokenResponse.Token, nil
 			case http.StatusNotFound:
+				resp.Body.Close()
 				return "", fmt.Errorf("unknown ID")
 			case http.StatusAccepted:
+				resp.Body.Close()
 				progressCb()
 			default:
-				return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+				statusErr := unexpectedStatusError(resp)
+				resp.Body.Close()
+				return "", statusErr
 			}
 		}
 		tick = time.After(delay)
@@ -118,8 +148,7 @@ func (flow *loginFlow) Run(provider string, parameters map[string]string) (strin
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("unexpected status code: %d : %s", resp.StatusCode, data)
+		return "", unexpectedStatusError(resp)
 	}
 
 	switch provider {
@@ -195,8 +224,7 @@ func (flow *loginFlow) RunUI(provider string, parameters map[string]string) (str
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("unexpected status code: %d : %s", resp.StatusCode, data)
+		return "", unexpectedStatusError(resp)
 	}
 
 	switch provider {
