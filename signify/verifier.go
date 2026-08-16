@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2026 Gilles Chehade <gilles@poolp.org>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+package signify
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"strings"
+	"sync/atomic"
+
+	gosignify "github.com/PlakarKorp/go-signify"
+)
+
+var (
+	ErrUnsigned       = errors.New("package is not signed")
+	ErrNameMismatch   = errors.New("signature covers a different file")
+	ErrDigestMismatch = errors.New("package contents do not match the signed checksum")
+	ErrNoChecksum     = errors.New("signature carries no checksum")
+	ErrBadChecksum    = errors.New("unusable signed checksum")
+)
+
+// Re-exported so callers need not import the library directly.
+var ParseChecksums = gosignify.ParseChecksums
+
+type Verifier struct {
+	store *TrustStore
+
+	allowUnsigned atomic.Bool
+}
+
+func NewVerifier(store *TrustStore) *Verifier {
+	return &Verifier{store: store}
+}
+
+// Opt-in per run only. A signed artifact is still verified, and a bad
+// signature is still fatal.
+func (v *Verifier) SetAllowUnsigned(allow bool) {
+	v.allowUnsigned.Store(allow)
+}
+
+type Result struct {
+	Key      *TrustedKey
+	Filename string
+	Digest   string
+}
+
+// VerifyArtifact checks that content is the file named by filename, signed by
+// a key trusted for origin.
+//
+// The order is deliberate: verify the signature, then compare the signed
+// filename against the one requested, then hash. The filename comparison is
+// what binds a signature to a package — without it, substituting an artifact
+// and its signature together passes every other check. The standalone .sum is
+// never consulted: it is unsigned, and the signature carries the copy that
+// matters.
+func (v *Verifier) VerifyArtifact(origin, filename string, sig []byte, content io.Reader) (*Result, error) {
+	if len(sig) == 0 {
+		if v.allowUnsigned.Load() {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w: %s", ErrUnsigned, filename)
+	}
+
+	parsed, err := gosignify.ParseSignature(sig)
+	if err != nil {
+		return nil, err
+	}
+
+	if parsed.Message == nil {
+		return nil, fmt.Errorf("%w: %s", ErrNoChecksum, filename)
+	}
+
+	key, err := v.store.Verify(origin, parsed.Message, parsed)
+	if err != nil {
+		return nil, err
+	}
+
+	sums, err := ParseChecksums(parsed.Message)
+	if err != nil {
+		return nil, err
+	}
+
+	want, err := sums.Find(filename)
+	if err != nil {
+		return nil, fmt.Errorf("%w: expected %s, signature covers %s",
+			ErrNameMismatch, filename, strings.Join(sums.Filenames(), ", "))
+	}
+
+	// The library accepts any algorithm a checksum file names; a package
+	// signature must be SHA256. Rejected here rather than left to the
+	// digest comparison, which would report a mismatch instead of the
+	// actual problem.
+	if !strings.EqualFold(want.Algorithm, "SHA256") {
+		return nil, fmt.Errorf("%w: %s is signed with %s, want SHA256",
+			ErrBadChecksum, filename, want.Algorithm)
+	}
+
+	// Hashed here rather than through want.Verify so the digest can be
+	// reported: a mismatch is far easier to diagnose with both values.
+	h := sha256.New()
+	if _, err := io.Copy(h, content); err != nil {
+		return nil, err
+	}
+
+	got := hex.EncodeToString(h.Sum(nil))
+
+	if !strings.EqualFold(got, want.Digest) {
+		return nil, fmt.Errorf("%w: %s has digest %s, signed checksum is %s",
+			ErrDigestMismatch, filename, got, want.Digest)
+	}
+
+	return &Result{Key: key, Filename: filename, Digest: got}, nil
+}
