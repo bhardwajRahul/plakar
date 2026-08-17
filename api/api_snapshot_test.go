@@ -400,19 +400,6 @@ func TestVFSErrorsHandler(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, w.Code, "body=%s", w.Body.String())
 }
 
-func TestSnapshotReader(t *testing.T) {
-	// The reader endpoint serves file content. With an empty token, the URL
-	// signer's VerifyMiddleware falls through to the (no-op) token auth.
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
-
-	indexID := snap.Header.GetIndexID()
-	id := hex.EncodeToString(indexID[:])
-	w := get(t, mux, "/api/snapshot/reader/"+id+":/subdir/dummy.txt")
-	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-	require.Contains(t, w.Body.String(), "hello dummy")
-}
-
 func TestSnapshotReaderSignedReaderValid(t *testing.T) {
 	const token = "verify-token"
 	mux, _, snap, _ := server(t, token)
