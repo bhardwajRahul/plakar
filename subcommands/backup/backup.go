@@ -17,7 +17,6 @@
 package backup
 
 import (
-	"flag"
 	"fmt"
 	"maps"
 	"os"
@@ -40,6 +39,7 @@ import (
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
+	"github.com/spf13/cobra"
 )
 
 type Backup struct {
@@ -64,6 +64,10 @@ type Backup struct {
 	Category            string
 	Environment         string
 	Perimeter           string
+
+	optIgnoreFiles ignoreFlags
+	optIgnore      ignoreFlags
+	optTags        tagFlags
 }
 
 func init() {
@@ -105,41 +109,38 @@ func (e *tagFlags) asList() []string {
 	return strings.Split(tags, ",")
 }
 
-func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
-	var opt_ignore_files ignoreFlags
-	var opt_ignore ignoreFlags
-	var opt_tags tagFlags
-
-	excludes := []string{}
-
+func (cmd *Backup) CobraCommand() *cobra.Command {
 	cmd.Opts = make(map[string]string)
 
-	flags := flag.NewFlagSet("backup", flag.ExitOnError)
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s [OPTIONS] path\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "       %s [OPTIONS] @LOCATION\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "\nOPTIONS:\n")
-		flags.PrintDefaults()
+	c := &cobra.Command{
+		Use: "backup [OPTIONS] path",
+	}
+	c.Flags().Var(subcommands.GoValue(&cmd.optTags), "tag", "comma-separated list of tags to apply to the snapshot")
+	c.Flags().StringVar(&cmd.Name, "name", "default", "backup name")
+	c.Flags().StringVar(&cmd.Category, "category", "", "backup category")
+	c.Flags().StringVar(&cmd.Environment, "environment", "", "backup environment")
+	c.Flags().StringVar(&cmd.Perimeter, "perimeter", "", "backup perimeter")
+	c.Flags().StringVar(&cmd.Job, "job", "", "backup job")
+	c.Flags().Var(subcommands.GoValue(&cmd.optIgnoreFiles), "ignore-file", "path to a file containing newline-separated gitignore patterns, treated as -ignore; can be specified multiple times")
+	c.Flags().Var(subcommands.GoValue(&cmd.optIgnore), "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
+	c.Flags().StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
+	c.Flags().BoolVar(&cmd.OptCheck, "check", false, "check the snapshot after creating it")
+	c.Flags().Var(subcommands.GoValue(utils.NewOptsFlag(cmd.Opts)), "o", "specify extra importer options")
+	c.Flags().BoolVar(&cmd.DryRun, "dry-run", false, "do not actually perform a backup")
+	c.Flags().BoolVar(&cmd.NoXattr, "no-xattr", false, "do not back up extended attributes")
+	c.Flags().StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
+	c.Flags().BoolVar(&cmd.NoProgress, "no-progress", false, "do not display progress")
+	c.Flags().Var(subcommands.GoValue(locate.NewTimeFlag(&cmd.ForcedTimestamp)), "force-timestamp", "force a timestamp")
+	return c
+}
+
+func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
+	rest, err := subcommands.ParseCobra(cmd, args)
+	if err != nil {
+		return err
 	}
 
-	flags.Var(&opt_tags, "tag", "comma-separated list of tags to apply to the snapshot")
-	flags.StringVar(&cmd.Name, "name", "default", "backup name")
-	flags.StringVar(&cmd.Category, "category", "", "backup category")
-	flags.StringVar(&cmd.Environment, "environment", "", "backup environment")
-	flags.StringVar(&cmd.Perimeter, "perimeter", "", "backup perimeter")
-	flags.StringVar(&cmd.Job, "job", "", "backup job")
-	flags.Var(&opt_ignore_files, "ignore-file", "path to a file containing newline-separated gitignore patterns, treated as -ignore; can be specified multiple times")
-	flags.Var(&opt_ignore, "ignore", "gitignore pattern to exclude files, can be specified multiple times to add several exclusion patterns")
-	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
-	flags.BoolVar(&cmd.OptCheck, "check", false, "check the snapshot after creating it")
-	flags.Var(utils.NewOptsFlag(cmd.Opts), "o", "specify extra importer options")
-	flags.BoolVar(&cmd.DryRun, "dry-run", false, "do not actually perform a backup")
-	flags.BoolVar(&cmd.NoXattr, "no-xattr", false, "do not back up extended attributes")
-	flags.StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
-	flags.BoolVar(&cmd.NoProgress, "no-progress", false, "do not display progress")
-
-	flags.Var(locate.NewTimeFlag(&cmd.ForcedTimestamp), "force-timestamp", "force a timestamp")
-	flags.Parse(args)
+	excludes := []string{}
 
 	if !cmd.ForcedTimestamp.IsZero() {
 		if cmd.ForcedTimestamp.After(time.Now()) {
@@ -147,7 +148,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 		}
 	}
 
-	for _, ignoreFile := range opt_ignore_files {
+	for _, ignoreFile := range cmd.optIgnoreFiles {
 		lines, err := utils.LoadIgnoreFile(ignoreFile)
 		if err != nil {
 			return err
@@ -155,13 +156,13 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 		excludes = append(excludes, lines...)
 	}
 
-	for _, item := range opt_ignore {
+	for _, item := range cmd.optIgnore {
 		excludes = append(excludes, item)
 	}
 
 	cmd.RepositorySecret = ctx.GetSecret()
 	cmd.Excludes = excludes
-	cmd.Tags = opt_tags.asList()
+	cmd.Tags = cmd.optTags.asList()
 
 	// If no tags were provided via CLI flag, check PLAKAR_TAGS env var
 	if len(cmd.Tags) == 0 {
@@ -178,7 +179,7 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 		}
 	}
 
-	cmd.Sources = flags.Args()
+	cmd.Sources = rest
 
 	if len(cmd.Sources) == 0 {
 		cmd.Sources = append(cmd.Sources, "fs:"+ctx.CWD)

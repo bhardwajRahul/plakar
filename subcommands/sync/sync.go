@@ -17,7 +17,6 @@
 package sync
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -32,6 +31,7 @@ import (
 	"github.com/PlakarKorp/plakar/cached"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/PlakarKorp/plakar/utils"
+	"github.com/spf13/cobra"
 )
 
 type Sync struct {
@@ -51,31 +51,32 @@ func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Sync{} }, 0, "sync")
 }
 
-func (cmd *Sync) Parse(ctx *appcontext.AppContext, args []string) error {
+func (cmd *Sync) CobraCommand() *cobra.Command {
 	cmd.SrcLocateOptions = locate.NewDefaultLocateOptions()
 
-	flags := flag.NewFlagSet("sync", flag.ExitOnError)
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s [SNAPSHOT] to REPOSITORY\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "       %s [SNAPSHOT] from REPOSITORY\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "       %s [SNAPSHOT] with REPOSITORY\n", flags.Name())
-		flags.PrintDefaults()
+	c := &cobra.Command{
+		Use: "sync",
+	}
+	c.Flags().StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
+	c.Flags().StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
+	subcommands.InstallGoFlags(c.Flags(), cmd.SrcLocateOptions.InstallLocateFlags)
+	return c
+}
+
+func (cmd *Sync) Parse(ctx *appcontext.AppContext, args []string) error {
+	rest, err := subcommands.ParseCobra(cmd, args)
+	if err != nil {
+		return err
 	}
 
-	cmd.SrcLocateOptions.InstallLocateFlags(flags)
-	flags.StringVar(&cmd.PackfileTempStorage, "packfiles", "", "memory or a path to a directory to store temporary packfiles")
-	flags.StringVar(&cmd.Cache, "cache", "vfs", "path to store vfs cache, 'no' for uncached and 'vfs' for the default in memory cache")
-
-	flags.Parse(args)
-
-	if flags.NArg() > 3 {
+	if len(rest) > 3 {
 		return fmt.Errorf("too many arguments")
 	}
 
 	direction := ""
 	peerRepositoryPath := ""
 
-	args = flags.Args()
+	args = rest
 	switch len(args) {
 	case 2:
 		direction = args[0]

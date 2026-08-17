@@ -18,7 +18,6 @@ package pkg
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,6 +27,7 @@ import (
 	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
+	"github.com/spf13/cobra"
 )
 
 type PkgAdd struct {
@@ -38,36 +38,27 @@ type PkgAdd struct {
 	Args          []string
 }
 
-func (cmd *PkgAdd) Parse(ctx *appcontext.AppContext, args []string) error {
-	flags := flag.NewFlagSet("pkg add", flag.ExitOnError)
-	flags.BoolVar(&cmd.upgrade, "u", false, "Update packages")
-	flags.BoolVar(&cmd.allowUnsigned, "allow-unsigned", false,
+func (cmd *PkgAdd) CobraCommand() *cobra.Command {
+	c := &cobra.Command{
+		Use: "pkg add",
+	}
+	c.Flags().BoolVar(&cmd.upgrade, "u", false, "Update packages")
+	c.Flags().BoolVar(&cmd.allowUnsigned, "allow-unsigned", false,
 		"Install packages that carry no signature")
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), `Usage: %s [-u] [-allow-unsigned] <package> ...
+	return c
+}
 
-Arguments:
-  <package>    Local .ptar file, or recipe name to fetch from plugins.plakar.io
-               (local files take precedence over remote recipes)
-
-Options:
-  -allow-unsigned
-               Install packages that carry no signature. Packages that are
-               signed are still verified, and a bad signature is still fatal.
-
-Examples:
-  pkg add imap           Fetch and install the 'imap' plugin
-  pkg add ./plugin.ptar  Install from local file
-`, flags.Name())
+func (cmd *PkgAdd) Parse(ctx *appcontext.AppContext, args []string) error {
+	rest, err := subcommands.ParseCobra(cmd, args)
+	if err != nil {
+		return err
 	}
 
-	flags.Parse(args)
-
-	if flags.NArg() < 1 && !cmd.upgrade {
+	if len(rest) < 1 && !cmd.upgrade {
 		return fmt.Errorf("not enough arguments")
 	}
 
-	cmd.Args = flags.Args()
+	cmd.Args = rest
 	for i, name := range cmd.Args {
 		absolute := name
 		if !filepath.IsAbs(absolute) {

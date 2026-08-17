@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -162,6 +163,8 @@ func newRootCmd(opts *globalOpts, def defaults) *cobra.Command {
 	f.StringVar(&opts.keyfile, "keyfile", "", "use passphrase from key file when prompted")
 	f.BoolVar(&opts.enableSecurityCheck, "enable-security-check", false, "enable update check")
 	f.BoolVar(&opts.disableSecurityCheck, "disable-security-check", false, "disable update check")
+
+	subcommands.Tree(root)
 
 	root.SetUsageFunc(func(c *cobra.Command) error {
 		out := c.OutOrStderr()

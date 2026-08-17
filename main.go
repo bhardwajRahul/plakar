@@ -387,7 +387,7 @@ func entryPoint() int {
 		return 1
 	}
 
-	cmd, _, args := subcommands.Lookup(args)
+	cmd, _, args := subcommands.Resolve(root, args)
 	if cmd == nil {
 		logger.Stderr("command not found: %s\n", args[0])
 		return 1
