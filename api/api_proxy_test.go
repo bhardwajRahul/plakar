@@ -10,64 +10,57 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProxyAlertingGetUnauthorized(t *testing.T) {
+// TestProxy drives the services-proxy endpoints. servicesProxy reads
+// PLAKAR_SERVICE_ENDPOINT per request, so the endpoint-error cases can use
+// t.Setenv against the shared mux instead of rebuilding it.
+func TestProxy(t *testing.T) {
 	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
 
-	// No auth token in the cookie jar -> handler returns a 401 JSON body.
-	w := get(t, mux, "/api/proxy/v1/account/services/alerting")
-	require.Equal(t, http.StatusUnauthorized, w.Code, "body=%s", w.Body.String())
+	t.Run("alerting get unauthorized", func(t *testing.T) {
+		// No auth token in the cookie jar -> handler returns a 401 JSON body.
+		w := get(t, mux, "/api/proxy/v1/account/services/alerting")
+		require.Equal(t, http.StatusUnauthorized, w.Code, "body=%s", w.Body.String())
 
-	var resp map[string]string
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, "authorization_error", resp["error"])
-}
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		require.Equal(t, "authorization_error", resp["error"])
+	})
 
-func TestProxyAlertingSetUnauthorized(t *testing.T) {
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
+	t.Run("alerting set unauthorized", func(t *testing.T) {
+		body := `{"enabled":true,"email_report":true}`
+		req, _ := http.NewRequest("PUT", "/api/proxy/v1/account/services/alerting", bytes.NewBufferString(body))
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code, "body=%s", w.Body.String())
 
-	body := `{"enabled":true,"email_report":true}`
-	req, _ := http.NewRequest("PUT", "/api/proxy/v1/account/services/alerting", bytes.NewBufferString(body))
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-	require.Equal(t, http.StatusUnauthorized, w.Code, "body=%s", w.Body.String())
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		require.Equal(t, "authorization_error", resp["error"])
+	})
 
-	var resp map[string]string
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, "authorization_error", resp["error"])
-}
+	t.Run("integration path not implemented", func(t *testing.T) {
+		w := get(t, mux, "/api/proxy/v1/integration/some-id/some/path")
+		// Returns a plain error -> mapped to 500 by handleError.
+		require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
+	})
 
-func TestProxyIntegrationPathNotImplemented(t *testing.T) {
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
+	t.Run("bad endpoint", func(t *testing.T) {
+		// An unparseable endpoint URL exercises the
+		// `targetBase, err := url.Parse(...); if err != nil` branch.
+		t.Setenv("PLAKAR_SERVICE_ENDPOINT", "://this is not a url")
 
-	w := get(t, mux, "/api/proxy/v1/integration/some-id/some/path")
-	// Returns a plain error -> mapped to 500 by handleError.
-	require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
-}
+		w := get(t, mux, "/api/proxy/v1/account/me")
+		require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
+	})
 
-// TestServicesProxyBadEndpoint points the proxy at an unparseable
-// endpoint URL, exercising the `targetBase, err := url.Parse(...); if
-// err != nil` branch of servicesProxy.
-func TestProxyBadEndpoint(t *testing.T) {
-	t.Setenv("PLAKAR_SERVICE_ENDPOINT", "://this is not a url")
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
+	t.Run("unreachable", func(t *testing.T) {
+		// A closed local port makes the outbound http.DefaultClient.Do fail with
+		// connection-refused, exercising the `if err != nil` branch after it.
+		// Hermetic: nothing listens on port 1.
+		t.Setenv("PLAKAR_SERVICE_ENDPOINT", "http://127.0.0.1:1")
 
-	w := get(t, mux, "/api/proxy/v1/account/me")
-	require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
-}
-
-// TestServicesProxyUnreachable points the proxy at a closed local port so
-// the outbound http.DefaultClient.Do fails with connection-refused, exercising
-// the `resp, err := http.DefaultClient.Do(req); if err != nil` branch. Hermetic:
-// nothing listens on 127.0.0.1:0-equivalent unreachable port.
-func TestProxyUnreachable(t *testing.T) {
-	t.Setenv("PLAKAR_SERVICE_ENDPOINT", "http://127.0.0.1:1")
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
-
-	w := get(t, mux, "/api/proxy/v1/account/me")
-	require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
+		w := get(t, mux, "/api/proxy/v1/account/me")
+		require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
+	})
 }
