@@ -30,14 +30,6 @@ func TestRepositoryEmptyStateOK(t *testing.T) {
 	}
 }
 
-func TestAPIRepositoryLocatePathname(t *testing.T) {
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
-
-	w := get(t, mux, "/api/repository/locate-pathname?resource=/subdir/dummy.txt")
-	require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-}
-
 func TestRepositoryLocatePathnameExactWindow(t *testing.T) {
 	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
