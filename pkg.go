@@ -39,7 +39,7 @@ func setupPkgManager(ctx *appcontext.AppContext, configDir, dataDir, cacheDir st
 		return fmt.Errorf("failed to load the package trust store: %w", err)
 	}
 
-	verifier := signify.NewPackageVerifier(signify.NewVerifier(trust))
+	verifier := signify.NewVerifier(trust)
 
 	token, _ := ctx.GetCookies().GetAuthToken()
 	manager, err := pkg.New(backend, &pkg.Options{

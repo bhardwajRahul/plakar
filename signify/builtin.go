@@ -22,10 +22,10 @@ type builtinKey struct {
 	scopes []string
 }
 
-// A set rather than a single key so rotation works: a new key ships in one
-// release and signs from the next, while the outgoing one stays valid.
-// Selection is by key number, so it never surfaces to users. Names are dated
-// so a rotation adds a key rather than shadowing one.
+// A list rather than a single key, so that during a rotation both the old and
+// the new key can be trusted at once. Each signature carries the key number of
+// the key that made it, so the right one is picked automatically and users
+// never have to choose.
 var builtinKeys = []builtinKey{
 	{
 		name: "plakar-20260815",

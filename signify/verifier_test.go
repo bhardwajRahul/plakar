@@ -249,35 +249,6 @@ func TestVerifyRejectsDetachedSignature(t *testing.T) {
 	}
 }
 
-func TestParseChecksums(t *testing.T) {
-	sums, err := ParseChecksums(fixture(t, "s3.sum"))
-	if err != nil {
-		t.Fatalf("ParseChecksums: %v", err)
-	}
-
-	if len(sums) != 1 {
-		t.Fatalf("got %d checksums, want 1", len(sums))
-	}
-
-	if sums[0].Filename != artifactName {
-		t.Errorf("filename = %q, want %q", sums[0].Filename, artifactName)
-	}
-}
-
-func TestParseChecksumsRejectsMalformed(t *testing.T) {
-	for _, s := range []string{
-		"SHA256 (s3.ptar) = notahex\n",
-		"garbage\n",
-	} {
-		if _, err := ParseChecksums([]byte(s)); err == nil {
-			t.Errorf("ParseChecksums(%q) accepted malformed input", s)
-		}
-	}
-}
-
-// The library parses any algorithm a checksum file names, so the SHA256-only
-// rule lives in VerifyArtifact. It must reject rather than hash with the wrong
-// algorithm and report a confusing digest mismatch.
 func TestVerifyRejectsNonSHA256Checksum(t *testing.T) {
 	_, sk, err := gosignify.GenerateKey("test")
 	if err != nil {

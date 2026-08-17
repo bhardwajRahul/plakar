@@ -22,10 +22,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 
 	gosignify "github.com/PlakarKorp/go-signify"
+	"github.com/PlakarKorp/pkg"
 )
 
 var (
@@ -35,9 +37,6 @@ var (
 	ErrNoChecksum     = errors.New("signature carries no checksum")
 	ErrBadChecksum    = errors.New("unusable signed checksum")
 )
-
-// Re-exported so callers need not import the library directly.
-var ParseChecksums = gosignify.ParseChecksums
 
 type Verifier struct {
 	store *TrustStore
@@ -92,15 +91,14 @@ func (v *Verifier) VerifyArtifact(origin, filename string, sig []byte, content i
 		return nil, err
 	}
 
-	sums, err := ParseChecksums(parsed.Message)
+	sums, err := gosignify.ParseChecksums(parsed.Message)
 	if err != nil {
 		return nil, err
 	}
 
 	want, err := sums.Find(filename)
 	if err != nil {
-		return nil, fmt.Errorf("%w: expected %s, signature covers %s",
-			ErrNameMismatch, filename, strings.Join(sums.Filenames(), ", "))
+		return nil, fmt.Errorf("%w: %s", ErrNameMismatch, err)
 	}
 
 	// The library accepts any algorithm a checksum file names; a package
@@ -127,4 +125,87 @@ func (v *Verifier) VerifyArtifact(origin, filename string, sig []byte, content i
 	}
 
 	return &Result{Key: key, Filename: filename, Digest: got}, nil
+}
+
+// Verify implements pkg.Verifier. Errors wrap pkg.ErrUnverified so callers can
+// tell a rejection from a transport failure.
+func (v *Verifier) Verify(artifact *pkg.Artifact, rd io.Reader) error {
+	if _, err := v.VerifyArtifact(artifact.Origin, artifact.Filename, artifact.Signature, rd); err != nil {
+		return fmt.Errorf("%w: %s: %s", pkg.ErrUnverified, artifact.Filename, err)
+	}
+
+	return nil
+}
+
+// Signer names the key that produced sig, by key number, so a key that has
+// since been rotated out is still named. This says who signed, not that the
+// signature is good.
+func (v *Verifier) Signer(sig []byte) string {
+	if len(sig) == 0 {
+		return ""
+	}
+
+	parsed, err := gosignify.ParseSignature(sig)
+	if err != nil {
+		return "unreadable signature"
+	}
+
+	for _, k := range v.store.Keys() {
+		if k.Key.KeyNum == parsed.KeyNum {
+			return k.Name
+		}
+	}
+
+	return "unknown key " + parsed.KeyNum.String()
+}
+
+// BuiltinKeys returns the keys compiled into this binary. Embedded rather than
+// read from disk: a key fetched from where a package could also reach would
+// verify nothing.
+func BuiltinKeys() []*TrustedKey {
+	keys := make([]*TrustedKey, 0, len(builtinKeys))
+
+	for _, b := range builtinKeys {
+		pk, err := gosignify.ParsePublicKey([]byte(b.key))
+		if err != nil {
+			// A build-time mistake, not a runtime condition; the
+			// tests check every builtin key parses.
+			continue
+		}
+
+		scopes := make([]*Scope, 0, len(b.scopes))
+		for _, s := range b.scopes {
+			sc, err := ParseScope(s)
+			if err != nil {
+				continue
+			}
+			scopes = append(scopes, sc)
+		}
+
+		keys = append(keys, &TrustedKey{
+			Name:    b.name,
+			Key:     pk,
+			Scopes:  scopes,
+			Builtin: true,
+		})
+	}
+
+	return keys
+}
+
+// LoadTrustStore builds this run's trust store: the compiled-in keys plus any
+// the user added under configDir.
+func LoadTrustStore(configDir string) (*TrustStore, error) {
+	store := NewTrustStore(BuiltinKeys()...)
+
+	userKeys, err := LoadTrustDir(filepath.Join(configDir, "trust"))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, k := range userKeys {
+		store.Add(k)
+	}
+
+	return store, nil
 }
