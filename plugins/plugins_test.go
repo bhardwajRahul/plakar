@@ -31,11 +31,11 @@ func TestRegisterStorage_Idempotent(t *testing.T) {
 	proto := uniqueProto(t)
 	t.Cleanup(func() { _ = storage.Unregister(proto) })
 
-	if err := RegisterStorage(proto, 0, "/nonexistent", nil); err != nil {
+	if err := RegisterStorage(proto, 0, &NativeRunner{Path: "/nonexistent"}); err != nil {
 		t.Fatalf("first register err = %v", err)
 	}
 	// re-registering the same proto must fail
-	if err := RegisterStorage(proto, 0, "/nonexistent", nil); err == nil {
+	if err := RegisterStorage(proto, 0, &NativeRunner{Path: "/nonexistent"}); err == nil {
 		t.Fatal("second register should error on duplicate proto")
 	}
 }
@@ -44,10 +44,10 @@ func TestRegisterImporter_Idempotent(t *testing.T) {
 	proto := uniqueProto(t)
 	t.Cleanup(func() { _ = importer.Unregister(proto) })
 
-	if err := RegisterImporter(proto, 0, "/nonexistent", nil); err != nil {
+	if err := RegisterImporter(proto, 0, &NativeRunner{Path: "/nonexistent"}); err != nil {
 		t.Fatalf("first register err = %v", err)
 	}
-	if err := RegisterImporter(proto, 0, "/nonexistent", nil); err == nil {
+	if err := RegisterImporter(proto, 0, &NativeRunner{Path: "/nonexistent"}); err == nil {
 		t.Fatal("second register should error on duplicate proto")
 	}
 }
@@ -56,10 +56,10 @@ func TestRegisterExporter_Idempotent(t *testing.T) {
 	proto := uniqueProto(t)
 	t.Cleanup(func() { _ = exporter.Unregister(proto) })
 
-	if err := RegisterExporter(proto, 0, "/nonexistent", nil); err != nil {
+	if err := RegisterExporter(proto, 0, &NativeRunner{Path: "/nonexistent"}); err != nil {
 		t.Fatalf("first register err = %v", err)
 	}
-	if err := RegisterExporter(proto, 0, "/nonexistent", nil); err == nil {
+	if err := RegisterExporter(proto, 0, &NativeRunner{Path: "/nonexistent"}); err == nil {
 		t.Fatal("second register should error on duplicate proto")
 	}
 }
@@ -101,7 +101,7 @@ func TestLoad_PropagatesDuplicateError(t *testing.T) {
 	t.Cleanup(func() { _ = storage.Unregister(stg) })
 
 	// Pre-register to force the duplicate path in Load.
-	if err := RegisterStorage(stg, 0, "/x", nil); err != nil {
+	if err := RegisterStorage(stg, 0, &NativeRunner{Path: "/x"}); err != nil {
 		t.Fatalf("seed register: %v", err)
 	}
 
