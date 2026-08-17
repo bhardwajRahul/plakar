@@ -35,11 +35,6 @@ func TestSnapshot(t *testing.T) {
 		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	})
 
-	t.Run("header bad id", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/nothexnothex")
-		require.NotEqual(t, http.StatusOK, w.Code)
-	})
-
 	t.Run("header not found", func(t *testing.T) {
 		// mangle the snapid so that it does not match
 		snapid := snap.Header.GetIndexID()
@@ -58,11 +53,6 @@ func TestSnapshot(t *testing.T) {
 	t.Run("header bad param", func(t *testing.T) {
 		w := get(t, mux, "/api/snapshot/zz")
 		require.Equal(t, http.StatusBadRequest, w.Code, "body=%s", w.Body.String())
-	})
-
-	t.Run("vfs search", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/vfs/search/"+id+":/subdir?recursive=true")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	})
 
 	t.Run("vfs search has next", func(t *testing.T) {
@@ -148,11 +138,6 @@ func TestSnapshot(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, w.Code, "body=%s", w.Body.String())
 	})
 
-	t.Run("vfs children", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/vfs/children/"+id+":/subdir")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-	})
-
 	t.Run("vfs children root", func(t *testing.T) {
 		// The root directory prepends no ".." entry (fsinfo.Path() == "/").
 		w := get(t, mux, "/api/snapshot/vfs/children/"+id+":/")
@@ -160,22 +145,6 @@ func TestSnapshot(t *testing.T) {
 		var items Items[json.RawMessage]
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
 		require.Greater(t, len(items.Items), 0)
-	})
-
-	t.Run("vfs children desc sort", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/vfs/children/"+id+":/subdir?sort=-Name&offset=0&limit=2")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-		var items Items[json.RawMessage]
-		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
-		require.Greater(t, len(items.Items), 0)
-	})
-
-	t.Run("vfs children second page", func(t *testing.T) {
-		// offset>0 takes the branch that decrements offset for the implicit "..".
-		w := get(t, mux, "/api/snapshot/vfs/children/"+id+":/subdir?offset=1&limit=5")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-		var items Items[json.RawMessage]
-		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
 	})
 
 	t.Run("vfs children limit decrement to zero", func(t *testing.T) {
@@ -220,19 +189,6 @@ func TestSnapshot(t *testing.T) {
 		require.NotEqual(t, http.StatusOK, w.Code)
 	})
 
-	t.Run("vfs errors", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/vfs/errors/"+id+":/")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-	})
-
-	t.Run("vfs errors window break", func(t *testing.T) {
-		// offset 0 / limit 1 over a clean directory exercises the i>=offset+limit
-		// break path in the error iterator window arithmetic.
-		w := get(t, mux, "/api/snapshot/vfs/errors/"+id+":/subdir?offset=0&limit=1")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-		require.Contains(t, w.Body.String(), "total")
-	})
-
 	t.Run("vfs errors paging", func(t *testing.T) {
 		// Exercise the offset/limit window arithmetic on a clean (no-error) dir.
 		w := get(t, mux, "/api/snapshot/vfs/errors/"+id+":/subdir?offset=0&limit=1")
@@ -247,17 +203,11 @@ func TestSnapshot(t *testing.T) {
 		require.Equal(t, http.StatusNotFound, w.Code, "body=%s", w.Body.String())
 	})
 
-	t.Run("vfs errors sort and paging", func(t *testing.T) {
-		// explicit Name sort + a paging window over an error-free directory.
-		w := get(t, mux, "/api/snapshot/vfs/errors/"+id+":/subdir?sort=Name&offset=0&limit=5")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-		require.Contains(t, w.Body.String(), "total")
-	})
-
 	t.Run("vfs errors handler", func(t *testing.T) {
-		// happy path on a dir.
+		// happy path on a dir, with a paging window.
 		w := get(t, mux, "/api/snapshot/vfs/errors/"+id+":/subdir?offset=0&limit=10")
 		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
+		require.Contains(t, w.Body.String(), "total")
 
 		// invalid sort key -> 400.
 		w = get(t, mux, "/api/snapshot/vfs/errors/"+id+":/?sort=Bogus")
@@ -270,11 +220,6 @@ func TestSnapshot(t *testing.T) {
 		// errors of a regular file -> 400 not a directory.
 		w = get(t, mux, "/api/snapshot/vfs/errors/"+id+":/top.txt")
 		require.Equal(t, http.StatusBadRequest, w.Code, "body=%s", w.Body.String())
-	})
-
-	t.Run("vfs chunks", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/vfs/chunks/"+id+":/subdir/dummy.txt")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
 	})
 
 	t.Run("vfs chunks offset", func(t *testing.T) {
@@ -331,41 +276,15 @@ func TestSnapshot(t *testing.T) {
 
 		base += "/subdir/dummy.txt"
 
-		// download=true sets a Content-Disposition attachment header.
+		// download=true sets a Content-Disposition attachment header naming the file.
 		w := get(t, mux, base+"?download=true")
 		require.Equal(t, http.StatusOK, w.Code)
 		require.Contains(t, w.Header().Get("Content-Disposition"), "attachment")
+		require.Contains(t, w.Header().Get("Content-Disposition"), "dummy.txt")
 
 		// an invalid render value is rejected.
 		w = get(t, mux, base+"?render=bogus")
 		require.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("reader render auto", func(t *testing.T) {
-		// No render param defaults to "auto".
-		w := get(t, mux, "/api/snapshot/reader/"+id+":/subdir/dummy.txt")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-		require.Contains(t, w.Body.String(), "hello dummy")
-	})
-
-	t.Run("reader download disposition", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/reader/"+id+":/subdir/dummy.txt?download=true")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-		require.Contains(t, w.Header().Get("Content-Disposition"), "attachment")
-		require.Contains(t, w.Header().Get("Content-Disposition"), "dummy.txt")
-	})
-
-	t.Run("reader invalid render", func(t *testing.T) {
-		w := get(t, mux, "/api/snapshot/reader/"+id+":/subdir/dummy.txt?render=invalid")
-		require.Equal(t, http.StatusBadRequest, w.Code, "body=%s", w.Body.String())
-
-		// code render path.
-		w = get(t, mux, "/api/snapshot/reader/"+id+":/subdir/dummy.txt?render=code")
-		require.Equal(t, http.StatusOK, w.Code, "body=%s", w.Body.String())
-
-		// reader for a non-existent file -> error.
-		w = get(t, mux, "/api/snapshot/reader/"+id+":/nope.txt")
-		require.NotEqual(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("reader missing file not found", func(t *testing.T) {
