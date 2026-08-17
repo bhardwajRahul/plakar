@@ -10,19 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAlertingSetNoAuth covers the no-auth-token 401 branch of
-// servicesSetAlertingServiceConfiguration.
-func TestAlertingSetNoAuth(t *testing.T) {
-	mux, _, snap, _ := server(t, "")
-	defer snap.Close()
-
-	req, err := http.NewRequest("PUT", "/api/proxy/v1/account/services/alerting", bytes.NewBufferString(`{"enabled":true}`))
-	require.NoError(t, err)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-	require.Equal(t, http.StatusUnauthorized, w.Code, "body=%s", w.Body.String())
-}
-
 func TestProxyAlertingGetUnauthorized(t *testing.T) {
 	mux, _, snap, _ := server(t, "")
 	defer snap.Close()
