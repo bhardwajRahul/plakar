@@ -22,7 +22,9 @@ jobs:
         go-version-file: 'go.mod'
 
     - name: Build
-      run: go build -v ./...
+      run: |
+        go build -v ./...
+        go build -tool
 
     # Produce a coverage profile (Codecov coverage) and a JUnit XML (Codecov
     # Test Analytics) in one run. The `timeout -s QUIT 5m` wrapper is kept so a
