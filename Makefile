@@ -18,8 +18,7 @@ install:
 	mkdir -p ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${MANDIR}/man1
 	${INSTALL_PROGRAM} plakar ${DESTDIR}${BINDIR}
-	find cmd/plakar -iname \*.1 -exec \
-		${INSTALL_MAN} {} ${DESTDIR}${MANDIR}/man1 \;
+	find . -name \*.1 -exec ${INSTALL_MAN} {} ${DESTDIR}${MANDIR}/man1 \;
 
 check: test
 test:
