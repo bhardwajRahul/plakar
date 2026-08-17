@@ -78,46 +78,40 @@ func TestPathParamToID_Invalid(t *testing.T) {
 
 func TestQueryParamToUint32(t *testing.T) {
 	tests := []struct {
-		name       string
-		param      string
-		want       uint32
-		wantErr    bool
-		wantExists bool
+		name    string
+		param   string
+		want    uint32
+		wantErr bool
 	}{
 		{
-			name:       "empty param",
-			param:      "",
-			want:       0,
-			wantErr:    false,
-			wantExists: false,
+			name:    "empty param",
+			param:   "",
+			want:    0,
+			wantErr: false,
 		},
 		{
-			name:       "valid param",
-			param:      "123",
-			want:       123,
-			wantErr:    false,
-			wantExists: true,
+			name:    "valid param",
+			param:   "123",
+			want:    123,
+			wantErr: false,
 		},
 		{
-			name:       "invalid param",
-			param:      "abc",
-			want:       0,
-			wantErr:    true,
-			wantExists: true,
+			name:    "invalid param",
+			param:   "abc",
+			want:    0,
+			wantErr: true,
 		},
 		{
-			name:       "negative param",
-			param:      "-1",
-			want:       0,
-			wantErr:    true,
-			wantExists: true,
+			name:    "negative param",
+			param:   "-1",
+			want:    0,
+			wantErr: true,
 		},
 		{
-			name:       "out of range param",
-			param:      "4294967296",
-			want:       0,
-			wantErr:    true,
-			wantExists: true,
+			name:    "out of range param",
+			param:   "4294967296",
+			want:    0,
+			wantErr: true,
 		},
 	}
 
