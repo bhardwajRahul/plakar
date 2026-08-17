@@ -186,14 +186,24 @@ func TestEntryPoint_CreateThenInfo(t *testing.T) {
 }
 
 func TestEntryPoint_AtMissingCommand(t *testing.T) {
-	// `at <loc>` with no following command currently calls log.Fatalf, which
-	// would exit the test process. We only drive the parse branch that does
-	// NOT terminate: `at` with a location and a real (but failing) command.
 	// Opening a non-existent repo location yields the RepoNotFound exit code.
 	missing := filepath.Join(t.TempDir(), "does-not-exist")
 	status, _, stderr := runEntryPoint(t, "at", missing, "info")
 	require.NotEqual(t, 0, status)
 	require.Contains(t, stderr, "failed to open the repository")
+
+	// A dangling "at" is reported for what it is, rather than falling
+	// through to the generic "a subcommand must be provided".  These used
+	// to go through log.Fatalf, which would have taken the test process
+	// down with them.
+	status, _, stderr = runEntryPoint(t, "at")
+	require.Equal(t, 1, status)
+	require.Contains(t, stderr, "missing plakar repository")
+
+	// A repository with no command behind it, likewise.
+	status, _, stderr = runEntryPoint(t, "at", missing)
+	require.Equal(t, 1, status)
+	require.Contains(t, stderr, "missing command")
 }
 
 // ---------- entryPoint: keyfile + plaintext repo unlock (nil secret) ----------

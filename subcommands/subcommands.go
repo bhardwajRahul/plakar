@@ -1,11 +1,14 @@
 package subcommands
 
 import (
+	goflag "flag"
+	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/spf13/pflag"
 )
 
 type CommandFlags uint32
@@ -40,6 +43,80 @@ func (cmd *SubcommandBase) GetFlags() CommandFlags {
 func (cmd *SubcommandBase) GetRepositorySecret() []byte {
 	return cmd.RepositorySecret
 }
+
+// SingleDash rewrites our single-dash options into the double-dash form pflag
+// expects, which it would otherwise read as bundles of shorthands.  Length is
+// not the criterion: -o, -k and -u are declared with StringVar and friends, so
+// they are one-letter long options rather than shorthands.
+//
+// Like the flag package it stops at the first positional argument, so a path
+// starting with a dash is never taken for an option.
+func SingleDash(flags *pflag.FlagSet, args []string) ([]string, error) {
+	out := make([]string, 0, len(args))
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		if arg == "--" {
+			return append(out, args[i:]...), nil
+		}
+
+		if !strings.HasPrefix(arg, "-") {
+			return append(out, args[i:]...), nil
+		}
+
+		if len(arg) > 1 && arg[1] != '-' {
+			name, _, explicit := strings.Cut(arg[1:], "=")
+			f := flags.Lookup(name)
+			if f == nil {
+				// A real shorthand is pflag's to resolve.
+				if len(name) == 1 && flags.ShorthandLookup(name) != nil {
+					out = append(out, arg)
+					continue
+				}
+				return nil, fmt.Errorf("flag provided but not defined: -%s", name)
+			}
+			out = append(out, "-"+arg)
+
+			// "-name value" takes the next argument with it.
+			if !explicit && f.Value.Type() != "bool" && i+1 < len(args) {
+				out = append(out, args[i+1])
+				i++
+			}
+			continue
+		}
+
+		out = append(out, arg)
+	}
+
+	return out, nil
+}
+
+// InstallGoFlags adopts the options kloset's LocateOptions installs into a
+// flag.FlagSet.
+func InstallGoFlags(flags *pflag.FlagSet, install func(*goflag.FlagSet)) {
+	gofs := goflag.NewFlagSet("", goflag.ContinueOnError)
+	install(gofs)
+	flags.AddGoFlagSet(gofs)
+}
+
+type goValue struct {
+	goflag.Value
+}
+
+func (goValue) Type() string { return "value" }
+
+// GoValue wraps a flag.Value for a pflag set, which additionally wants Type().
+func GoValue(v goflag.Value) pflag.Value {
+	return goValue{v}
+}
+
+// ErrUsage marks an option-parsing error, which exits 2 like the flag package
+// did rather than 1.
+type ErrUsage struct{ err error }
+
+func (e ErrUsage) Error() string { return e.err.Error() }
+func (e ErrUsage) Unwrap() error { return e.err }
 
 type CmdFactory func() Subcommand
 type subcmd struct {
