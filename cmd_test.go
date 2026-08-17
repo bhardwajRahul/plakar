@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"testing"
 
+	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
@@ -151,4 +153,40 @@ func TestGlobalFlagsParseBothSpellings(t *testing.T) {
 		require.True(t, opts.quiet, "args: %v", args)
 		require.Equal(t, []string{"version"}, rest, "args: %v", args)
 	}
+}
+
+func TestIsCompletionRequest(t *testing.T) {
+	require.True(t, isCompletionRequest([]string{cobra.ShellCompRequestCmd, "dia"}))
+	require.True(t, isCompletionRequest([]string{cobra.ShellCompNoDescRequestCmd}))
+	require.True(t, isCompletionRequest([]string{"completion", "bash"}))
+
+	require.False(t, isCompletionRequest(nil))
+	require.False(t, isCompletionRequest([]string{"backup", "/data"}))
+	// Only the first word counts: "at <repo> completion" is a repository
+	// called completion, not a request for the script.
+	require.False(t, isCompletionRequest([]string{"at", "/repo", "completion"}))
+}
+
+// Completion has to name the commands, which cobra only does for the ones it
+// considers runnable.
+func TestCompletionListsCommands(t *testing.T) {
+	_, root := newTestRoot()
+	subcommands.Tree(root)
+
+	var out bytes.Buffer
+	root.SetOut(&out)
+	root.SetErr(&out)
+	root.SetArgs([]string{cobra.ShellCompRequestCmd, "dia"})
+	require.NoError(t, root.Execute())
+	require.Contains(t, out.String(), "diag")
+
+	out.Reset()
+	root.SetArgs([]string{cobra.ShellCompRequestCmd, "diag", ""})
+	require.NoError(t, root.Execute())
+	require.Contains(t, out.String(), "snapshot")
+
+	out.Reset()
+	root.SetArgs([]string{cobra.ShellCompRequestCmd, "backup", "-"})
+	require.NoError(t, root.Execute())
+	require.Contains(t, out.String(), "--tag")
 }

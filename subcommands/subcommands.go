@@ -252,6 +252,11 @@ func Tree(root *cobra.Command) {
 			}
 			if leaf {
 				c.Annotations = map[string]string{annotationPath: path}
+				// Cobra only completes commands it considers
+				// runnable; entryPoint does the dispatching.
+				c.RunE = func(*cobra.Command, []string) error {
+					return nil
+				}
 			}
 			// The name comes from the registration: Use does not
 			// always agree ("diag blobsearch" says "diag packfile").

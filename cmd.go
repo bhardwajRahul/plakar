@@ -131,6 +131,18 @@ func normalizeArgs(root *cobra.Command, args []string) (out, rest []string, repo
 	return out, nil, repository, hadAt, nil
 }
 
+// isCompletionRequest reports whether the command line is one of the shell
+// completion entry points: the hidden command the shells call to ask for
+// candidates, or "plakar completion <shell>" which prints the script.
+func isCompletionRequest(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	return args[0] == cobra.ShellCompRequestCmd ||
+		args[0] == cobra.ShellCompNoDescRequestCmd ||
+		args[0] == "completion"
+}
+
 // newRootCmd builds the root command and binds the global flags.  The setup
 // stays in entryPoint() rather than a PersistentPreRun hook: parts of it exit
 // early, and the ordering is easier to follow spelled out.

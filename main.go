@@ -143,6 +143,15 @@ func entryPoint() int {
 		cpuCount:  opt_cpuDefault,
 	})
 
+	// Completion is cobra's own business: it must not go through the
+	// rewriting below, nor open a repository to answer.
+	if isCompletionRequest(os.Args[1:]) {
+		if err := root.Execute(); err != nil {
+			return 1
+		}
+		return 0
+	}
+
 	// cmdArgs is what is left for the subcommand.
 	normalized, cmdArgs, atRepository, hadAt, err := normalizeArgs(root, os.Args[1:])
 	if err == nil {
