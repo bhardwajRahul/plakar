@@ -19,7 +19,6 @@ package pkg
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io"
 	"math"
@@ -37,6 +36,7 @@ import (
 	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
+	"github.com/spf13/cobra"
 	"golang.org/x/mod/semver"
 )
 
@@ -49,23 +49,27 @@ type PkgCreate struct {
 	ManifestPath string
 }
 
+func (cmd *PkgCreate) CobraCommand() *cobra.Command {
+	c := &cobra.Command{
+		Use: "pkg create",
+	}
+	c.Flags().StringVar(&cmd.Out, "out", "", "Plugin file to create")
+	return c
+}
+
 func (cmd *PkgCreate) Parse(ctx *appcontext.AppContext, args []string) error {
-	flags := flag.NewFlagSet("pkg create", flag.ExitOnError)
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s [-out plugin] manifest.yaml version\n",
-			flags.Name())
+	rest, err := subcommands.ParseCobra(cmd, args)
+	if err != nil {
+		return err
 	}
 
-	flags.StringVar(&cmd.Out, "out", "", "Plugin file to create")
-	flags.Parse(args)
-
-	if flags.NArg() != 2 {
+	if len(rest) != 2 {
 		return fmt.Errorf("wrong usage")
 	}
 
 	var (
-		manifest = flags.Arg(0)
-		version  = flags.Arg(1)
+		manifest = rest[0]
+		version  = rest[1]
 	)
 
 	if !semver.IsValid(version) {

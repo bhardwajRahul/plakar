@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -97,13 +96,13 @@ func pkgpreloadhook(m *pkg.Manifest) error {
 func pkgloadhook(m *pkg.Manifest, p *pkg.Package, pkgdir string) {
 	if err := plugins.Load(m, pkgdir); err != nil {
 		fmt.Fprintf(os.Stderr, "%s: failed to load %s@%s: %s\n",
-			flag.CommandLine.Name(), m.Name, p.Version, err)
+			progName(), m.Name, p.Version, err)
 	}
 }
 
 func pkgunloadhook(m *pkg.Manifest, p *pkg.Package) {
 	if err := plugins.Unload(m); err != nil {
 		fmt.Fprintf(os.Stderr, "%s: failed to unload %s@%s: %s\n",
-			flag.CommandLine.Name(), m.Name, p.Version, err)
+			progName(), m.Name, p.Version, err)
 	}
 }

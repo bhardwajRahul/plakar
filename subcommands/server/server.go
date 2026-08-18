@@ -17,39 +17,35 @@
 package server
 
 import (
-	"flag"
-	"fmt"
-
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/server/httpd"
 	"github.com/PlakarKorp/plakar/subcommands"
+	"github.com/spf13/cobra"
 )
 
 func init() {
 	subcommands.Register(func() subcommands.Subcommand { return &Server{} }, subcommands.BeforeRepositoryWithStorage, "server")
 }
 
+func (cmd *Server) CobraCommand() *cobra.Command {
+	c := &cobra.Command{
+		Use: "server [OPTIONS]",
+	}
+	c.Flags().StringVar(&cmd.ListenAddr, "listen", "localhost:9876", "address to listen on")
+	c.Flags().BoolVar(&cmd.allowDelete, "allow-delete", false, "enable delete operations")
+	c.Flags().StringVar(&cmd.Cert, "cert", "", "Full certificate chain")
+	c.Flags().StringVar(&cmd.Key, "key", "", "Certificate private key")
+	return c
+}
+
 func (cmd *Server) Parse(ctx *appcontext.AppContext, args []string) error {
-	var opt_allowdelete bool
-	flags := flag.NewFlagSet("server", flag.ExitOnError)
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s [OPTIONS]\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "\nOPTIONS:\n")
-		flags.PrintDefaults()
+	if _, err := subcommands.ParseCobra(cmd, args); err != nil {
+		return err
 	}
 
-	flags.StringVar(&cmd.ListenAddr, "listen", "localhost:9876", "address to listen on")
-	flags.BoolVar(&opt_allowdelete, "allow-delete", false, "enable delete operations")
-	flags.StringVar(&cmd.Cert, "cert", "", "Full certificate chain")
-	flags.StringVar(&cmd.Key, "key", "", "Certificate private key")
-
-	flags.Parse(args)
-
-	noDelete := !opt_allowdelete
-
 	cmd.RepositorySecret = ctx.GetSecret()
-	cmd.NoDelete = noDelete
+	cmd.NoDelete = !cmd.allowDelete
 
 	return nil
 }
@@ -61,6 +57,8 @@ type Server struct {
 	NoDelete   bool
 	Cert       string
 	Key        string
+
+	allowDelete bool
 }
 
 func (cmd *Server) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {

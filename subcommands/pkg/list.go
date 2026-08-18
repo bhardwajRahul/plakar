@@ -17,7 +17,6 @@
 package pkg
 
 import (
-	"flag"
 	"fmt"
 	"runtime"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/appcontext"
 	"github.com/PlakarKorp/plakar/subcommands"
+	"github.com/spf13/cobra"
 )
 
 type PkgList struct {
@@ -34,20 +34,23 @@ type PkgList struct {
 	Signers  bool
 }
 
+func (cmd *PkgList) CobraCommand() *cobra.Command {
+	c := &cobra.Command{
+		Use: "pkg list",
+	}
+	c.Flags().BoolVar(&cmd.LongName, "long", false, "show full package name")
+	c.Flags().BoolVar(&cmd.ListAll, "available", false, "list available prebuilt packages")
+	c.Flags().BoolVar(&cmd.Signers, "signers", false, "show which key signed each installed package")
+	return c
+}
+
 func (cmd *PkgList) Parse(ctx *appcontext.AppContext, args []string) error {
-	flags := flag.NewFlagSet("pkg list", flag.ExitOnError)
-	flags.BoolVar(&cmd.LongName, "long", false, "show full package name")
-	flags.BoolVar(&cmd.ListAll, "available", false, "list available prebuilt packages")
-	flags.BoolVar(&cmd.Signers, "signers", false, "show which key signed each installed package")
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s [OPTIONS]\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "\nOPTIONS:\n")
-		flags.PrintDefaults()
+	rest, err := subcommands.ParseCobra(cmd, args)
+	if err != nil {
+		return err
 	}
 
-	flags.Parse(args)
-
-	if flags.NArg() != 0 {
+	if len(rest) != 0 {
 		return fmt.Errorf("too many arguments")
 	}
 
