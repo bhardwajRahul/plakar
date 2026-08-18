@@ -11,6 +11,8 @@ github.com/PlakarKorp/go-cdc-chunkers v1.1.0 h1:XJKDpvncPc7ZNo830Kk5MRqOhbCLi5Ga
 github.com/PlakarKorp/go-cdc-chunkers v1.1.0/go.mod h1:y7ag92JABKPBDoSOPwedssQ5NIOgjRm4Mu6yTBpmUMY=
 github.com/PlakarKorp/go-human2duration v0.1.6 h1:pRPAU3yX4ROV7RihXihPkwyjoQNI1lnemjAMFdWRwi8=
 github.com/PlakarKorp/go-human2duration v0.1.6/go.mod h1:1kg75kTlYCYURVyciaeO2GFdLgGDMhIfBTBpfydv1sk=
+github.com/PlakarKorp/go-signify v0.1.0 h1:kdoOKOLFm3TV8iiLWv4I+Rj0xkz+5yRvAyhE7fKwxZk=
+github.com/PlakarKorp/go-signify v0.1.0/go.mod h1:3s+TD9DBxuBmEJGADEYLZ5ax2SwjgcO3ofrfCtqC8/E=
 github.com/PlakarKorp/integration-grpc v1.1.0 h1:ZUa/4m/pZWOmB7XzBfeAA/pOAxev3zbkVHrdi0tqtB4=
 github.com/PlakarKorp/integration-grpc v1.1.0/go.mod h1:QZ55M9kXa3DntUvS9njOLoFY1S09bYbHKR/3kflDi5o=
 github.com/PlakarKorp/integrations/fs v1.1.3 h1:ljkALE/B6m9Ht7877U3Wu6RoogKBynlXlz4ySD/qSXY=
@@ -25,8 +27,10 @@ github.com/PlakarKorp/integrations/tar v1.1.0 h1:hw2vhiwlAzJMWVS2py9sRVqhF9K9kUD
 github.com/PlakarKorp/integrations/tar v1.1.0/go.mod h1:lq8UXspuZFCKqOZUsUL9f4pM3xWXqZNeLTAc7GIBMsg=
 github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260728134607-9310b71c3adc h1:ITRHWjDdJWmKOHe3uAc+AZ/aMexch8DPiGee+ZF2wBI=
 github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260728134607-9310b71c3adc/go.mod h1:SOI8K/6XjiDLwjQxfN9ck1tAdPCqNuworw3nzAEcOSQ=
-github.com/PlakarKorp/pkg v1.1.2 h1:fNnfut1dJNBYLX4VbE5mwQSbFl8/ZGomeyfQKD5Lx0M=
-github.com/PlakarKorp/pkg v1.1.2/go.mod h1:2mnpmH0ZbJXIjYjhvjLQhmw4Tj5TIVDXZWuINtPNdaU=
+github.com/PlakarKorp/pkg v1.1.3-0.20260815233227-6ac26c3d50ec h1:FFuiyZoRxjbZlwXQ/MnGYwK5uNk1yZNXglrxMhABkRc=
+github.com/PlakarKorp/pkg v1.1.3-0.20260815233227-6ac26c3d50ec/go.mod h1:2mnpmH0ZbJXIjYjhvjLQhmw4Tj5TIVDXZWuINtPNdaU=
+github.com/PlakarKorp/pkg v1.1.3-0.20260817121456-e41c09352892 h1:Py7NAnhDxW3QiMdHGXdepGj+KA9QXe1RssCmtaC5I8s=
+github.com/PlakarKorp/pkg v1.1.3-0.20260817121456-e41c09352892/go.mod h1:2mnpmH0ZbJXIjYjhvjLQhmw4Tj5TIVDXZWuINtPNdaU=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
 github.com/RaduBerinde/axisds v0.1.0/go.mod h1:UHGJonU9z4YYGKJxSaC6/TNcLOBptpmM5m2Cksbnw0Y=
 github.com/RaduBerinde/btreemap v0.0.0-20260105202824-d3184786f603 h1:fSdiBlO4Bad28mJOPlAynvfgdDC9v+yRlzSFHvvjKYI=
@@ -172,6 +176,8 @@ github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+m
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
+github.com/ebfe/bcrypt_pbkdf v0.0.0-20140212075826-3c8d2dcb253a h1:YtdtTUN1iH97s+6PUjLnaiKSQj4oG1/EZ3N9bx6g4kU=
+github.com/ebfe/bcrypt_pbkdf v0.0.0-20140212075826-3c8d2dcb253a/go.mod h1:/CZpbhAusDOobpcb9yubw46kdYjq0zRC0Wpg9a9zFQM=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f h1:Y/CXytFA4m6baUTXGLOoWe4PQhGxaX0KpnayAqC48p4=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f/go.mod h1:vw97MGsxSvLiUE2X8qFplwetxpGLQrlU1Q9AUEIzCaM=
 github.com/felixge/fgprof v0.9.5 h1:8+vR6yu2vvSKn08urWyEuxx75NWPEvybbkBirEpsbVY=
