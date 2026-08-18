@@ -336,14 +336,9 @@ func entryPoint() int {
 	ctx.ProcessID = os.Getpid()
 	ctx.MaxConcurrency = opt_maxConcurrency
 
-	// An "at" with nothing behind it is a mistake of its own.
 	if hadAt {
 		if atRepository == "" {
 			fmt.Fprintf(os.Stderr, "%s: missing plakar repository\n", progName())
-			return 1
-		}
-		if len(cmdArgs) == 0 {
-			fmt.Fprintf(os.Stderr, "%s: missing command\n", progName())
 			return 1
 		}
 	}

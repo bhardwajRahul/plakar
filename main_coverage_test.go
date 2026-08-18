@@ -31,7 +31,7 @@ func runEntryPoint(t *testing.T, args ...string) (status int, stdout, stderr str
 		{"XDG_CONFIG_HOME", filepath.Join(base, "config")},
 		{"XDG_CACHE_HOME", filepath.Join(base, "cache")},
 		{"XDG_DATA_HOME", filepath.Join(base, "data")},
-		{"TERM", "dumb"},        // force stdio renderer, no TUI
+		{"TERM", "dumb"},          // force stdio renderer, no TUI
 		{"PLAKAR_REPOSITORY", ""}, // don't inherit a real repo
 		{"PLAKAR_PASSPHRASE", ""}, // don't inherit a real passphrase
 	} {
@@ -199,11 +199,6 @@ func TestEntryPoint_AtMissingCommand(t *testing.T) {
 	status, _, stderr = runEntryPoint(t, "at")
 	require.Equal(t, 1, status)
 	require.Contains(t, stderr, "missing plakar repository")
-
-	// A repository with no command behind it, likewise.
-	status, _, stderr = runEntryPoint(t, "at", missing)
-	require.Equal(t, 1, status)
-	require.Contains(t, stderr, "missing command")
 }
 
 // ---------- entryPoint: keyfile + plaintext repo unlock (nil secret) ----------
