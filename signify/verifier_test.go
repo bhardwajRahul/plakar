@@ -75,7 +75,7 @@ func TestVerifyRejectsTamperedArtifact(t *testing.T) {
 		strings.NewReader("this is NOT the artifact content\n"),
 	)
 
-	if !errors.Is(err, ErrDigestMismatch) {
+	if !errors.Is(err, gosignify.ErrDigestMismatch) {
 		t.Errorf("got %v, want ErrDigestMismatch", err)
 	}
 }
@@ -209,7 +209,7 @@ func TestAllowUnsignedStillVerifiesSignedArtifacts(t *testing.T) {
 	// Tampered content with a valid signature: still rejected.
 	_, err = v.VerifyArtifact(testOrigin, artifactName,
 		fixture(t, "art.sum.sig"), strings.NewReader("tampered"))
-	if !errors.Is(err, ErrDigestMismatch) {
+	if !errors.Is(err, gosignify.ErrDigestMismatch) {
 		t.Errorf("got %v, want ErrDigestMismatch", err)
 	}
 

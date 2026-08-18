@@ -17,8 +17,6 @@
 package signify
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -110,28 +108,18 @@ func (v *Verifier) VerifyArtifact(origin, filename string, sig []byte, content i
 			ErrBadChecksum, filename, want.Algorithm)
 	}
 
-	// Hashed here rather than through want.Verify so the digest can be
-	// reported: a mismatch is far easier to diagnose with both values.
-	h := sha256.New()
-	if _, err := io.Copy(h, content); err != nil {
+	if err := want.Verify(content); err != nil {
 		return nil, err
 	}
 
-	got := hex.EncodeToString(h.Sum(nil))
-
-	if !strings.EqualFold(got, want.Digest) {
-		return nil, fmt.Errorf("%w: %s has digest %s, signed checksum is %s",
-			ErrDigestMismatch, filename, got, want.Digest)
-	}
-
-	return &Result{Key: key, Filename: filename, Digest: got}, nil
+	return &Result{Key: key, Filename: filename, Digest: want.Digest}, nil
 }
 
 // Verify implements pkg.Verifier. Errors wrap pkg.ErrUnverified so callers can
 // tell a rejection from a transport failure.
 func (v *Verifier) Verify(artifact *pkg.Artifact, rd io.Reader) error {
 	if _, err := v.VerifyArtifact(artifact.Origin, artifact.Filename, artifact.Signature, rd); err != nil {
-		return fmt.Errorf("%w: %s: %s", pkg.ErrUnverified, artifact.Filename, err)
+		return fmt.Errorf("%w: %s: %w", pkg.ErrUnverified, artifact.Filename, err)
 	}
 
 	return nil
