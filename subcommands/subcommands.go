@@ -56,8 +56,6 @@ func (cmd *SubcommandBase) GetRepositorySecret() []byte {
 // not the criterion: -o, -k and -u are declared with StringVar and friends, so
 // they are one-letter long options rather than shorthands.
 //
-// Like the flag package it stops at the first positional argument, so a path
-// starting with a dash is never taken for an option.
 func SingleDash(flags *pflag.FlagSet, args []string) ([]string, error) {
 	out := make([]string, 0, len(args))
 
