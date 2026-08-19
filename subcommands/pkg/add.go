@@ -35,6 +35,7 @@ type PkgAdd struct {
 
 	upgrade       bool
 	allowUnsigned bool
+	container     bool
 	Args          []string
 }
 
@@ -45,6 +46,7 @@ func (cmd *PkgAdd) CobraCommand() *cobra.Command {
 	c.Flags().BoolVar(&cmd.upgrade, "u", false, "Update packages")
 	c.Flags().BoolVar(&cmd.allowUnsigned, "allow-unsigned", false,
 		"Install packages that carry no signature")
+	c.Flags().BoolVar(&cmd.container, "container", false, "Install the container flavor of remote packages")
 	return c
 }
 
@@ -106,6 +108,9 @@ func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository)
 			Version:       version,
 			Upgrade:       cmd.upgrade,
 		}
+		if cmd.container {
+			addopts.Container = true
+		}
 		if err := pkgmgr.Add(plugin, &addopts); err != nil {
 			if cmd.upgrade && errors.Is(err, pkg.ErrAlreadyInstalled) {
 				continue
@@ -127,6 +132,9 @@ func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository)
 			addopts := pkg.AddOptions{
 				ImplicitFetch: true,
 				Upgrade:       cmd.upgrade,
+				// Keep whatever flavor is installed rather than
+				// silently switching a container install to native.
+				Container: plugin.OperatingSystem == pkg.OSContainer,
 			}
 
 			if err := pkgmgr.Add(plugin.Name, &addopts); err != nil {
