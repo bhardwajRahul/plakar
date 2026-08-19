@@ -190,3 +190,29 @@ func TestCompletionListsCommands(t *testing.T) {
 	require.NoError(t, root.Execute())
 	require.Contains(t, out.String(), "--tag")
 }
+
+// Cobra resolves against the command tree, where "at" does not exist, so the
+// prefix has to go before the tree sees the line.
+func TestCompletionArgsDropsAtPrefix(t *testing.T) {
+	require.Equal(t,
+		[]string{"__complete", "ls", ""},
+		completionArgs([]string{"__complete", "at", "/repo", "ls", ""}))
+
+	require.Equal(t,
+		[]string{"__complete", "ls", "1c8"},
+		completionArgs([]string{"__complete", "at", "/repo", "ls", "1c8"}))
+
+	// Without the prefix there is nothing to drop.
+	require.Equal(t,
+		[]string{"__complete", "ls", ""},
+		completionArgs([]string{"__complete", "ls", ""}))
+
+	// The word being completed is the repository itself: leave it, or cobra
+	// is handed nothing to complete at all.
+	require.Equal(t,
+		[]string{"__complete", "at", ""},
+		completionArgs([]string{"__complete", "at", ""}))
+	require.Equal(t,
+		[]string{"__complete", "at", "/tmp/re"},
+		completionArgs([]string{"__complete", "at", "/tmp/re"}))
+}

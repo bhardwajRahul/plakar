@@ -145,7 +145,8 @@ func entryPoint() int {
 
 	// Completion is cobra's own business: it must not go through the
 	// rewriting below, nor open a repository to answer.
-	if isCompletionRequest(os.Args[1:]) {
+	if args := os.Args[1:]; isCompletionRequest(args) {
+		root.SetArgs(completionArgs(args))
 		if err := root.Execute(); err != nil {
 			return 1
 		}

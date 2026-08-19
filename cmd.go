@@ -143,6 +143,29 @@ func isCompletionRequest(args []string) bool {
 		args[0] == "completion"
 }
 
+// completionArgs drops the "at REPOSITORY" prefix from what the shell hands
+// back, since cobra resolves commands against the tree and "at" is not one of
+// them.  The repository is still read from os.Args when we need it.
+//
+// The last argument is the word being completed and is left alone: while the
+// user is still typing the repository itself there is nothing to strip yet.
+func completionArgs(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+	last := len(args) - 1
+
+	out := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		if args[i] == "at" && i+1 < last {
+			i++
+			continue
+		}
+		out = append(out, args[i])
+	}
+	return out
+}
+
 // newRootCmd builds the root command and binds the global flags.  The setup
 // stays in entryPoint() rather than a PersistentPreRun hook: parts of it exit
 // early, and the ordering is easier to follow spelled out.
@@ -177,6 +200,7 @@ func newRootCmd(opts *globalOpts, def defaults) *cobra.Command {
 	f.BoolVar(&opts.disableSecurityCheck, "disable-security-check", false, "disable update check")
 
 	subcommands.Tree(root)
+	installSnapshotCompletion(root)
 
 	root.SetUsageFunc(func(c *cobra.Command) error {
 		out := c.OutOrStderr()
