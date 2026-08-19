@@ -22,8 +22,11 @@ func setupPkgManager(ctx *appcontext.AppContext, configDir, dataDir, cacheDir st
 
 	backend, err := pkg.NewFlatBackend(ctx.GetInner(), plugdir, cachedir, &pkg.FlatBackendOptions{
 		PreLoadHook: pkgpreloadhook,
-		LoadHook:    pkgloadhook,
-		UnloadHook:  pkgunloadhook,
+		InstallHook: func(m *pkg.Manifest) error {
+			return plugins.EnsureImages(ctx, m, ctx.Stdout, ctx.Stderr)
+		},
+		LoadHook:   pkgloadhook,
+		UnloadHook: pkgunloadhook,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init the package manager: %w", err)
