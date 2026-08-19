@@ -208,7 +208,7 @@ func TestScanEmitsErrorForMissingConnectorFiles(t *testing.T) {
 			ExtraFiles: []string{"ghost-extra.dat"}, // missing
 		}},
 	}
-	imp := &pkgerImporter{cwd: dir, manifest: m, manifestPath: manifest}
+	imp := &pkgerImporter{cwd: dir, manifest: m}
 
 	ch := make(chan *connectors.Record, 128)
 	err := imp.Import(context.Background(), ch, nil)
@@ -241,7 +241,7 @@ func TestScanPropagatesNotBelowManifestError(t *testing.T) {
 			Executable: outside,
 		}},
 	}
-	imp := &pkgerImporter{cwd: sub, manifest: m, manifestPath: manifest}
+	imp := &pkgerImporter{cwd: sub, manifest: m}
 
 	ch := make(chan *connectors.Record, 64)
 	err := imp.Import(context.Background(), ch, nil)

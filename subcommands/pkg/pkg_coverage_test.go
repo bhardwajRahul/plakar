@@ -327,7 +327,7 @@ func TestPkgerImporterScan(t *testing.T) {
 			ExtraFiles: []string{"extra.dat"},
 		}},
 	}
-	imp := &pkgerImporter{cwd: dir, manifest: m, manifestPath: manifest}
+	imp := &pkgerImporter{cwd: dir, manifest: m}
 
 	ch := make(chan *connectors.Record, 128)
 	require.NoError(t, imp.Import(context.Background(), ch, nil))

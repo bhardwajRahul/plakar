@@ -2,48 +2,15 @@ package pkg
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/PlakarKorp/kloset/connectors"
-	ppkg "github.com/PlakarKorp/pkg"
 	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
 )
-
-// ---------------------------------------------------------------------------
-// scan: hard error returned when the manifest file itself escapes cwd.
-// This exercises the early `dofile(imp.manifestPath, ...)` error-return path
-// in scan, which is distinct from the connector-loop error path.
-// ---------------------------------------------------------------------------
-
-func TestScanManifestPathEscapesCwd_cov80(t *testing.T) {
-	t.Parallel()
-	if runtime.GOOS == "windows" {
-		t.Skip("path-escape semantics differ on windows")
-	}
-	root := t.TempDir()
-	sub := filepath.Join(root, "sub")
-	require.NoError(t, os.Mkdir(sub, 0755))
-
-	// manifestPath is outside cwd -> dofile returns the hard "not below" error,
-	// which scan must propagate before touching any connector.
-	outsideManifest := filepath.Join(root, "manifest.yaml")
-	require.NoError(t, os.WriteFile(outsideManifest, []byte("name: x\n"), 0644))
-
-	imp := &pkgerImporter{
-		cwd:          sub,
-		manifest:     &ppkg.Manifest{Name: "x"},
-		manifestPath: outsideManifest,
-	}
-	ch := make(chan *connectors.Record, 16)
-	err := imp.Import(context.Background(), ch, nil)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "not below the manifest")
-}
 
 // ---------------------------------------------------------------------------
 // dofile itextra: a plain (non-exe, non-json) file is accepted as-is and a
