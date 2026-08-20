@@ -188,6 +188,40 @@ func integrationMatchesInstallationStatus(it *pkg.Integration, filter string) bo
 	}
 }
 
+// integrationMatchesTypes reports whether the integration has at least
+// one of the requested Types bools set. filter values are the plakar
+// Types-struct field names in lowercase — "storage", "source",
+// "destination", "provider". Empty filter matches everything; unknown
+// values match nothing. Any-of semantics: an integration matches if it
+// satisfies ANY of the requested types (OR within the type filter; AND
+// with the other filters).
+func integrationMatchesTypes(it *pkg.Integration, filter []string) bool {
+	if len(filter) == 0 {
+		return true
+	}
+	for _, t := range filter {
+		switch t {
+		case "storage":
+			if it.Types.Storage {
+				return true
+			}
+		case "source":
+			if it.Types.Source {
+				return true
+			}
+		case "destination":
+			if it.Types.Destination {
+				return true
+			}
+		case "provider":
+			if it.Types.Provider {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Request) error {
 	offset, err := QueryParamToInt64(r, "offset", 0, 0)
 	if err != nil {
@@ -199,10 +233,7 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	filterType, _, err := QueryParamToString(r, "type")
-	if err != nil {
-		return err
-	}
+	filterTypes := QueryParamToStrings(r, "type")
 
 	filterTag, _, err := QueryParamToString(r, "tag")
 	if err != nil {
@@ -232,8 +263,7 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 	res.Items = make([]pkg.Integration, 0)
 
 	integrations, err := ui.ctx.GetPkgManager().Query(&pkg.QueryOptions{
-		Type: filterType,
-		Tag:  filterTag,
+		Tag: filterTag,
 	})
 	if err != nil {
 		return err
@@ -245,6 +275,9 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 		if !integrationMatchesInstallationStatus(integration, filterInstallationStatus) {
+			continue
+		}
+		if !integrationMatchesTypes(integration, filterTypes) {
 			continue
 		}
 

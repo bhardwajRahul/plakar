@@ -143,3 +143,61 @@ func TestIntegrationMatchesInstallationStatus(t *testing.T) {
 		})
 	}
 }
+
+// TestIntegrationMatchesTypes pins the multi-value type filter used by
+// servicesGetIntegration: empty filter matches everything; any-of
+// semantics — an integration matches if it satisfies AT LEAST ONE of
+// the requested Types bools; unknown values are ignored (match nothing
+// on their own).
+func TestIntegrationMatchesTypes(t *testing.T) {
+	mk := func(storage, source, destination, provider bool) pkg.Integration {
+		return pkg.Integration{
+			Types: pkg.IntegrationTypes{
+				Storage:     storage,
+				Source:      source,
+				Destination: destination,
+				Provider:    provider,
+			},
+		}
+	}
+
+	storageOnly := mk(true, false, false, false)
+	sourceOnly := mk(false, true, false, false)
+	destOnly := mk(false, false, true, false)
+	providerOnly := mk(false, false, false, true)
+	sourceAndDest := mk(false, true, true, false)
+	nothing := mk(false, false, false, false)
+
+	cases := []struct {
+		name   string
+		filter []string
+		it     pkg.Integration
+		want   bool
+	}{
+		{"empty filter matches storage", nil, storageOnly, true},
+		{"empty filter matches nothing-typed", nil, nothing, true},
+
+		{"single value matches", []string{"storage"}, storageOnly, true},
+		{"single value rejects wrong type", []string{"storage"}, sourceOnly, false},
+
+		{"multi-value: first value matches", []string{"storage", "source"}, storageOnly, true},
+		{"multi-value: second value matches", []string{"storage", "source"}, sourceOnly, true},
+		{"multi-value: neither matches", []string{"storage", "source"}, destOnly, false},
+		{"multi-value: both bools true = any-of", []string{"storage", "source"}, sourceAndDest, true}, // source matches
+		{"all four values matches multi-typed", []string{"storage", "source", "destination", "provider"}, sourceAndDest, true},
+		{"all four values rejects nothing-typed", []string{"storage", "source", "destination", "provider"}, nothing, false},
+
+		{"provider matches provider row", []string{"provider"}, providerOnly, true},
+		{"provider rejects non-provider row", []string{"provider"}, storageOnly, false},
+
+		{"unknown value alone rejects", []string{"garbage"}, storageOnly, false},
+		{"unknown mixed with valid still ORs", []string{"garbage", "storage"}, storageOnly, true},
+		{"case-sensitive: 'Storage' rejects", []string{"Storage"}, storageOnly, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := integrationMatchesTypes(&tc.it, tc.filter)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
