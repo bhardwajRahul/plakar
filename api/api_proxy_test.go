@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/PlakarKorp/pkg"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,4 +64,30 @@ func TestProxy(t *testing.T) {
 		w := get(t, mux, "/api/proxy/v1/account/me")
 		require.Equal(t, http.StatusInternalServerError, w.Code, "body=%s", w.Body.String())
 	})
+}
+
+// TestIntegrationMatchesSearch pins the search filter used by
+// servicesGetIntegration: case-insensitive substring over Name OR
+// DisplayName; empty needle matches everything.
+func TestIntegrationMatchesSearch(t *testing.T) {
+	cases := []struct {
+		name, needle string
+		it           pkg.Integration
+		want         bool
+	}{
+		{"empty needle matches", "", pkg.Integration{Name: "aws-s3"}, true},
+		{"name substring, lowercase", "aws", pkg.Integration{Name: "aws-s3"}, true},
+		{"name substring, mixed case in field", "s3", pkg.Integration{Name: "aws-S3", DisplayName: "Amazon S3"}, true},
+		{"display name substring", "amazon", pkg.Integration{Name: "aws-s3", DisplayName: "Amazon S3"}, true},
+		{"no match", "gcp", pkg.Integration{Name: "aws-s3", DisplayName: "Amazon S3"}, false},
+		{"empty display name doesn't panic", "aws", pkg.Integration{Name: "aws-s3", DisplayName: ""}, true},
+		{"empty name doesn't panic", "amazon", pkg.Integration{Name: "", DisplayName: "Amazon S3"}, true},
+		{"unicode passthrough", "π", pkg.Integration{Name: "geo-π-service"}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := integrationMatchesSearch(&tc.it, tc.needle)
+			require.Equal(t, tc.want, got)
+		})
+	}
 }

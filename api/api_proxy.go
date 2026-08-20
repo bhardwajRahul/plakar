@@ -149,6 +149,17 @@ func (ui *uiserver) servicesSetAlertingServiceConfiguration(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(alertConfig)
 }
 
+// integrationMatchesSearch reports whether the integration's Name or
+// DisplayName contains needle (case-insensitive substring). needle must
+// already be lowercased. An empty needle matches everything.
+func integrationMatchesSearch(it *pkg.Integration, needle string) bool {
+	if needle == "" {
+		return true
+	}
+	return strings.Contains(strings.ToLower(it.Name), needle) ||
+		strings.Contains(strings.ToLower(it.DisplayName), needle)
+}
+
 func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Request) error {
 	offset, err := QueryParamToInt64(r, "offset", 0, 0)
 	if err != nil {
@@ -175,24 +186,34 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
+	search, _, err := QueryParamToString(r, "search")
+	if err != nil {
+		return err
+	}
+	needle := strings.ToLower(search) // "" when unset — no filter
+
 	var res Items[pkg.Integration]
 	res.Items = make([]pkg.Integration, 0)
 
-	var i int64
 	integrations, err := ui.ctx.GetPkgManager().Query(&pkg.QueryOptions{
 		Type:   filterType,
 		Tag:    filterTag,
 		Status: filterStatus,
 	})
-	for _, int := range integrations {
-		if err != nil {
-			return err
+	if err != nil {
+		return err
+	}
+
+	var i int64
+	for _, integration := range integrations {
+		if !integrationMatchesSearch(integration, needle) {
+			continue
 		}
 
 		res.Total++
 		i++
 		if i > offset && i < offset+limit {
-			res.Items = append(res.Items, *int)
+			res.Items = append(res.Items, *integration)
 		}
 	}
 
