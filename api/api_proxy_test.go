@@ -91,3 +91,55 @@ func TestIntegrationMatchesSearch(t *testing.T) {
 		})
 	}
 }
+
+// TestIntegrationMatchesInstallationStatus pins the installation_status
+// filter used by servicesGetIntegration: empty filter matches
+// everything; "installed"/"not-installed" match on Installation.Status;
+// "upgradable" requires installed AND Installation.Version !=
+// LatestVersion (plain string inequality, matches plakman); any unknown
+// value matches nothing.
+func TestIntegrationMatchesInstallationStatus(t *testing.T) {
+	installed := func(ver, latest string) pkg.Integration {
+		return pkg.Integration{
+			Installation:  pkg.IntegrationInstallation{Status: "installed", Version: ver},
+			LatestVersion: latest,
+		}
+	}
+	notInstalled := func(latest string) pkg.Integration {
+		return pkg.Integration{
+			Installation:  pkg.IntegrationInstallation{Status: "not-installed"},
+			LatestVersion: latest,
+		}
+	}
+
+	cases := []struct {
+		name   string
+		filter string
+		it     pkg.Integration
+		want   bool
+	}{
+		{"empty filter matches installed", "", installed("1.0.0", "1.0.0"), true},
+		{"empty filter matches not-installed", "", notInstalled("1.0.0"), true},
+
+		{"installed matches installed row", "installed", installed("1.0.0", "1.0.0"), true},
+		{"installed rejects not-installed row", "installed", notInstalled("1.0.0"), false},
+		{"not-installed matches not-installed row", "not-installed", notInstalled("1.0.0"), true},
+		{"not-installed rejects installed row", "not-installed", installed("1.0.0", "1.0.0"), false},
+
+		{"upgradable when installed version differs", "upgradable", installed("1.0.0", "1.1.0"), true},
+		{"upgradable rejects matching versions", "upgradable", installed("1.0.0", "1.0.0"), false},
+		{"upgradable rejects not-installed row", "upgradable", notInstalled("1.1.0"), false},
+		{"upgradable with empty installed version", "upgradable", installed("", "1.0.0"), true},
+		{"upgradable with both versions empty", "upgradable", installed("", ""), false},
+
+		{"unknown filter rejects installed", "garbage", installed("1.0.0", "1.0.0"), false},
+		{"unknown filter rejects not-installed", "garbage", notInstalled("1.0.0"), false},
+		{"case-sensitive: 'Installed' rejects all", "Installed", installed("1.0.0", "1.0.0"), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := integrationMatchesInstallationStatus(&tc.it, tc.filter)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}

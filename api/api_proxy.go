@@ -160,6 +160,34 @@ func integrationMatchesSearch(it *pkg.Integration, needle string) bool {
 		strings.Contains(strings.ToLower(it.DisplayName), needle)
 }
 
+// integrationMatchesInstallationStatus reports whether the integration
+// satisfies the installation_status query param. filter must be one of:
+//
+//	""             — no filter, matches everything.
+//	"installed"    — Installation.Status == "installed".
+//	"not-installed"— Installation.Status == "not-installed".
+//	"upgradable"   — installed AND Installation.Version != LatestVersion
+//	                 (plain string inequality, deliberately not
+//	                 semver-aware; mirrors the frontend "canUpgrade"
+//	                 chip and plakman).
+//
+// Any other value matches nothing (silent zero results, no 400).
+func integrationMatchesInstallationStatus(it *pkg.Integration, filter string) bool {
+	switch filter {
+	case "":
+		return true
+	case "installed":
+		return it.Installation.Status == "installed"
+	case "not-installed":
+		return it.Installation.Status == "not-installed"
+	case "upgradable":
+		return it.Installation.Status == "installed" &&
+			it.Installation.Version != it.LatestVersion
+	default:
+		return false
+	}
+}
+
 func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Request) error {
 	offset, err := QueryParamToInt64(r, "offset", 0, 0)
 	if err != nil {
@@ -181,9 +209,17 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	filterStatus, _, err := QueryParamToString(r, "status")
+	// installation_status is the canonical param; `status` is kept as a
+	// legacy alias. If both are sent, installation_status wins.
+	filterInstallationStatus, _, err := QueryParamToString(r, "installation_status")
 	if err != nil {
 		return err
+	}
+	if filterInstallationStatus == "" {
+		filterInstallationStatus, _, err = QueryParamToString(r, "status")
+		if err != nil {
+			return err
+		}
 	}
 
 	search, _, err := QueryParamToString(r, "search")
@@ -196,9 +232,8 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 	res.Items = make([]pkg.Integration, 0)
 
 	integrations, err := ui.ctx.GetPkgManager().Query(&pkg.QueryOptions{
-		Type:   filterType,
-		Tag:    filterTag,
-		Status: filterStatus,
+		Type: filterType,
+		Tag:  filterTag,
 	})
 	if err != nil {
 		return err
@@ -207,6 +242,9 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 	var i int64
 	for _, integration := range integrations {
 		if !integrationMatchesSearch(integration, needle) {
+			continue
+		}
+		if !integrationMatchesInstallationStatus(integration, filterInstallationStatus) {
 			continue
 		}
 
