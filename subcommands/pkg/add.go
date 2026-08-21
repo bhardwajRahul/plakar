@@ -95,6 +95,12 @@ func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository)
 
 	for _, plugin := range cmd.Args {
 		plugin, version, _ := strings.Cut(plugin, "@")
+		if version == "latest" {
+			// "latest" spells out the default: leave the version empty so
+			// the manager picks it from the recipe instead of looking for
+			// a release named "latest".
+			version = ""
+		}
 		addopts := pkg.AddOptions{
 			ImplicitFetch: true,
 			Version:       version,
