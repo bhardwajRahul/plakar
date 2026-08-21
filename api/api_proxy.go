@@ -20,13 +20,7 @@ var SERVICES_ENDPOINT = "https://api.plakar.io"
 
 // integrationsCache memoizes pkg.Manager.Query() across requests so the
 // /integration list and detail endpoints don't fetch the ~449 KB remote
-// catalog from api.plakar.io on every hit. The handler runs all filters
-// (search, installation_status, type, tag) over the cached slice, so a
-// single entry under a constant key covers every call.
-//
-// TTL is short enough that catalog updates propagate without operator
-// action. install/uninstall explicitly invalidate the entry so
-// state-changing operations reflect immediately.
+// catalog from api.plakar.io on every hit.
 const integrationsCacheKey = "all"
 
 var integrationsCache = ttlmap.New[string, []*pkg.Integration](5 * time.Minute)
@@ -169,9 +163,6 @@ func (ui *uiserver) servicesSetAlertingServiceConfiguration(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(alertConfig)
 }
 
-// integrationMatchesSearch reports whether the integration's Name or
-// DisplayName contains needle (case-insensitive substring). needle must
-// already be lowercased. An empty needle matches everything.
 func integrationMatchesSearch(it *pkg.Integration, needle string) bool {
 	if needle == "" {
 		return true
@@ -180,18 +171,6 @@ func integrationMatchesSearch(it *pkg.Integration, needle string) bool {
 		strings.Contains(strings.ToLower(it.DisplayName), needle)
 }
 
-// integrationMatchesInstallationStatus reports whether the integration
-// satisfies the installation_status query param. filter must be one of:
-//
-//	""             — no filter, matches everything.
-//	"installed"    — Installation.Status == "installed".
-//	"not-installed"— Installation.Status == "not-installed".
-//	"upgradable"   — installed AND Installation.Version != LatestVersion
-//	                 (plain string inequality, deliberately not
-//	                 semver-aware; mirrors the frontend "canUpgrade"
-//	                 chip and plakman).
-//
-// Any other value matches nothing (silent zero results, no 400).
 func integrationMatchesInstallationStatus(it *pkg.Integration, filter string) bool {
 	switch filter {
 	case "":
@@ -215,13 +194,6 @@ func integrationMatchesTag(it *pkg.Integration, tag string) bool {
 	return slices.Contains(it.Tags, tag)
 }
 
-// integrationMatchesTypes reports whether the integration has at least
-// one of the requested Types bools set. filter values are the plakar
-// Types-struct field names in lowercase — "storage", "source",
-// "destination", "provider". Empty filter matches everything; unknown
-// values match nothing. Any-of semantics: an integration matches if it
-// satisfies ANY of the requested types (OR within the type filter; AND
-// with the other filters).
 func integrationMatchesTypes(it *pkg.Integration, filter []string) bool {
 	if len(filter) == 0 {
 		return true
@@ -296,7 +268,7 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return err
 	}
-	needle := strings.ToLower(search) // "" when unset — no filter
+	needle := strings.ToLower(search)
 
 	var res Items[pkg.Integration]
 	res.Items = make([]pkg.Integration, 0)

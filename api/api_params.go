@@ -92,9 +92,6 @@ func QueryParamToString(r *http.Request, param string) (string, bool, error) {
 	return str, true, nil
 }
 
-// QueryParamToStrings returns all values for a repeatable query
-// parameter (?foo=a&foo=b), with empty entries dropped. An empty
-// result means the filter is not set.
 func QueryParamToStrings(r *http.Request, param string) []string {
 	raw := r.URL.Query()[param]
 	if len(raw) == 0 {
