@@ -201,3 +201,35 @@ func TestIntegrationMatchesTypes(t *testing.T) {
 		})
 	}
 }
+
+// TestIntegrationMatchesTag pins the tag filter used by
+// servicesGetIntegration: empty tag matches everything; a non-empty tag
+// must appear in the integration's Tags slice (case-sensitive
+// slices.Contains match, unchanged from the pkg-side filter it
+// replaces).
+func TestIntegrationMatchesTag(t *testing.T) {
+	withTags := func(tags ...string) pkg.Integration {
+		return pkg.Integration{Tags: tags}
+	}
+
+	cases := []struct {
+		name string
+		tag  string
+		it   pkg.Integration
+		want bool
+	}{
+		{"empty tag matches everything", "", withTags(), true},
+		{"empty tag matches integration with tags", "", withTags("backup", "daily"), true},
+		{"exact tag match", "backup", withTags("backup"), true},
+		{"one of multiple tags matches", "daily", withTags("backup", "daily"), true},
+		{"no match", "weekly", withTags("backup", "daily"), false},
+		{"case-sensitive: 'Backup' rejects", "Backup", withTags("backup"), false},
+		{"empty Tags slice rejects non-empty tag", "backup", withTags(), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := integrationMatchesTag(&tc.it, tc.tag)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}

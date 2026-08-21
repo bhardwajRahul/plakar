@@ -7,13 +7,33 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/services"
+	"go.omarpolo.com/ttlmap"
 )
 
 var SERVICES_ENDPOINT = "https://api.plakar.io"
+
+// integrationsCache memoizes pkg.Manager.Query() across requests so the
+// /integration list and detail endpoints don't fetch the ~449 KB remote
+// catalog from api.plakar.io on every hit. The handler runs all filters
+// (search, installation_status, type, tag) over the cached slice, so a
+// single entry under a constant key covers every call.
+//
+// TTL is short enough that catalog updates propagate without operator
+// action. install/uninstall explicitly invalidate the entry so
+// state-changing operations reflect immediately.
+const integrationsCacheKey = "all"
+
+var integrationsCache = ttlmap.New[string, []*pkg.Integration](5 * time.Minute)
+
+func init() {
+	integrationsCache.AutoExpire()
+}
 
 func (ui *uiserver) servicesProxy(w http.ResponseWriter, r *http.Request) error {
 	// Define target service base URL
@@ -188,6 +208,13 @@ func integrationMatchesInstallationStatus(it *pkg.Integration, filter string) bo
 	}
 }
 
+func integrationMatchesTag(it *pkg.Integration, tag string) bool {
+	if tag == "" {
+		return true
+	}
+	return slices.Contains(it.Tags, tag)
+}
+
 // integrationMatchesTypes reports whether the integration has at least
 // one of the requested Types bools set. filter values are the plakar
 // Types-struct field names in lowercase — "storage", "source",
@@ -220,6 +247,18 @@ func integrationMatchesTypes(it *pkg.Integration, filter []string) bool {
 		}
 	}
 	return false
+}
+
+func (ui *uiserver) cachedIntegrations() ([]*pkg.Integration, error) {
+	if cached, ok := integrationsCache.Get(integrationsCacheKey); ok {
+		return cached, nil
+	}
+	integrations, err := ui.ctx.GetPkgManager().Query(nil)
+	if err != nil {
+		return nil, err
+	}
+	integrationsCache.Add(integrationsCacheKey, integrations)
+	return integrations, nil
 }
 
 func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Request) error {
@@ -262,9 +301,7 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 	var res Items[pkg.Integration]
 	res.Items = make([]pkg.Integration, 0)
 
-	integrations, err := ui.ctx.GetPkgManager().Query(&pkg.QueryOptions{
-		Tag: filterTag,
-	})
+	integrations, err := ui.cachedIntegrations()
 	if err != nil {
 		return err
 	}
@@ -278,6 +315,9 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 		if !integrationMatchesTypes(integration, filterTypes) {
+			continue
+		}
+		if !integrationMatchesTag(integration, filterTag) {
 			continue
 		}
 
@@ -294,7 +334,7 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 func (ui *uiserver) servicesGetIntegrationId(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 
-	integrations, err := ui.ctx.GetPkgManager().Query(nil)
+	integrations, err := ui.cachedIntegrations()
 	if err != nil {
 		return err
 	}
