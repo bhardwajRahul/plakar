@@ -167,6 +167,7 @@ func integrationMatchesSearch(it *pkg.Integration, needle string) bool {
 	if needle == "" {
 		return true
 	}
+	needle = strings.ToLower(needle)
 	return strings.Contains(strings.ToLower(it.Name), needle) ||
 		strings.Contains(strings.ToLower(it.DisplayName), needle)
 }
@@ -268,7 +269,6 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return err
 	}
-	needle := strings.ToLower(search)
 
 	var res Items[pkg.Integration]
 	res.Items = make([]pkg.Integration, 0)
@@ -280,7 +280,7 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 
 	var i int64
 	for _, integration := range integrations {
-		if !integrationMatchesSearch(integration, needle) {
+		if !integrationMatchesSearch(integration, search) {
 			continue
 		}
 		if !integrationMatchesInstallationStatus(integration, filterInstallationStatus) {
