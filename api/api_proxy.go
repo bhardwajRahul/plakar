@@ -294,10 +294,10 @@ func (ui *uiserver) servicesGetIntegration(w http.ResponseWriter, r *http.Reques
 		}
 
 		res.Total++
-		i++
-		if i > offset && i < offset+limit {
+		if i >= offset && i < offset+limit {
 			res.Items = append(res.Items, *integration)
 		}
+		i++
 	}
 
 	return json.NewEncoder(w).Encode(res)
