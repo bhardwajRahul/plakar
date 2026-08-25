@@ -118,12 +118,8 @@ func TestGetResource_KnownTypes(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/resources/"+name, nil)
 			req.SetPathValue("resource", name)
 			got, err := getResource(req)
-			if err != nil {
-				t.Fatalf("err = %v", err)
-			}
-			if got != want {
-				t.Fatalf("got %v, want %v", got, want)
-			}
+			require.NoError(t, err)
+			require.Equal(t, want, got)
 		})
 	}
 }
@@ -141,12 +137,8 @@ func TestGetMac_ValidHex(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.SetPathValue("mac", hex.EncodeToString(mac[:]))
 	got, err := getMac(req)
-	if err != nil {
-		t.Fatalf("err = %v", err)
-	}
-	if got != mac {
-		t.Fatalf("got %x, want %x", got, mac)
-	}
+	require.NoError(t, err)
+	require.Equal(t, mac, got)
 }
 
 func TestGetMac_NonHex(t *testing.T) {
@@ -168,24 +160,18 @@ func TestGetMac_WrongLength(t *testing.T) {
 func TestGetRange_Empty(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	rng, err := getRange(req)
-	if err != nil {
-		t.Fatalf("err = %v", err)
-	}
-	if rng != nil {
-		t.Fatalf("range should be nil when Range header is absent, got %+v", rng)
-	}
+	require.NoError(t, err)
+	require.Nil(t, rng, "range should be nil when Range header is absent")
 }
 
 func TestGetRange_Valid(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Range", "bytes=10-30")
 	rng, err := getRange(req)
-	if err != nil {
-		t.Fatalf("err = %v", err)
-	}
-	if rng == nil || rng.Offset != 10 || rng.Length != 20 {
-		t.Fatalf("got %+v, want offset=10 length=20", rng)
-	}
+	require.NoError(t, err)
+	require.NotNil(t, rng)
+	require.Equal(t, uint64(10), rng.Offset)
+	require.Equal(t, uint32(20), rng.Length)
 }
 
 func TestGetRange_InvalidPrefix(t *testing.T) {
@@ -255,15 +241,9 @@ func TestOpenRepository_Ok(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200", rec.Code)
-	}
-	if got := rec.Header().Get("Content-Type"); got != "application/octet-stream" {
-		t.Fatalf("Content-Type = %q", got)
-	}
-	if rec.Body.String() != "wrapped-config-bytes" {
-		t.Fatalf("body = %q", rec.Body.String())
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "application/octet-stream", rec.Header().Get("Content-Type"))
+	require.Equal(t, "wrapped-config-bytes", rec.Body.String())
 }
 
 func TestOpenRepository_StoreError(t *testing.T) {
@@ -274,12 +254,8 @@ func TestOpenRepository_StoreError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", rec.Code)
-	}
-	if !strings.Contains(rec.Body.String(), "disk on fire") {
-		t.Fatalf("body should include error, got %q", rec.Body.String())
-	}
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
+	require.Contains(t, rec.Body.String(), "disk on fire")
 }
 
 func TestListResource_Ok(t *testing.T) {
@@ -295,16 +271,12 @@ func TestListResource_Ok(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
 	var got []objects.MAC
-	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
-		t.Fatalf("decode: %v", err)
-	}
-	if len(got) != 1 || got[0] != mac {
-		t.Fatalf("got %v, want [%v]", got, mac)
-	}
+	err := json.NewDecoder(rec.Body).Decode(&got)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(got), "got %v, want [%v]", got, mac)
+	require.Equal(t, mac, got[0])
 }
 
 func TestListResource_BadType(t *testing.T) {
@@ -315,9 +287,7 @@ func TestListResource_BadType(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d, want 400", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestListResource_StoreError(t *testing.T) {
@@ -328,9 +298,7 @@ func TestListResource_StoreError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", rec.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
 func TestGetResourceHandler_Ok(t *testing.T) {
@@ -346,15 +314,10 @@ func TestGetResourceHandler_Ok(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d", rec.Code)
-	}
-	if rec.Body.String() != "payload" {
-		t.Fatalf("body = %q", rec.Body.String())
-	}
-	if store.lastGetType != storage.StorageResourcePackfile || store.lastGetMAC != mac {
-		t.Fatalf("store call args wrong: type=%v mac=%v", store.lastGetType, store.lastGetMAC)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "payload", rec.Body.String())
+	require.Equal(t, storage.StorageResourcePackfile, store.lastGetType)
+	require.Equal(t, mac, store.lastGetMAC)
 }
 
 func TestGetResourceHandler_WithRange(t *testing.T) {
@@ -371,12 +334,10 @@ func TestGetResourceHandler_WithRange(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d", rec.Code)
-	}
-	if store.lastGetRng == nil || store.lastGetRng.Offset != 2 || store.lastGetRng.Length != 3 {
-		t.Fatalf("range wrong: %+v", store.lastGetRng)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.NotNil(t, store.lastGetRng)
+	require.Equal(t, uint64(2), store.lastGetRng.Offset)
+	require.Equal(t, uint32(3), store.lastGetRng.Length)
 }
 
 func TestGetResourceHandler_BadType(t *testing.T) {
@@ -388,9 +349,7 @@ func TestGetResourceHandler_BadType(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestGetResourceHandler_BadMAC(t *testing.T) {
@@ -401,9 +360,7 @@ func TestGetResourceHandler_BadMAC(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestGetResourceHandler_BadRange(t *testing.T) {
@@ -416,9 +373,7 @@ func TestGetResourceHandler_BadRange(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestGetResourceHandler_StoreError(t *testing.T) {
@@ -430,9 +385,7 @@ func TestGetResourceHandler_StoreError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
 // errReadCloser fails on Read so io.ReadAll in getResource returns an error.
@@ -450,9 +403,7 @@ func TestGetResourceHandler_ReadError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", rec.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
 func TestPutResource_Ok(t *testing.T) {
@@ -465,12 +416,8 @@ func TestPutResource_Ok(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d", rec.Code)
-	}
-	if string(store.lastPutData) != "body-bytes" {
-		t.Fatalf("put data = %q", store.lastPutData)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, []byte("body-bytes"), store.lastPutData)
 }
 
 func TestPutResource_BadType(t *testing.T) {
@@ -482,9 +429,7 @@ func TestPutResource_BadType(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestPutResource_BadMAC(t *testing.T) {
@@ -495,9 +440,7 @@ func TestPutResource_BadMAC(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestPutResource_StoreError(t *testing.T) {
@@ -509,9 +452,7 @@ func TestPutResource_StoreError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
 func TestDeleteResource_Ok(t *testing.T) {
@@ -523,12 +464,9 @@ func TestDeleteResource_Ok(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d", rec.Code)
-	}
-	if store.lastDelType != storage.StorageResourcePackfile || store.lastDelMAC != mac {
-		t.Fatalf("delete call args wrong: type=%v mac=%v", store.lastDelType, store.lastDelMAC)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, storage.StorageResourcePackfile, store.lastDelType)
+	require.Equal(t, mac, store.lastDelMAC)
 }
 
 func TestDeleteResource_Forbidden(t *testing.T) {
@@ -540,9 +478,7 @@ func TestDeleteResource_Forbidden(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusForbidden {
-		t.Fatalf("status = %d, want 403", rec.Code)
-	}
+	require.Equal(t, http.StatusForbidden, rec.Code)
 }
 
 func TestDeleteResource_BadType(t *testing.T) {
@@ -554,9 +490,7 @@ func TestDeleteResource_BadType(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestDeleteResource_BadMAC(t *testing.T) {
@@ -566,9 +500,7 @@ func TestDeleteResource_BadMAC(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestDeleteResource_StoreError(t *testing.T) {
@@ -580,9 +512,7 @@ func TestDeleteResource_StoreError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d", rec.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
 func TestAuth(t *testing.T) {
