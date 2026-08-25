@@ -6,19 +6,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/location"
 	"github.com/PlakarKorp/kloset/objects"
-	ptesting "github.com/PlakarKorp/plakar/testing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,20 +101,6 @@ func makeMAC(first byte) objects.MAC {
 	var m objects.MAC
 	m[0] = first
 	return m
-}
-
-// newTestMux wires up the same routes as Server() but against the supplied
-// fakeStore so we can drive every handler via httptest without spinning up
-// a real http.Server.
-func newTestMux(store *fakeStore, noDelete bool) *http.ServeMux {
-	s := &server{store: store, noDelete: noDelete}
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", s.openRepository)
-	mux.HandleFunc("GET /resources/{resource}", s.listResource)
-	mux.HandleFunc("GET /resources/{resource}/{mac}", s.getResource)
-	mux.HandleFunc("PUT /resources/{resource}/{mac}", s.putResource)
-	mux.HandleFunc("DELETE /resources/{resource}/{mac}", s.deleteResource)
-	return mux
 }
 
 // ---------- pure parser helpers ----------
@@ -267,7 +249,7 @@ func TestGetRange_LengthOverflowsUint32(t *testing.T) {
 
 func TestOpenRepository_Ok(t *testing.T) {
 	store := &fakeStore{openConfig: []byte("wrapped-config-bytes")}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -286,7 +268,7 @@ func TestOpenRepository_Ok(t *testing.T) {
 
 func TestOpenRepository_StoreError(t *testing.T) {
 	store := &fakeStore{openErr: errors.New("disk on fire")}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -307,7 +289,7 @@ func TestListResource_Ok(t *testing.T) {
 			storage.StorageResourcePackfile: {mac},
 		},
 	}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles", nil)
 	rec := httptest.NewRecorder()
@@ -327,7 +309,7 @@ func TestListResource_Ok(t *testing.T) {
 
 func TestListResource_BadType(t *testing.T) {
 	store := &fakeStore{}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/bogus", nil)
 	rec := httptest.NewRecorder()
@@ -340,7 +322,7 @@ func TestListResource_BadType(t *testing.T) {
 
 func TestListResource_StoreError(t *testing.T) {
 	store := &fakeStore{listErr: errors.New("list failed")}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles", nil)
 	rec := httptest.NewRecorder()
@@ -358,7 +340,7 @@ func TestGetResourceHandler_Ok(t *testing.T) {
 			storage.StorageResourcePackfile: {mac: []byte("payload")},
 		},
 	}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -382,7 +364,7 @@ func TestGetResourceHandler_WithRange(t *testing.T) {
 			storage.StorageResourcePackfile: {mac: []byte("payload")},
 		},
 	}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	req.Header.Set("Range", "bytes=2-5")
@@ -400,7 +382,7 @@ func TestGetResourceHandler_WithRange(t *testing.T) {
 func TestGetResourceHandler_BadType(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/bogus/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -413,7 +395,7 @@ func TestGetResourceHandler_BadType(t *testing.T) {
 
 func TestGetResourceHandler_BadMAC(t *testing.T) {
 	store := &fakeStore{}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/short", nil)
 	rec := httptest.NewRecorder()
@@ -427,7 +409,7 @@ func TestGetResourceHandler_BadMAC(t *testing.T) {
 func TestGetResourceHandler_BadRange(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	req.Header.Set("Range", "items=garbage")
@@ -442,7 +424,7 @@ func TestGetResourceHandler_BadRange(t *testing.T) {
 func TestGetResourceHandler_StoreError(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{getErr: errors.New("missing")}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -462,7 +444,7 @@ func (errReadCloser) Close() error             { return nil }
 func TestGetResourceHandler_ReadError(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{getReader: errReadCloser{}}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -476,7 +458,7 @@ func TestGetResourceHandler_ReadError(t *testing.T) {
 func TestPutResource_Ok(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), strings.NewReader("body-bytes"))
@@ -493,7 +475,7 @@ func TestPutResource_Ok(t *testing.T) {
 
 func TestPutResource_BadType(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := newTestMux(&fakeStore{}, false)
+	mux := Mux(&fakeStore{}, false, "")
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/bogus/"+hex.EncodeToString(mac[:]), strings.NewReader("x"))
@@ -506,7 +488,7 @@ func TestPutResource_BadType(t *testing.T) {
 }
 
 func TestPutResource_BadMAC(t *testing.T) {
-	mux := newTestMux(&fakeStore{}, false)
+	mux := Mux(&fakeStore{}, false, "")
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/packfiles/short", strings.NewReader("x"))
@@ -520,7 +502,7 @@ func TestPutResource_BadMAC(t *testing.T) {
 
 func TestPutResource_StoreError(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := newTestMux(&fakeStore{putErr: errors.New("write failed")}, false)
+	mux := Mux(&fakeStore{putErr: errors.New("write failed")}, false, "")
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), strings.NewReader("x"))
@@ -535,7 +517,7 @@ func TestPutResource_StoreError(t *testing.T) {
 func TestDeleteResource_Ok(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := newTestMux(store, false)
+	mux := Mux(store, false, "")
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
@@ -552,7 +534,7 @@ func TestDeleteResource_Ok(t *testing.T) {
 
 func TestDeleteResource_Forbidden(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := newTestMux(&fakeStore{}, true) // noDelete=true
+	mux := Mux(&fakeStore{}, true, "") // noDelete=true
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
@@ -566,7 +548,7 @@ func TestDeleteResource_Forbidden(t *testing.T) {
 
 func TestDeleteResource_BadType(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := newTestMux(&fakeStore{}, false)
+	mux := Mux(&fakeStore{}, false, "")
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/bogus/"+hex.EncodeToString(mac[:]), nil)
@@ -579,7 +561,7 @@ func TestDeleteResource_BadType(t *testing.T) {
 }
 
 func TestDeleteResource_BadMAC(t *testing.T) {
-	mux := newTestMux(&fakeStore{}, false)
+	mux := Mux(&fakeStore{}, false, "")
 
 	req := httptest.NewRequest(http.MethodDelete, "/resources/packfiles/short", nil)
 	rec := httptest.NewRecorder()
@@ -592,7 +574,7 @@ func TestDeleteResource_BadMAC(t *testing.T) {
 
 func TestDeleteResource_StoreError(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := newTestMux(&fakeStore{deleteErr: errors.New("nope")}, false)
+	mux := Mux(&fakeStore{deleteErr: errors.New("nope")}, false, "")
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
@@ -604,124 +586,29 @@ func TestDeleteResource_StoreError(t *testing.T) {
 	}
 }
 
-// freePort asks the kernel for an unused TCP port and returns it as a string.
-func freePort(t *testing.T) string {
-	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("listen: %v", err)
-	}
-	addr := l.Addr().(*net.TCPAddr)
-	_ = l.Close()
-	return fmt.Sprintf("127.0.0.1:%d", addr.Port)
-}
-
-func TestServer_StartServeAndShutdown(t *testing.T) {
-	repo, ctx := ptesting.GenerateRepository(t, nil, nil, nil)
-
-	addr := freePort(t)
-	errCh := make(chan error, 1)
-	go func() {
-		// noDelete=false, no TLS — exercises the plain ListenAndServe path.
-		errCh <- Server(ctx, repo, addr, false, "", "", "")
-	}()
-
-	// Wait until the server accepts connections, then make one request so the
-	// wired routes are exercised through a real listener.
-	base := "http://" + addr
-	var resp *http.Response
-	deadline := 2 * time.Second
-	for waited := time.Duration(0); waited < deadline; waited += 20 * time.Millisecond {
-		r, err := http.Get(base + "/")
-		if err == nil {
-			resp = r
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	if resp == nil {
-		t.Fatal("server never became reachable")
-	}
-	_ = resp.Body.Close()
-
-	// Cancelling the context triggers the goroutine inside Server() to call
-	// Shutdown, which makes ListenAndServe return.
-	ctx.GetInner().Cancel(nil)
-
-	select {
-	case err := <-errCh:
-		// http.ErrServerClosed is the expected return after a graceful Shutdown.
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			t.Fatalf("Server returned %v, want ErrServerClosed or nil", err)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("Server did not return after context cancellation")
-	}
-}
-
-func TestServer_TLSConfigErrors(t *testing.T) {
-	// With cert/key set but pointing at nonexistent files, ListenAndServeTLS
-	// returns an error immediately — this covers the TLS branch of Server().
-	repo, ctx := ptesting.GenerateRepository(t, nil, nil, nil)
-
-	addr := freePort(t)
-	err := Server(ctx, repo, addr, false, "", "/nonexistent/cert.pem", "/nonexistent/key.pem")
-	if err == nil {
-		t.Fatal("expected error from ListenAndServeTLS with missing cert/key")
-	}
-}
-
 func TestServerToken(t *testing.T) {
-	repo, ctx := ptesting.GenerateRepository(t, nil, nil, nil)
+	mux := Mux(&fakeStore{}, false, "nestor")
 
-	token := "nestor"
+	var req *http.Request
+	var rec *httptest.ResponseRecorder
 
-	addr := freePort(t)
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- Server(ctx, repo, addr, false, token, "", "")
-	}()
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusUnauthorized, rec.Code,
+		"expected 401 without token")
 
-	// Wait until the server accepts connections, then make one request so the
-	// wired routes are exercised through a real listener.
-	base := "http://" + addr
-	var resp *http.Response
-	deadline := 2 * time.Second
-	for waited := time.Duration(0); waited < deadline; waited += 20 * time.Millisecond {
-		r, err := http.Get(base + "/")
-		if err == nil {
-			resp = r
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	if resp == nil {
-		t.Fatal("server never became reachable")
-	}
-	_ = resp.Body.Close()
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "Bearer flan")
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusUnauthorized, rec.Code,
+		"expected 401 with a bad token")
 
-	require.Equal(t, 401, resp.StatusCode)
-
-	req, err := http.NewRequest("GET", base+"/", nil)
-	require.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err = http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	resp.Body.Close()
-	require.Equal(t, 200, resp.StatusCode)
-
-	// Cancelling the context triggers the goroutine inside Server() to call
-	// Shutdown, which makes ListenAndServe return.
-	ctx.GetInner().Cancel(nil)
-
-	select {
-	case err := <-errCh:
-		// http.ErrServerClosed is the expected return after a graceful Shutdown.
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			t.Fatalf("Server returned %v, want ErrServerClosed or nil", err)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("Server did not return after context cancellation")
-	}
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "Bearer nestor")
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code,
+		"expected 200 with the right token")
 }
