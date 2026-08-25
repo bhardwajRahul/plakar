@@ -2,6 +2,7 @@ package httpd
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -149,7 +150,7 @@ func auth(token string, next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
-		if auth != expect {
+		if subtle.ConstantTimeCompare([]byte(auth), []byte(expect)) == 0 {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
