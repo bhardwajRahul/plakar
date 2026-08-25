@@ -249,7 +249,7 @@ func TestGetRange_LengthOverflowsUint32(t *testing.T) {
 
 func TestOpenRepository_Ok(t *testing.T) {
 	store := &fakeStore{openConfig: []byte("wrapped-config-bytes")}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -268,7 +268,7 @@ func TestOpenRepository_Ok(t *testing.T) {
 
 func TestOpenRepository_StoreError(t *testing.T) {
 	store := &fakeStore{openErr: errors.New("disk on fire")}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -289,7 +289,7 @@ func TestListResource_Ok(t *testing.T) {
 			storage.StorageResourcePackfile: {mac},
 		},
 	}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles", nil)
 	rec := httptest.NewRecorder()
@@ -309,7 +309,7 @@ func TestListResource_Ok(t *testing.T) {
 
 func TestListResource_BadType(t *testing.T) {
 	store := &fakeStore{}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/bogus", nil)
 	rec := httptest.NewRecorder()
@@ -322,7 +322,7 @@ func TestListResource_BadType(t *testing.T) {
 
 func TestListResource_StoreError(t *testing.T) {
 	store := &fakeStore{listErr: errors.New("list failed")}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles", nil)
 	rec := httptest.NewRecorder()
@@ -340,7 +340,7 @@ func TestGetResourceHandler_Ok(t *testing.T) {
 			storage.StorageResourcePackfile: {mac: []byte("payload")},
 		},
 	}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -364,7 +364,7 @@ func TestGetResourceHandler_WithRange(t *testing.T) {
 			storage.StorageResourcePackfile: {mac: []byte("payload")},
 		},
 	}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	req.Header.Set("Range", "bytes=2-5")
@@ -382,7 +382,7 @@ func TestGetResourceHandler_WithRange(t *testing.T) {
 func TestGetResourceHandler_BadType(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/bogus/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -395,7 +395,7 @@ func TestGetResourceHandler_BadType(t *testing.T) {
 
 func TestGetResourceHandler_BadMAC(t *testing.T) {
 	store := &fakeStore{}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/short", nil)
 	rec := httptest.NewRecorder()
@@ -409,7 +409,7 @@ func TestGetResourceHandler_BadMAC(t *testing.T) {
 func TestGetResourceHandler_BadRange(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	req.Header.Set("Range", "items=garbage")
@@ -424,7 +424,7 @@ func TestGetResourceHandler_BadRange(t *testing.T) {
 func TestGetResourceHandler_StoreError(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{getErr: errors.New("missing")}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -444,7 +444,7 @@ func (errReadCloser) Close() error             { return nil }
 func TestGetResourceHandler_ReadError(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{getReader: errReadCloser{}}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -458,7 +458,7 @@ func TestGetResourceHandler_ReadError(t *testing.T) {
 func TestPutResource_Ok(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := Mux(store, false, "")
+	mux := Mux(store, false)
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), strings.NewReader("body-bytes"))
@@ -475,7 +475,7 @@ func TestPutResource_Ok(t *testing.T) {
 
 func TestPutResource_BadType(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := Mux(&fakeStore{}, false, "")
+	mux := Mux(&fakeStore{}, false)
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/bogus/"+hex.EncodeToString(mac[:]), strings.NewReader("x"))
@@ -488,7 +488,7 @@ func TestPutResource_BadType(t *testing.T) {
 }
 
 func TestPutResource_BadMAC(t *testing.T) {
-	mux := Mux(&fakeStore{}, false, "")
+	mux := Mux(&fakeStore{}, false)
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/packfiles/short", strings.NewReader("x"))
@@ -502,7 +502,7 @@ func TestPutResource_BadMAC(t *testing.T) {
 
 func TestPutResource_StoreError(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := Mux(&fakeStore{putErr: errors.New("write failed")}, false, "")
+	mux := Mux(&fakeStore{putErr: errors.New("write failed")}, false)
 
 	req := httptest.NewRequest(http.MethodPut,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), strings.NewReader("x"))
@@ -517,8 +517,7 @@ func TestPutResource_StoreError(t *testing.T) {
 func TestDeleteResource_Ok(t *testing.T) {
 	mac := makeMAC(0x42)
 	store := &fakeStore{}
-	mux := Mux(store, false, "")
-
+	mux := Mux(store, false)
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
 	rec := httptest.NewRecorder()
@@ -534,7 +533,7 @@ func TestDeleteResource_Ok(t *testing.T) {
 
 func TestDeleteResource_Forbidden(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := Mux(&fakeStore{}, true, "") // noDelete=true
+	mux := Mux(&fakeStore{}, true) // noDelete=true
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
@@ -548,7 +547,7 @@ func TestDeleteResource_Forbidden(t *testing.T) {
 
 func TestDeleteResource_BadType(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := Mux(&fakeStore{}, false, "")
+	mux := Mux(&fakeStore{}, false)
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/bogus/"+hex.EncodeToString(mac[:]), nil)
@@ -561,7 +560,7 @@ func TestDeleteResource_BadType(t *testing.T) {
 }
 
 func TestDeleteResource_BadMAC(t *testing.T) {
-	mux := Mux(&fakeStore{}, false, "")
+	mux := Mux(&fakeStore{}, false)
 
 	req := httptest.NewRequest(http.MethodDelete, "/resources/packfiles/short", nil)
 	rec := httptest.NewRecorder()
@@ -574,7 +573,7 @@ func TestDeleteResource_BadMAC(t *testing.T) {
 
 func TestDeleteResource_StoreError(t *testing.T) {
 	mac := makeMAC(0x42)
-	mux := Mux(&fakeStore{deleteErr: errors.New("nope")}, false, "")
+	mux := Mux(&fakeStore{deleteErr: errors.New("nope")}, false)
 
 	req := httptest.NewRequest(http.MethodDelete,
 		"/resources/packfiles/"+hex.EncodeToString(mac[:]), nil)
@@ -586,8 +585,9 @@ func TestDeleteResource_StoreError(t *testing.T) {
 	}
 }
 
-func TestServerToken(t *testing.T) {
-	mux := Mux(&fakeStore{}, false, "nestor")
+func TestAuth(t *testing.T) {
+	token := "nestor"
+	mux := Auth(token, Mux(&fakeStore{}, false))
 
 	var req *http.Request
 	var rec *httptest.ResponseRecorder
@@ -606,7 +606,7 @@ func TestServerToken(t *testing.T) {
 		"expected 401 with a bad token")
 
 	req = httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("Authorization", "Bearer nestor")
+	req.Header.Set("Authorization", "Bearer "+token)
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code,

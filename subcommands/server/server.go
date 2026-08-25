@@ -73,11 +73,11 @@ func (cmd *Server) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 		protocol = "http"
 	}
 	ctx.GetLogger().Info("listening on %s://%s", protocol, cmd.ListenAddr)
-	mux := httpd.Mux(repo.Store(), cmd.NoDelete, cmd.Token)
+	mux := httpd.Mux(repo.Store(), cmd.NoDelete)
 
 	server := &http.Server{
 		Addr:    cmd.ListenAddr,
-		Handler: mux,
+		Handler: httpd.Logging(httpd.Auth(cmd.Token, mux)),
 	}
 	go func() {
 		<-ctx.Done()

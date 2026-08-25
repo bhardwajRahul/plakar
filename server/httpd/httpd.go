@@ -139,7 +139,7 @@ func (s *server) deleteResource(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func auth(token string, next http.Handler) http.Handler {
+func Auth(token string, next http.Handler) http.Handler {
 	if token == "" {
 		return next
 	}
@@ -156,7 +156,7 @@ func auth(token string, next http.Handler) http.Handler {
 	})
 }
 
-func logging(next http.Handler) http.Handler {
+func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sr := &statusRecorder{ResponseWriter: w, status: 200}
 
@@ -166,7 +166,7 @@ func logging(next http.Handler) http.Handler {
 	})
 }
 
-func Mux(store storage.Store, noDelete bool, token string) http.Handler {
+func Mux(store storage.Store, noDelete bool) http.Handler {
 	s := server{
 		store:    store,
 		noDelete: noDelete,
@@ -181,7 +181,7 @@ func Mux(store storage.Store, noDelete bool, token string) http.Handler {
 	mux.HandleFunc("PUT /resources/{resource}/{mac}", s.putResource)
 	mux.HandleFunc("DELETE /resources/{resource}/{mac}", s.deleteResource)
 
-	return logging(auth(token, mux))
+	return mux
 }
 
 func getResource(r *http.Request) (storage.StorageResource, error) {
