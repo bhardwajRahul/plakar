@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PlakarKorp/kloset/connectors/storage"
 	"github.com/PlakarKorp/kloset/objects"
@@ -23,6 +25,16 @@ var ErrInvalidRange = fmt.Errorf("invalid range")
 type server struct {
 	store    storage.Store
 	noDelete bool
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
 }
 
 func (s *server) openRepository(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +140,34 @@ func (s *server) deleteResource(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Server(ctx context.Context, repo *repository.Repository, addr string, noDelete bool, cert string, key string) error {
+func auth(token string, next http.Handler) http.Handler {
+	if token == "" {
+		return next
+	}
+
+	expect := fmt.Sprint("Bearer ", token)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if auth != expect {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func logging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sr := &statusRecorder{ResponseWriter: w, status: 200}
+
+		start := time.Now()
+		next.ServeHTTP(sr, r)
+		log.Printf("%d %s %s %v", sr.status, r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
+func Server(ctx context.Context, repo *repository.Repository, addr string, noDelete bool, token, cert, key string) error {
 	s := server{
 		store:    repo.Store(),
 		noDelete: noDelete,
@@ -143,7 +182,7 @@ func Server(ctx context.Context, repo *repository.Repository, addr string, noDel
 	mux.HandleFunc("PUT /resources/{resource}/{mac}", s.putResource)
 	mux.HandleFunc("DELETE /resources/{resource}/{mac}", s.deleteResource)
 
-	server := &http.Server{Addr: addr, Handler: mux}
+	server := &http.Server{Addr: addr, Handler: logging(auth(token, mux))}
 	go func() {
 		<-repo.AppContext().Done()
 		server.Shutdown(repo.AppContext().Context)
