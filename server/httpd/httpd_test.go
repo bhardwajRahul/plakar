@@ -86,12 +86,12 @@ func (f *fakeStore) Delete(ctx context.Context, typ storage.StorageResource, mac
 }
 
 // Unused methods — panic so an accidentally widened surface is loud.
-func (f *fakeStore) Create(context.Context, []byte) error      { panic("unused") }
-func (f *fakeStore) Ping(context.Context) error                { panic("unused") }
-func (f *fakeStore) Origin() string                            { panic("unused") }
-func (f *fakeStore) Type() string                              { panic("unused") }
-func (f *fakeStore) Root() string                              { panic("unused") }
-func (f *fakeStore) Flags() location.Flags                     { panic("unused") }
+func (f *fakeStore) Create(context.Context, []byte) error { panic("unused") }
+func (f *fakeStore) Ping(context.Context) error           { panic("unused") }
+func (f *fakeStore) Origin() string                       { panic("unused") }
+func (f *fakeStore) Type() string                         { panic("unused") }
+func (f *fakeStore) Root() string                         { panic("unused") }
+func (f *fakeStore) Flags() location.Flags                { panic("unused") }
 func (f *fakeStore) Mode(context.Context) (storage.Mode, error) {
 	panic("unused")
 }
