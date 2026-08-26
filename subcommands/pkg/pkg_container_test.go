@@ -147,11 +147,9 @@ func TestPkgCreateNativeRejectsInvalidConnector(t *testing.T) {
 		"name: myplugin\nconnectors:\n  - type: importer\n    executable: myplugin\n    image_id: sha256:aa\n"), 0644))
 
 	cmd := &PkgCreate{}
-	require.NoError(t, cmd.Parse(ctx, []string{"-out", filepath.Join(work, "out.ptar"), "manifest.yaml", "v1.2.3"}))
-
-	_, err := cmd.Execute(ctx, nil)
+	err := cmd.Parse(ctx, []string{"-out", filepath.Join(work, "out.ptar"), "manifest.yaml", "v1.2.3"})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid connector")
+	require.Contains(t, err.Error(), "exactly one of")
 }
 
 func TestPkgerImporterManifestData(t *testing.T) {

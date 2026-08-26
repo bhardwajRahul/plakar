@@ -35,7 +35,7 @@ func TestPkgExecuteNoAction(t *testing.T) {
 func TestPkgCreateParseAbsoluteManifest(t *testing.T) {
 	ctx := newCtx(t)
 	manifest := filepath.Join(ctx.CWD, "manifest.yaml")
-	require.NoError(t, os.WriteFile(manifest, []byte("name: myplugin\n"), 0644))
+	require.NoError(t, os.WriteFile(manifest, []byte("name: myplugin\nconnectors:\n  - type: importer\n    executable: myplugin\n"), 0644))
 
 	// Pass an absolute, uncleaned path to take the filepath.Clean branch.
 	dirty := filepath.Join(ctx.CWD, ".", "manifest.yaml")
@@ -48,7 +48,7 @@ func TestPkgCreateParseAbsoluteManifest(t *testing.T) {
 func TestPkgCreateParseGOOSGOARCHEnv(t *testing.T) {
 	ctx := newCtx(t)
 	manifest := filepath.Join(ctx.CWD, "manifest.yaml")
-	require.NoError(t, os.WriteFile(manifest, []byte("name: myplugin\n"), 0644))
+	require.NoError(t, os.WriteFile(manifest, []byte("name: myplugin\nconnectors:\n  - type: importer\n    executable: myplugin\n"), 0644))
 
 	t.Setenv("GOOS", "plan9")
 	t.Setenv("GOARCH", "mips")

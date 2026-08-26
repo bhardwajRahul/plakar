@@ -118,7 +118,7 @@ func TestPkgBuildParseErrors(t *testing.T) {
 func TestPkgCreateParseOk(t *testing.T) {
 	ctx := newCtx(t)
 	manifest := filepath.Join(ctx.CWD, "manifest.yaml")
-	require.NoError(t, os.WriteFile(manifest, []byte("name: myplugin\n"), 0644))
+	require.NoError(t, os.WriteFile(manifest, []byte("name: myplugin\nconnectors:\n  - type: importer\n    executable: myplugin\n"), 0644))
 
 	cmd := &PkgCreate{}
 	require.NoError(t, cmd.Parse(ctx, []string{"manifest.yaml", "v1.2.3"}))

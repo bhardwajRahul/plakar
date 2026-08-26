@@ -81,8 +81,6 @@ func TestLoad_RegistersAllConnectorTypes(t *testing.T) {
 			{Type: "importer", Protocols: []string{imp}, Executable: "noop"},
 			{Type: "exporter", Protocols: []string{exp}, Executable: "noop"},
 			{Type: "storage", Protocols: []string{stg}, Executable: "noop"},
-			// Unknown type — Load must silently ignore it.
-			{Type: "unknown-type", Protocols: []string{"ignored"}, Executable: "noop"},
 		},
 	}
 
@@ -175,7 +173,6 @@ func TestUnload_Symmetric(t *testing.T) {
 			{Type: "importer", Protocols: []string{imp}, Executable: "noop"},
 			{Type: "exporter", Protocols: []string{exp}, Executable: "noop"},
 			{Type: "storage", Protocols: []string{stg}, Executable: "noop"},
-			{Type: "unknown-type", Protocols: []string{"ignored"}, Executable: "noop"},
 		},
 	}
 	if err := Load(m, "/tmp"); err != nil {
