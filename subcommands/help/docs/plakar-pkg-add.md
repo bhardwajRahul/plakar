@@ -8,6 +8,7 @@ PLAKAR-PKG-ADD(1) - General Commands Manual
 
 **plakar&nbsp;pkg&nbsp;add**
 \[**-allow-unsigned**]
+\[**-devel**]
 \[**-u**]
 *plugin&nbsp;...*
 
@@ -46,6 +47,10 @@ The options are as follows:
 > Install packages that carry no signature.
 > By default, package are expected to be signed.
 
+**-devel**
+
+> Use the integration devel tree.
+
 **-u**
 
 > Update the specific plugins.
@@ -75,4 +80,4 @@ plakar-pkg-create(1),
 plakar-pkg-rm(1),
 plakar-pkg-show(1)
 
-Plakar - August 25, 2026 - PLAKAR-PKG-ADD(1)
+Plakar - August 26, 2026 - PLAKAR-PKG-ADD(1)
