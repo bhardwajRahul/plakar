@@ -11,6 +11,7 @@ import (
 	_ "github.com/PlakarKorp/integrations/fs/exporter"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
+	"github.com/PlakarKorp/plakar/login"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,6 +36,7 @@ func TestAPI(t *testing.T) {
 			{"snapshot-not-found -> 404", snapshot.ErrNotFound, http.StatusNotFound},
 			{"non-wrapped fs-not-exist -> 500", errors.New("boom: " + fs.ErrNotExist.Error()), http.StatusInternalServerError},
 			{"unknown -> 500", errors.New("some random failure"), http.StatusInternalServerError},
+			{"rate-limited -> 429", login.ErrRateLimited, http.StatusTooManyRequests},
 		} {
 			t.Run(c.name, func(t *testing.T) {
 				req, _ := http.NewRequest("GET", "/whatever", nil)
