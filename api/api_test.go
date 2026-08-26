@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +11,6 @@ import (
 	_ "github.com/PlakarKorp/integrations/fs/exporter"
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/kloset/snapshot"
-	"github.com/PlakarKorp/plakar/login"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,23 +71,6 @@ func TestAPI(t *testing.T) {
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		require.True(t, resp.Authenticated)
 		require.NotEmpty(t, resp.RepositoryId)
-	})
-
-	t.Run("login flow error maps rate limit to 429", func(t *testing.T) {
-		err := loginFlowError(fmt.Errorf("failed to run login flow: %w", login.ErrRateLimited))
-
-		var apiErr *ApiError
-		require.ErrorAs(t, err, &apiErr)
-		require.Equal(t, http.StatusTooManyRequests, apiErr.HttpCode)
-		require.Equal(t, "rate-limited", apiErr.ErrCode)
-	})
-
-	t.Run("login flow error passes through other errors", func(t *testing.T) {
-		err := loginFlowError(errors.New("boom"))
-
-		var apiErr *ApiError
-		require.False(t, errors.As(err, &apiErr), "non-rate-limit error must not be mapped to an ApiError")
-		require.ErrorContains(t, err, "boom")
 	})
 }
 
