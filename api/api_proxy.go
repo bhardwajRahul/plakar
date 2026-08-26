@@ -9,25 +9,14 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/services"
-	"go.omarpolo.com/ttlmap"
 )
 
 var SERVICES_ENDPOINT = "https://api.plakar.io"
 
-// integrationsCache memoizes pkg.Manager.Query() across requests so the
-// /integration list and detail endpoints don't fetch the ~449 KB remote
-// catalog from api.plakar.io on every hit.
 const integrationsCacheKey = "all"
-
-var integrationsCache = ttlmap.New[string, []*pkg.Integration](5 * time.Minute)
-
-func init() {
-	integrationsCache.AutoExpire()
-}
 
 func (ui *uiserver) servicesProxy(w http.ResponseWriter, r *http.Request) error {
 	// Define target service base URL
@@ -223,14 +212,14 @@ func integrationMatchesTypes(it *pkg.Integration, filter []string) bool {
 }
 
 func (ui *uiserver) cachedIntegrations() ([]*pkg.Integration, error) {
-	if cached, ok := integrationsCache.Get(integrationsCacheKey); ok {
+	if cached, ok := ui.integrationsCache.Get(integrationsCacheKey); ok {
 		return cached, nil
 	}
 	integrations, err := ui.ctx.GetPkgManager().Query(nil)
 	if err != nil {
 		return nil, err
 	}
-	integrationsCache.Add(integrationsCacheKey, integrations)
+	ui.integrationsCache.Add(integrationsCacheKey, integrations)
 	return integrations, nil
 }
 
