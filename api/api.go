@@ -16,6 +16,7 @@ import (
 	"github.com/PlakarKorp/kloset/snapshot"
 	"github.com/PlakarKorp/pkg"
 	"github.com/PlakarKorp/plakar/appcontext"
+	"github.com/PlakarKorp/plakar/login"
 	"github.com/PlakarKorp/plakar/utils"
 	"go.omarpolo.com/ttlmap"
 )
@@ -67,6 +68,12 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 			HttpCode: 400,
 			ErrCode:  "bad-request",
 			Message:  err.Error(),
+		}
+	case errors.Is(err, login.ErrRateLimited):
+		err = &ApiError{
+			HttpCode: http.StatusTooManyRequests,
+			ErrCode:  "rate-limited",
+			Message:  "Rate limit reached. Please retry later.",
 		}
 	case errors.Is(err, repository.ErrBlobNotFound):
 		fallthrough

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -37,6 +36,7 @@ func TestAPI(t *testing.T) {
 			{"snapshot-not-found -> 404", snapshot.ErrNotFound, http.StatusNotFound},
 			{"non-wrapped fs-not-exist -> 500", errors.New("boom: " + fs.ErrNotExist.Error()), http.StatusInternalServerError},
 			{"unknown -> 500", errors.New("some random failure"), http.StatusInternalServerError},
+			{"rate-limited -> 429", login.ErrRateLimited, http.StatusTooManyRequests},
 		} {
 			t.Run(c.name, func(t *testing.T) {
 				req, _ := http.NewRequest("GET", "/whatever", nil)
@@ -73,23 +73,6 @@ func TestAPI(t *testing.T) {
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		require.True(t, resp.Authenticated)
 		require.NotEmpty(t, resp.RepositoryId)
-	})
-
-	t.Run("login flow error maps rate limit to 429", func(t *testing.T) {
-		err := loginFlowError(fmt.Errorf("failed to run login flow: %w", login.ErrRateLimited))
-
-		var apiErr *ApiError
-		require.ErrorAs(t, err, &apiErr)
-		require.Equal(t, http.StatusTooManyRequests, apiErr.HttpCode)
-		require.Equal(t, "rate-limited", apiErr.ErrCode)
-	})
-
-	t.Run("login flow error passes through other errors", func(t *testing.T) {
-		err := loginFlowError(errors.New("boom"))
-
-		var apiErr *ApiError
-		require.False(t, errors.As(err, &apiErr), "non-rate-limit error must not be mapped to an ApiError")
-		require.ErrorContains(t, err, "boom")
 	})
 }
 
