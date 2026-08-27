@@ -33,6 +33,7 @@ func (cmd *Server) CobraCommand() *cobra.Command {
 		Use: "server [OPTIONS]",
 	}
 	c.Flags().StringVar(&cmd.ListenAddr, "listen", "localhost:9876", "address to listen on")
+	c.Flags().StringVar(&cmd.Token, "token", "", "Bearer token")
 	c.Flags().BoolVar(&cmd.allowDelete, "allow-delete", false, "enable delete operations")
 	c.Flags().StringVar(&cmd.Cert, "cert", "", "Full certificate chain")
 	c.Flags().StringVar(&cmd.Key, "key", "", "Certificate private key")
@@ -55,6 +56,7 @@ type Server struct {
 
 	ListenAddr string
 	NoDelete   bool
+	Token      string
 	Cert       string
 	Key        string
 
@@ -69,7 +71,7 @@ func (cmd *Server) Execute(ctx *appcontext.AppContext, repo *repository.Reposito
 		protocol = "http"
 	}
 	ctx.GetLogger().Info("listening on %s://%s", protocol, cmd.ListenAddr)
-	err := httpd.Server(ctx, repo, cmd.ListenAddr, cmd.NoDelete, cmd.Cert, cmd.Key)
+	err := httpd.Server(ctx, repo, cmd.ListenAddr, cmd.NoDelete, cmd.Token, cmd.Cert, cmd.Key)
 	if err != nil {
 		return 1, err
 	}
