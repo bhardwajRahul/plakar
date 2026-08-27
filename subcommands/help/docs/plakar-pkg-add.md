@@ -34,6 +34,10 @@ it locally
 To install a specific version of a plugin, use the
 *name*@*version*
 syntax.
+*version*
+may be
+**latest**,
+which is also what is used when no version is given.
 
 The options are as follows:
 
