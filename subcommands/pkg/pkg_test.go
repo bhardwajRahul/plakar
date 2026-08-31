@@ -106,7 +106,7 @@ func TestPkgAddLatestResolvesThroughRecipe(t *testing.T) {
 		mu.Lock()
 		requested = append(requested, r.URL.Path)
 		mu.Unlock()
-		if r.URL.Path == path.Join("/", ppkg.PLUGIN_API_VERSION, "s3", "recipe.yaml") {
+		if r.URL.Path == path.Join("/community/", ppkg.PLUGIN_API_VERSION, "s3", "recipe.yaml") {
 			w.Write([]byte("name: s3\nversion: v2.0.0\nrepository: https://example.com/s3\n"))
 			return
 		}
@@ -120,7 +120,7 @@ func TestPkgAddLatestResolvesThroughRecipe(t *testing.T) {
 		&ppkg.FlatBackendOptions{})
 	require.NoError(t, err)
 
-	manager, err := ppkg.New(backend, &ppkg.Options{InstallURL: srv.URL})
+	manager, err := ppkg.New(backend, &ppkg.Options{DistURL: srv.URL})
 	require.NoError(t, err)
 	ctx.SetPkgManager(manager)
 
@@ -133,7 +133,7 @@ func TestPkgAddLatestResolvesThroughRecipe(t *testing.T) {
 	mu.Lock()
 	defer mu.Unlock()
 	require.NotEmpty(t, requested)
-	require.Equal(t, path.Join("/", ppkg.PLUGIN_API_VERSION, "s3", "recipe.yaml"), requested[0])
+	require.Equal(t, path.Join("/community/", ppkg.PLUGIN_API_VERSION, "s3", "recipe.yaml"), requested[0])
 	for _, p := range requested {
 		require.NotContains(t, p, "latest",
 			"@latest must not be forwarded as a literal version")
