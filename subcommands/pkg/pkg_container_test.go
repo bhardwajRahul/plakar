@@ -152,6 +152,63 @@ func TestPkgCreateNativeRejectsInvalidConnector(t *testing.T) {
 	require.Contains(t, err.Error(), "exactly one of")
 }
 
+func TestPkgAddContainerRunsInstallHook(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("container packages are linux-only")
+	}
+	fakeContainerCLI(t)
+
+	bufOut := bytes.NewBuffer(nil)
+	bufErr := bytes.NewBuffer(nil)
+	_, ctx := ptesting.GenerateRepository(t, bufOut, bufErr, nil)
+
+	work := t.TempDir()
+	ctx.CWD = work
+	writeContainerPackage(t, work)
+
+	cmd := &PkgCreate{}
+	require.NoError(t, cmd.Parse(ctx, []string{"-container", "manifest.yaml", "v1.2.3"}))
+	status, err := cmd.Execute(ctx, nil)
+	require.NoError(t, err)
+	require.Equal(t, 0, status)
+
+	newManager := func(hook func(*ppkg.Manifest) error) *ppkg.Manager {
+		base := t.TempDir()
+		backend, err := ppkg.NewFlatBackend(ctx.GetInner(),
+			filepath.Join(base, "plugins"), filepath.Join(base, "cache"),
+			&ppkg.FlatBackendOptions{InstallHook: hook})
+		require.NoError(t, err)
+		mgr, err := ppkg.New(backend, nil)
+		require.NoError(t, err)
+		return mgr
+	}
+
+	// The install hook sees the stamped manifest; a container-flavored
+	// package installs from the local file.
+	var seen []*ppkg.Manifest
+	mgr := newManager(func(m *ppkg.Manifest) error { seen = append(seen, m); return nil })
+	require.NoError(t, mgr.Add(cmd.Out, nil))
+	require.Len(t, seen, 1)
+	require.Equal(t, testImageID, seen[0].Connectors[0].ImageID)
+
+	var installed []*ppkg.Package
+	for p, err := range mgr.List() {
+		require.NoError(t, err)
+		installed = append(installed, p)
+	}
+	require.Len(t, installed, 1)
+	require.Equal(t, ppkg.OSContainer, installed[0].OperatingSystem)
+
+	// A failing hook aborts the install.
+	mgr = newManager(func(m *ppkg.Manifest) error { return fmt.Errorf("image not present") })
+	err = mgr.Add(cmd.Out, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "image not present")
+	for range mgr.List() {
+		t.Fatal("nothing should be installed after a failed install hook")
+	}
+}
+
 func TestPkgerImporterManifestData(t *testing.T) {
 	dir := t.TempDir()
 	data := []byte("name: myplugin\nconnectors:\n  - type: importer\n    image_id: sha256:aa\n")
