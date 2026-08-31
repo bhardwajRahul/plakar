@@ -63,9 +63,21 @@ func RegisterExporter(proto string, flags location.Flags, runner Runner) error {
 
 func Load(m *pkg.Manifest, pkgdir string) error {
 	for _, conn := range m.Connectors {
-		runner := &NativeRunner{
-			Path: filepath.Join(pkgdir, conn.Executable),
-			Args: conn.Args,
+		if err := conn.Validate(); err != nil {
+			return err
+		}
+
+		var runner Runner
+		if conn.ImageID != "" {
+			runner = &DockerRunner{
+				Image: conn.ImageID,
+				Args:  conn.Args,
+			}
+		} else {
+			runner = &NativeRunner{
+				Path: filepath.Join(pkgdir, conn.Executable),
+				Args: conn.Args,
+			}
 		}
 
 		flags, err := conn.Flags()
