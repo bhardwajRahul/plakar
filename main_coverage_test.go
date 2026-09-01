@@ -167,6 +167,7 @@ func TestEntryPoint_MissingKeyfile(t *testing.T) {
 
 func TestEntryPoint_CreateThenInfo(t *testing.T) {
 	repoDir := filepath.Join(t.TempDir(), "repo")
+	t.Setenv(plaintextEnv, "1") // the repository below is plaintext
 
 	// Create a plaintext repository at an explicit location.
 	status, _, stderr := runEntryPoint(t, "at", repoDir, "create", "-plaintext")
@@ -207,6 +208,7 @@ func TestEntryPoint_KeyfileWithPlaintextRepo(t *testing.T) {
 	// A keyfile is supplied but the repo is plaintext: setupEncryption sees a
 	// nil Encryption config and the keyfile secret is simply ignored.
 	repoDir := filepath.Join(t.TempDir(), "repo")
+	t.Setenv(plaintextEnv, "1") // the repository below is plaintext
 	status, _, stderr := runEntryPoint(t, "at", repoDir, "create", "-plaintext")
 	require.Equalf(t, 0, status, "create stderr: %s", stderr)
 

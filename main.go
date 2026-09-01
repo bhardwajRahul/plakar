@@ -441,6 +441,11 @@ func entryPoint() int {
 			return exitcodes.RepoIncompatible
 		}
 
+		if err := utils.CheckPlaintext(storeConfig["location"], repoConfig.Encryption != nil); err != nil {
+			logger.Stderr("%s: %s\n", progName(), err)
+			return exitcodes.AuthFailure
+		}
+
 		if err := setupEncryption(ctx, repoConfig); err != nil {
 			logger.Stderr("%s: %s\n", progName(), err)
 			return exitcodes.AuthFailure
