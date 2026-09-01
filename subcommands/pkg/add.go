@@ -34,6 +34,7 @@ type PkgAdd struct {
 	subcommands.SubcommandBase
 
 	upgrade       bool
+	devel         bool
 	allowUnsigned bool
 	container     bool
 	Args          []string
@@ -44,6 +45,7 @@ func (cmd *PkgAdd) CobraCommand() *cobra.Command {
 		Use: "pkg add",
 	}
 	c.Flags().BoolVar(&cmd.upgrade, "u", false, "Update packages")
+	c.Flags().BoolVar(&cmd.devel, "devel", false, "Opt-in to the devel integration tree")
 	c.Flags().BoolVar(&cmd.allowUnsigned, "allow-unsigned", false,
 		"Install packages that carry no signature")
 	c.Flags().BoolVar(&cmd.container, "container", false, "Install the container flavor of remote packages")
@@ -83,6 +85,11 @@ func (cmd *PkgAdd) Parse(ctx *appcontext.AppContext, args []string) error {
 func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository) (int, error) {
 	pkgmgr := ctx.GetPkgManager()
 
+	var edition string
+	if cmd.devel {
+		edition = "devel"
+	}
+
 	if cmd.allowUnsigned {
 		verifier := ctx.GetPkgVerifier()
 		if verifier == nil {
@@ -104,6 +111,7 @@ func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository)
 			version = ""
 		}
 		addopts := pkg.AddOptions{
+			Edition:       edition,
 			ImplicitFetch: true,
 			Version:       version,
 			Upgrade:       cmd.upgrade,
@@ -130,6 +138,7 @@ func (cmd *PkgAdd) Execute(ctx *appcontext.AppContext, _ *repository.Repository)
 			}
 
 			addopts := pkg.AddOptions{
+				Edition:       edition,
 				ImplicitFetch: true,
 				Upgrade:       cmd.upgrade,
 				// Keep whatever flavor is installed rather than

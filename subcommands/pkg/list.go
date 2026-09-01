@@ -29,6 +29,7 @@ import (
 
 type PkgList struct {
 	subcommands.SubcommandBase
+	devel    bool
 	LongName bool
 	ListAll  bool
 	Signers  bool
@@ -38,6 +39,7 @@ func (cmd *PkgList) CobraCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use: "pkg list",
 	}
+	c.Flags().BoolVar(&cmd.devel, "devel", false, "use the devel tree")
 	c.Flags().BoolVar(&cmd.LongName, "long", false, "show full package name")
 	c.Flags().BoolVar(&cmd.ListAll, "available", false, "list available prebuilt packages")
 	c.Flags().BoolVar(&cmd.Signers, "signers", false, "show which key signed each installed package")
@@ -59,6 +61,11 @@ func (cmd *PkgList) Parse(ctx *appcontext.AppContext, args []string) error {
 
 func (cmd *PkgList) Execute(ctx *appcontext.AppContext, _ *repository.Repository) (int, error) {
 	pkgmgr := ctx.GetPkgManager()
+
+	var edition string
+	if cmd.devel {
+		edition = "devel"
+	}
 
 	// signer reports who signed an installed package. Reported from the
 	// signature retained at install time, so it needs no network and
@@ -98,6 +105,7 @@ func (cmd *PkgList) Execute(ctx *appcontext.AppContext, _ *repository.Repository
 
 	integrations, err := pkgmgr.Query(&pkg.QueryOptions{
 		OnlyLocal: !cmd.ListAll,
+		Edition:   edition,
 	})
 	if err != nil {
 		return 1, err
