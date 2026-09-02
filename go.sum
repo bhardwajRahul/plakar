@@ -23,10 +23,10 @@ github.com/PlakarKorp/integrations/ptar v1.1.1 h1:44E8NHkx4cKA/bCUtcF82Qj75LyK4v
 github.com/PlakarKorp/integrations/ptar v1.1.1/go.mod h1:HeheyF9oVvFvclksHu1egJ6aNtTdB8uOddSh9A6RbKU=
 github.com/PlakarKorp/integrations/stdio v1.1.0 h1:kvZma7XfqW4p21DH/mHUC4WTa3tiPuJIZj5LgSUcZ1k=
 github.com/PlakarKorp/integrations/stdio v1.1.0/go.mod h1:Hoef62hqivDoEFC4ewyUE1ZAFSd6Kncd2Wr+R7tBcug=
-github.com/PlakarKorp/integrations/tar v1.1.0 h1:hw2vhiwlAzJMWVS2py9sRVqhF9K9kUD+S1L7JsRzwrc=
-github.com/PlakarKorp/integrations/tar v1.1.0/go.mod h1:lq8UXspuZFCKqOZUsUL9f4pM3xWXqZNeLTAc7GIBMsg=
-github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260728134607-9310b71c3adc h1:ITRHWjDdJWmKOHe3uAc+AZ/aMexch8DPiGee+ZF2wBI=
-github.com/PlakarKorp/kloset v1.2.0-alpha.2.0.20260728134607-9310b71c3adc/go.mod h1:SOI8K/6XjiDLwjQxfN9ck1tAdPCqNuworw3nzAEcOSQ=
+github.com/PlakarKorp/integrations/tar v1.1.1 h1:2v1BF5LLE88vm8C6ZbzhCOEXv44js9MSbfCq/qbOokc=
+github.com/PlakarKorp/integrations/tar v1.1.1/go.mod h1:lq8UXspuZFCKqOZUsUL9f4pM3xWXqZNeLTAc7GIBMsg=
+github.com/PlakarKorp/kloset v1.1.5 h1:m+ESyqK/rdG0jHSrJnT5xkXOANFodmY16WlSJeEIAn4=
+github.com/PlakarKorp/kloset v1.1.5/go.mod h1:tDJRg9YBSmgJHQJzNubt+jZiETRcakPUpbO7PFcYUNM=
 github.com/PlakarKorp/pkg v1.1.5 h1:sNCEzV+EDGwxwPhpzOODAmWVmqx6J6j3pkNjB4FW224=
 github.com/PlakarKorp/pkg v1.1.5/go.mod h1:2mnpmH0ZbJXIjYjhvjLQhmw4Tj5TIVDXZWuINtPNdaU=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
@@ -98,8 +98,6 @@ github.com/bradfitz/iter v0.0.0-20140124041915-454541ec3da2/go.mod h1:PyRFw1Lt2w
 github.com/bradfitz/iter v0.0.0-20190303215204-33e6a9893b0c/go.mod h1:PyRFw1Lt2wKX4ZVSQ2mk+PeDa1rxyObEDlApuIsUKuo=
 github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 h1:GKTyiRCL6zVf5wWaqKnf+7Qs6GbEPfd4iMOitWzXJx8=
 github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8/go.mod h1:spo1JLcs67NmW1aVLEgtA8Yy1elc+X8y5SRW1sFW4Og=
-github.com/c2sp/wycheproof v0.0.0-20260105152342-fca0d3ba9f12 h1:C34LW7dhWgjAaAOdNB8z2UCyJsXDjC6UTILljHuqOlI=
-github.com/c2sp/wycheproof v0.0.0-20260105152342-fca0d3ba9f12/go.mod h1:U1QjrC6KepOmtVmJn3QsKOTd9HliGr/da5afPEhLRnk=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
@@ -422,8 +420,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/tink-crypto/tink-go/v2 v2.7.0 h1:k7QnUXJ1cRDpvoy/5l1FimZqMAArRff8vjUqzi5N04o=
-github.com/tink-crypto/tink-go/v2 v2.7.0/go.mod h1:cWNpQ/yAT/QHzAV0kBGMOSJzzYTKofDZdJaUqOPPWCI=
+github.com/tink-crypto/tink-go/v2 v2.6.0 h1:+KHNBHhWH33Vn+igZWcsgdEPUxKwBMEe0QC60t388v4=
+github.com/tink-crypto/tink-go/v2 v2.6.0/go.mod h1:2WbBA6pfNsAfBwDCggboaHeB2X29wkU8XHtGwh2YIk8=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
