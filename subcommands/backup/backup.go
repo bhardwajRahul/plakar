@@ -188,6 +188,12 @@ func (cmd *Backup) Parse(ctx *appcontext.AppContext, args []string) error {
 	return nil
 }
 
+// computing the filesystem summary walks the whole source a second time,
+// so only do it when something will display it.
+func (cmd *Backup) wantsFilesystemSummary(ctx *appcontext.AppContext, flags location.Flags) bool {
+	return !cmd.NoProgress && ctx.ProgressSummary && (flags&location.FLAG_STREAM) == 0
+}
+
 func (cmd *Backup) Execute(ctx *appcontext.AppContext, repo *repository.Repository) (int, error) {
 	ret, err, _, _ := cmd.DoBackup(ctx, repo)
 	return ret, err
@@ -273,7 +279,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		importerKey := typ + ":" + orig
 		sourcesPerOrig[importerKey] = append(sourcesPerOrig[importerKey], imp)
 
-		if !cmd.NoProgress && (imp.Flags()&location.FLAG_STREAM) == 0 {
+		if cmd.wantsFilesystemSummary(ctx, imp.Flags()) {
 			imp, err := importer.NewImporter(ctx.GetInner(), importerOpts, cmdOptsCopy)
 			if err != nil {
 				return 1, fmt.Errorf("failed to create an importer for %s: %s", scanDir, err), objects.MAC{}, nil
@@ -370,7 +376,7 @@ func (cmd *Backup) DoBackup(ctx *appcontext.AppContext, repo *repository.Reposit
 		}
 		snap.WithVFSCache(parentVFS)
 
-		if !cmd.NoProgress && (source.Flags()&location.FLAG_STREAM) == 0 {
+		if cmd.wantsFilesystemSummary(ctx, source.Flags()) {
 			source, err := snapshot.NewSource(repo.AppContext(), sourcesPerOrigForStats[key]...)
 			if err != nil {
 				return 1, err, objects.NilMac, nil

@@ -27,6 +27,10 @@ type AppContext struct {
 
 	Quiet  bool
 	Silent bool
+
+	// ProgressSummary is set when the selected renderer consumes fs.summary,
+	// which costs backup an extra scan of the source.
+	ProgressSummary bool
 }
 
 func NewAppContext() *AppContext {
