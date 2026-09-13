@@ -220,6 +220,22 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 			return fmt.Errorf("no valid %ss found in config", cmd)
 		}
 
+		if cmd == "store" {
+			for section := range newConfMap {
+				for k := range newConfMap[section] {
+					if k == "passphrase_cmd" {
+						fmt.Fprintln(ctx.Stderr,
+							cmd, fmt.Sprintf("%q", section),
+							"has a passphrase_cmd which will be",
+							"executed when unlocking the store",
+						)
+						fmt.Fprintln(ctx.Stderr,
+							"make sure you trust this configuration")
+					}
+				}
+			}
+		}
+
 		if flags.NArg() == 0 {
 			for name, section := range newConfMap {
 				if hasFunc(name) && !opt_overwrite {
