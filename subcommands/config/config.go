@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"maps"
-	"net/http"
 	"os"
 	"strings"
 
@@ -200,21 +199,12 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 
 		var rd = ctx.Stdin
 		if opt_config != "" {
-			if strings.HasPrefix(opt_config, "http://") || strings.HasPrefix(opt_config, "https://") {
-				resp, err := http.Get(opt_config)
-				if err != nil {
-					return fmt.Errorf("failed to fetch config from %q: %w", opt_config, err)
-				}
-				defer resp.Body.Close()
-				rd = resp.Body
-			} else {
-				f, err := os.Open(opt_config)
-				if err != nil {
-					return fmt.Errorf("failed to open file %q: %w", opt_config, err)
-				}
-				defer f.Close()
-				rd = f
+			f, err := os.Open(opt_config)
+			if err != nil {
+				return fmt.Errorf("failed to open file %q: %w", opt_config, err)
 			}
+			defer f.Close()
+			rd = f
 		}
 
 		thirdParty := ""
