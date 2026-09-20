@@ -371,3 +371,102 @@ func TestDispatchShow(t *testing.T) {
 		require.Contains(t, bufErr.String(), "does not exist")
 	})
 }
+
+// TestDispatchLifecycle walks an entry of each kind through add, set, unset,
+// show and rm.
+func TestDispatchLifecycle(t *testing.T) {
+	entities := []struct {
+		kind string
+		has  func(*appcontext.AppContext, string) bool
+		opts func(*appcontext.AppContext, string) map[string]string
+	}{
+		{
+			"store",
+			func(c *appcontext.AppContext, n string) bool { return c.Config.HasRepository(n) },
+			func(c *appcontext.AppContext, n string) map[string]string { return c.Config.Repositories[n] },
+		},
+		{
+			"source",
+			func(c *appcontext.AppContext, n string) bool { return c.Config.HasSource(n) },
+			func(c *appcontext.AppContext, n string) map[string]string { return c.Config.Sources[n] },
+		},
+		{
+			"destination",
+			func(c *appcontext.AppContext, n string) bool { return c.Config.HasDestination(n) },
+			func(c *appcontext.AppContext, n string) map[string]string { return c.Config.Destinations[n] },
+		},
+	}
+
+	for _, e := range entities {
+		t.Run(e.kind, func(t *testing.T) {
+			ctx, bufOut, _ := newCtx(t)
+
+			require.NoError(t, dispatchSubcommand(ctx, e.kind, "add", []string{"n", "fs:/tmp/n", "key=val", "k2=v2"}))
+			require.True(t, e.has(ctx, "n"))
+			require.Equal(t, "val", e.opts(ctx, "n")["key"])
+			require.Equal(t, "v2", e.opts(ctx, "n")["k2"])
+
+			require.NoError(t, dispatchSubcommand(ctx, e.kind, "set", []string{"n", "k3=v3"}))
+			require.Equal(t, "v3", e.opts(ctx, "n")["k3"])
+
+			require.NoError(t, dispatchSubcommand(ctx, e.kind, "unset", []string{"n", "k3"}))
+			_, ok := e.opts(ctx, "n")["k3"]
+			require.False(t, ok)
+
+			bufOut.Reset()
+			require.NoError(t, dispatchSubcommand(ctx, e.kind, "show", []string{"n"}))
+			require.Contains(t, bufOut.String(), "n")
+
+			bufOut.Reset()
+			require.NoError(t, dispatchSubcommand(ctx, e.kind, "show", []string{"-yaml", "n"}))
+			require.Contains(t, bufOut.String(), "n")
+
+			require.NoError(t, dispatchSubcommand(ctx, e.kind, "rm", []string{"n"}))
+			require.False(t, e.has(ctx, "n"))
+		})
+	}
+}
+
+// TestDispatchEntryErrors covers the argument and lookup errors of add, set,
+// unset and rm, against a context that already holds a store named "r".
+func TestDispatchEntryErrors(t *testing.T) {
+	cases := []struct {
+		name    string
+		verb    string
+		args    []string
+		wantErr string
+	}{
+		{"add/duplicate", "add", []string{"r", "fs:/tmp/r2"}, "already exists"},
+		{"add/too-few-args", "add", []string{"only-name"}, ""},
+		{"add/malformed-kv", "add", []string{"r2", "fs:/tmp/r2", "noequalsign"}, ""},
+		{"set/unknown-name", "set", []string{"ghost", "k=v"}, ""},
+		{"set/malformed-kv", "set", []string{"r", "bad"}, ""},
+		{"unset/too-few-args", "unset", []string{"r"}, ""},
+		{"unset/unknown-name", "unset", []string{"ghost", "k"}, ""},
+		{"unset/location-rejected", "unset", []string{"r", "location"}, ""},
+		{"rm/unknown-name", "rm", []string{"ghost"}, ""},
+		{"rm/no-args", "rm", []string{}, ""},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctx, _, _ := newCtx(t, withStore("r", "fs:/tmp/r"))
+
+			err := dispatchSubcommand(ctx, "store", c.verb, c.args)
+			require.Error(t, err)
+			if c.wantErr != "" {
+				require.Contains(t, err.Error(), c.wantErr)
+			}
+		})
+	}
+
+	// a name that isn't a valid alias is rejected before anything is stored
+	t.Run("add/invalid-name", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+
+		err := dispatchSubcommand(ctx, "destination", "add", []string{"s3://xxxx", "access_key=yyy"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid configuration name")
+		require.False(t, ctx.Config.HasDestination("s3://xxxx"))
+	})
+}

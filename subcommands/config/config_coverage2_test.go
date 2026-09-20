@@ -53,12 +53,3 @@ func TestCov2StoreExecuteSuccessStatus2(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, status)
 }
-
-// ---------- unset cannot remove location ----------
-
-func TestCov2UnsetLocationRejected2(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:///x"}))
-	err := dispatchSubcommand(ctx, "store", "unset", []string{"r", "location"})
-	require.Error(t, err)
-}
