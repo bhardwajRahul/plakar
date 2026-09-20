@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/PlakarKorp/kloset/repository"
@@ -469,4 +470,27 @@ func TestDispatchEntryErrors(t *testing.T) {
 		require.Contains(t, err.Error(), "invalid configuration name")
 		require.False(t, ctx.Config.HasDestination("s3://xxxx"))
 	})
+}
+
+func TestNormalizeHelpers(t *testing.T) {
+	require.Equal(t, "name", normalizeName("@name"))
+	require.Equal(t, "name", normalizeName("name"))
+	require.Equal(t, "fs:/x", normalizeLocation("location=fs:/x"))
+	require.Equal(t, "fs:/x", normalizeLocation("fs:/x"))
+}
+
+func TestMarshalINISections(t *testing.T) {
+	var buf bytes.Buffer
+	require.NoError(t, MarshalINISections("mysection", map[string]string{"key": "val"}, &buf))
+	out := buf.String()
+	require.Contains(t, out, "[mysection]")
+	require.Contains(t, out, "key")
+	require.Contains(t, out, "val")
+}
+
+func TestDispatchUnknownCmd(t *testing.T) {
+	ctx, _, _ := newCtx(t)
+	err := dispatchSubcommand(ctx, "bogus", "show", nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unknown cmd")
 }
