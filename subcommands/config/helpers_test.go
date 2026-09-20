@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -38,4 +39,13 @@ func newCtx(t *testing.T) (*appcontext.AppContext, *bytes.Buffer, *bytes.Buffer)
 func fsLoc(t *testing.T) string {
 	t.Helper()
 	return "fs://" + t.TempDir()
+}
+
+// writeConf writes body to a file in a fresh temp dir and returns its path.
+func writeConf(t *testing.T, name, body string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), name)
+	require.NoError(t, os.WriteFile(path, []byte(body), 0o600))
+	return path
 }

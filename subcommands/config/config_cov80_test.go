@@ -1,51 +1,14 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-// ---------- import with -rclone (third-party prefix synthesis) ----------
-
-func TestDispatchImportRcloneCov80(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-
-	// An rclone-style INI section; with -rclone the importer synthesizes a
-	// "rclone://" location and prefixes each key.
-	content := "[remote1]\ntype = s3\nprovider = AWS\n"
-	file := filepath.Join(t.TempDir(), "rclone.conf")
-	require.NoError(t, os.WriteFile(file, []byte(content), 0600))
-
-	err := dispatchSubcommand(ctx, "store", "import", []string{"-rclone", "-config", file})
-	require.NoError(t, err)
-	require.True(t, ctx.Config.HasRepository("remote1"))
-	require.Equal(t, "rclone://", ctx.Config.Repositories["remote1"]["location"])
-	require.Equal(t, "s3", ctx.Config.Repositories["remote1"]["rclone_type"])
-}
-
 // import of a config that contains no usable sections must error with "no
 // valid ...s found".
-func TestDispatchImportEmptyAfterParseCov80(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-
-	// A YAML doc whose only top-level entry is a scalar (skipped by LoadYAML)
-	// plus a location so GetConf doesn't reject it, but yields no real
-	// sections once empties are stripped. We use an rclone import of an empty
-	// INI so the resulting map is empty.
-	file := filepath.Join(t.TempDir(), "empty.conf")
-	require.NoError(t, os.WriteFile(file, []byte("\n"), 0600))
-
-	err := dispatchSubcommand(ctx, "store", "import", []string{"-rclone", "-config", file})
-	// Empty file -> GetConf returns an empty map (rclone synthesizes nothing),
-	// so dispatch reports "no valid stores found" OR a load error; either way
-	// it must be an error.
-	require.Error(t, err)
-}
-
 // ---------- policy add/set with an invalid value (config.Set error) ----------
 
 func TestDispatchPolicyAddSetErrorCov80(t *testing.T) {

@@ -203,3 +203,108 @@ func TestDispatchCheckPing(t *testing.T) {
 		}
 	}
 }
+
+// TestDispatchImport covers the import action of dispatchSubcommand: whole-file
+// and selected-section imports, the skip/overwrite rules for entries that
+// already exist, and the -rclone INI variant.
+func TestDispatchImport(t *testing.T) {
+	const twoSections = "alpha:\n  location: fs:///a\nbeta:\n  location: fs:///b\n"
+
+	t.Run("all-sections", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+		conf := writeConf(t, "stores.yaml", twoSections)
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "import", []string{"-config", conf}))
+		require.True(t, ctx.Config.HasRepository("alpha"))
+		require.True(t, ctx.Config.HasRepository("beta"))
+	})
+
+	t.Run("selected-section-renamed", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+		conf := writeConf(t, "stores.yaml", twoSections)
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "import", []string{"-config", conf, "alpha:gamma"}))
+		require.True(t, ctx.Config.HasRepository("gamma"))
+		require.False(t, ctx.Config.HasRepository("beta"))
+	})
+
+	t.Run("selected-missing-and-empty-name", func(t *testing.T) {
+		ctx, _, bufErr := newCtx(t)
+		conf := writeConf(t, "import.yml", twoSections)
+
+		// rename alpha, request a missing section, and an empty target
+		args := []string{"-config", conf, "alpha:renamed", "ghost", ":bad"}
+		require.NoError(t, dispatchSubcommand(ctx, "source", "import", args))
+
+		require.Equal(t, "fs:///a", ctx.Config.Sources["renamed"]["location"])
+		require.Contains(t, bufErr.String(), "does not exist in config")
+		require.Contains(t, bufErr.String(), "empty section name")
+	})
+
+	t.Run("existing-skipped", func(t *testing.T) {
+		ctx, _, bufErr := newCtx(t)
+		require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"alpha", "fs:///old"}))
+		conf := writeConf(t, "import.yml", twoSections)
+
+		// without -overwrite alpha is skipped, beta is still added
+		require.NoError(t, dispatchSubcommand(ctx, "source", "import", []string{"-config", conf}))
+		require.Contains(t, bufErr.String(), "already exists, skipping")
+		require.Equal(t, "fs:///old", ctx.Config.Sources["alpha"]["location"])
+		require.Equal(t, "fs:///b", ctx.Config.Sources["beta"]["location"])
+	})
+
+	t.Run("selected-existing-skipped", func(t *testing.T) {
+		ctx, _, bufErr := newCtx(t)
+		require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"alpha", "fs:///old"}))
+		conf := writeConf(t, "import.yml", "alpha:\n  location: fs:///new\n")
+
+		require.NoError(t, dispatchSubcommand(ctx, "source", "import", []string{"-config", conf, "alpha"}))
+		require.Contains(t, bufErr.String(), "already exists, skipping")
+		require.Equal(t, "fs:///old", ctx.Config.Sources["alpha"]["location"])
+	})
+
+	t.Run("overwrite", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+		require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"alpha", "fs:///old"}))
+		conf := writeConf(t, "import.yml", "alpha:\n  location: fs:///new\n")
+
+		require.NoError(t, dispatchSubcommand(ctx, "source", "import", []string{"-overwrite", "-config", conf}))
+		require.Equal(t, "fs:///new", ctx.Config.Sources["alpha"]["location"])
+	})
+
+	t.Run("missing-file", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+
+		err := dispatchSubcommand(ctx, "store", "import", []string{"-config", "/nonexistent/x.yaml"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to open file")
+	})
+
+	t.Run("no-valid-sections", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+		// a scalar-only top level yields no sections once empties are stripped
+		conf := writeConf(t, "empty.yml", "location: fs:///x\n")
+
+		require.Error(t, dispatchSubcommand(ctx, "source", "import", []string{"-config", conf}))
+	})
+
+	t.Run("rclone", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+		// with -rclone the importer synthesizes an "rclone://" location and
+		// prefixes each key.
+		conf := writeConf(t, "rclone.conf", "[remote1]\ntype = s3\nprovider = AWS\n")
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "import", []string{"-rclone", "-config", conf}))
+		require.True(t, ctx.Config.HasRepository("remote1"))
+		require.Equal(t, "rclone://", ctx.Config.Repositories["remote1"]["location"])
+		require.Equal(t, "s3", ctx.Config.Repositories["remote1"]["rclone_type"])
+	})
+
+	t.Run("rclone-empty", func(t *testing.T) {
+		ctx, _, _ := newCtx(t)
+		// an empty INI synthesizes nothing, so dispatch finds no valid entries
+		conf := writeConf(t, "empty.conf", "\n")
+
+		require.Error(t, dispatchSubcommand(ctx, "store", "import", []string{"-rclone", "-config", conf}))
+	})
+}

@@ -232,38 +232,6 @@ func TestDispatchShowAllAndMissing(t *testing.T) {
 	require.Contains(t, bufErr.String(), "does not exist")
 }
 
-func TestDispatchImportFromFile(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-
-	// Write a YAML config with two store sections.
-	tmp := filepath.Join(t.TempDir(), "stores.yaml")
-	content := "alpha:\n  location: fs:/tmp/alpha\nbeta:\n  location: fs:/tmp/beta\n"
-	require.NoError(t, os.WriteFile(tmp, []byte(content), 0644))
-
-	require.NoError(t, dispatchSubcommand(ctx, "store", "import", []string{"-config", tmp}))
-	require.True(t, ctx.Config.HasRepository("alpha"))
-	require.True(t, ctx.Config.HasRepository("beta"))
-}
-
-func TestDispatchImportSelectedSection(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	tmp := filepath.Join(t.TempDir(), "stores.yaml")
-	content := "alpha:\n  location: fs:/tmp/alpha\nbeta:\n  location: fs:/tmp/beta\n"
-	require.NoError(t, os.WriteFile(tmp, []byte(content), 0644))
-
-	// Import only alpha, renamed to gamma.
-	require.NoError(t, dispatchSubcommand(ctx, "store", "import", []string{"-config", tmp, "alpha:gamma"}))
-	require.True(t, ctx.Config.HasRepository("gamma"))
-	require.False(t, ctx.Config.HasRepository("beta"))
-}
-
-func TestDispatchImportMissingFile(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	err := dispatchSubcommand(ctx, "store", "import", []string{"-config", "/nonexistent/x.yaml"})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to open file")
-}
-
 // ---------- dispatchPolicy ----------
 
 func TestPolicyParseExecute(t *testing.T) {
