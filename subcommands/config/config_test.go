@@ -164,3 +164,42 @@ func TestCmdRepository(t *testing.T) {
 	err = configure(ctx, "store", args)
 	require.EqualError(t, err, "backend 'invalid' does not exist")
 }
+
+// TestDispatchCheckPing covers the check and ping actions of dispatchSubcommand
+// for every entity kind. Both verbs resolve the named entry and open its
+// backend, so they share one table.
+func TestDispatchCheckPing(t *testing.T) {
+	entities := []struct{ kind, name string }{
+		{"store", "r"},
+		{"source", "s"},
+		{"destination", "d"},
+	}
+
+	for _, verb := range []string{"check", "ping"} {
+		for _, e := range entities {
+			t.Run(verb+"/"+e.kind+"/ok", func(t *testing.T) {
+				ctx, _, _ := newCtx(t)
+				// the fs backend opens cleanly even when uninitialized.
+				require.NoError(t, dispatchSubcommand(ctx, e.kind, "add", []string{e.name, fsLoc(t)}))
+				require.NoError(t, dispatchSubcommand(ctx, e.kind, verb, []string{e.name}))
+			})
+
+			t.Run(verb+"/"+e.kind+"/unknown-scheme", func(t *testing.T) {
+				ctx, _, _ := newCtx(t)
+				require.NoError(t, dispatchSubcommand(ctx, e.kind, "add", []string{e.name, "no-such-scheme://nowhere"}))
+				require.Error(t, dispatchSubcommand(ctx, e.kind, verb, []string{e.name}))
+			})
+
+			t.Run(verb+"/"+e.kind+"/unknown-name", func(t *testing.T) {
+				ctx, _, _ := newCtx(t)
+				require.Error(t, dispatchSubcommand(ctx, e.kind, verb, []string{"ghost"}))
+			})
+
+			// wrong arg count is checked before the entity kind is looked at.
+			t.Run(verb+"/"+e.kind+"/no-args", func(t *testing.T) {
+				ctx, _, _ := newCtx(t)
+				require.Error(t, dispatchSubcommand(ctx, e.kind, verb, []string{}))
+			})
+		}
+	}
+}

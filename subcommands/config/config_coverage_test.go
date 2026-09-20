@@ -7,53 +7,6 @@ import (
 )
 
 // fsLoc returns an absolute fs:/// location pointing at a fresh temp dir.
-// ---------- check success (store / source / destination) ----------
-
-func TestCovCheckStoreSuccess(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	loc := fsLoc(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", loc}))
-	// fs storage backend opens cleanly even when uninitialized.
-	require.NoError(t, dispatchSubcommand(ctx, "store", "check", []string{"r"}))
-}
-
-func TestCovCheckSourceSuccess(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	loc := fsLoc(t)
-	require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"s", loc}))
-	require.NoError(t, dispatchSubcommand(ctx, "source", "check", []string{"s"}))
-}
-
-func TestCovCheckDestinationSuccess(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	loc := fsLoc(t)
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "add", []string{"d", loc}))
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "check", []string{"d"}))
-}
-
-// ---------- ping success (store / source / destination) ----------
-
-func TestCovPingStoreSuccess(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	loc := fsLoc(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", loc}))
-	require.NoError(t, dispatchSubcommand(ctx, "store", "ping", []string{"r"}))
-}
-
-func TestCovPingSourceSuccess(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	loc := fsLoc(t)
-	require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"s", loc}))
-	require.NoError(t, dispatchSubcommand(ctx, "source", "ping", []string{"s"}))
-}
-
-func TestCovPingDestinationSuccess(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	loc := fsLoc(t)
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "add", []string{"d", loc}))
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "ping", []string{"d"}))
-}
-
 // ---------- source add/set/unset/rm/show lifecycle ----------
 
 func TestCovSourceLifecycle(t *testing.T) {
@@ -97,43 +50,6 @@ func TestCovDestinationLifecycle(t *testing.T) {
 
 	require.NoError(t, dispatchSubcommand(ctx, "destination", "rm", []string{"d"}))
 	require.False(t, ctx.Config.HasDestination("d"))
-}
-
-// ---------- check/ping failure for unconfigured source & destination ----------
-
-func TestCovCheckSourceUnknownGetFails(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	// name exists in the map but with a bogus protocol -> NewImporter fails.
-	require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"s", "bogus://x"}))
-	require.Error(t, dispatchSubcommand(ctx, "source", "check", []string{"s"}))
-}
-
-func TestCovCheckDestinationUnknownGetFails(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "add", []string{"d", "bogus://x"}))
-	require.Error(t, dispatchSubcommand(ctx, "destination", "check", []string{"d"}))
-}
-
-func TestCovPingSourceBadProto(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "source", "add", []string{"s", "bogus://x"}))
-	require.Error(t, dispatchSubcommand(ctx, "source", "ping", []string{"s"}))
-}
-
-func TestCovPingDestinationBadProto(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "add", []string{"d", "bogus://x"}))
-	require.Error(t, dispatchSubcommand(ctx, "destination", "ping", []string{"d"}))
-}
-
-// ---------- source/destination check/ping on unknown name ----------
-
-func TestCovCheckPingMissingName(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.Error(t, dispatchSubcommand(ctx, "source", "check", []string{"ghost"}))
-	require.Error(t, dispatchSubcommand(ctx, "destination", "check", []string{"ghost"}))
-	require.Error(t, dispatchSubcommand(ctx, "source", "ping", []string{"ghost"}))
-	require.Error(t, dispatchSubcommand(ctx, "destination", "ping", []string{"ghost"}))
 }
 
 // ---------- policy lifecycle via dispatchPolicy (set/unset/show formats) ----------

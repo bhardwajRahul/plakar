@@ -264,20 +264,6 @@ func TestDispatchImportMissingFile(t *testing.T) {
 	require.Contains(t, err.Error(), "failed to open file")
 }
 
-func TestDispatchCheckUnknown(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	// check unknown name
-	require.Error(t, dispatchSubcommand(ctx, "store", "check", []string{"ghost"}))
-	// check wrong arg count
-	require.Error(t, dispatchSubcommand(ctx, "store", "check", []string{}))
-}
-
-func TestDispatchPingUnknown(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.Error(t, dispatchSubcommand(ctx, "store", "ping", []string{"ghost"}))
-	require.Error(t, dispatchSubcommand(ctx, "store", "ping", []string{}))
-}
-
 // ---------- dispatchPolicy ----------
 
 func TestPolicyParseExecute(t *testing.T) {

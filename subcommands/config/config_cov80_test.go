@@ -46,42 +46,6 @@ func TestDispatchImportEmptyAfterParseCov80(t *testing.T) {
 	require.Error(t, err)
 }
 
-// ---------- ping / check error branches ----------
-
-func TestDispatchPingStoreOpenErrorCov80(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	// Register a store whose location uses an unknown scheme so storage.New
-	// fails inside the ping handler (config.go store-ping error branch).
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
-		[]string{"r", "no-such-scheme://nowhere"}))
-	err := dispatchSubcommand(ctx, "store", "ping", []string{"r"})
-	require.Error(t, err)
-}
-
-func TestDispatchCheckStoreOpenErrorCov80(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
-		[]string{"r", "no-such-scheme://nowhere"}))
-	err := dispatchSubcommand(ctx, "store", "check", []string{"r"})
-	require.Error(t, err)
-}
-
-func TestDispatchCheckSourceBadProtoCov80(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "source", "add",
-		[]string{"s", "no-such-scheme://nowhere"}))
-	err := dispatchSubcommand(ctx, "source", "check", []string{"s"})
-	require.Error(t, err)
-}
-
-func TestDispatchCheckDestinationBadProtoCov80(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "destination", "add",
-		[]string{"d", "no-such-scheme://nowhere"}))
-	err := dispatchSubcommand(ctx, "destination", "check", []string{"d"})
-	require.Error(t, err)
-}
-
 // ---------- policy add/set with an invalid value (config.Set error) ----------
 
 func TestDispatchPolicyAddSetErrorCov80(t *testing.T) {
