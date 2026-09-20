@@ -1,14 +1,10 @@
 package config
 
 import (
-	"bytes"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/PlakarKorp/kloset/repository"
 	"github.com/PlakarKorp/plakar/appcontext"
-	"github.com/PlakarKorp/plakar/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -47,29 +43,12 @@ func TestValidAliasName(t *testing.T) {
 }
 
 func TestConfigEmpty(t *testing.T) {
-	bufOut := bytes.NewBuffer(nil)
-	bufErr := bytes.NewBuffer(nil)
-	// init temporary directories
-	tmpDir, err := os.MkdirTemp("", "plakar-config-test")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		os.RemoveAll(tmpDir)
-	})
-
-	configPath := filepath.Join(tmpDir, "config.yaml")
-	cfg, err := config.LoadOldConfigIfExists(configPath)
-
-	require.NoError(t, err)
-	ctx := appcontext.NewAppContext()
-	ctx.ConfigDir = tmpDir
-	ctx.Config = cfg
-	ctx.Stdout = bufOut
-	ctx.Stderr = bufErr
+	ctx, bufOut, bufErr := newCtx(t)
 	repo := &repository.Repository{}
 	args := []string{}
 
 	subcommand := &ConfigStoreCmd{}
-	err = subcommand.Parse(ctx, args)
+	err := subcommand.Parse(ctx, args)
 	require.Error(t, err, "no action specified")
 
 	subcommand = &ConfigStoreCmd{}
@@ -115,26 +94,10 @@ func TestConfigEmpty(t *testing.T) {
 }
 
 func TestCmdRemote(t *testing.T) {
-	bufOut := bytes.NewBuffer(nil)
-	bufErr := bytes.NewBuffer(nil)
-	// init temporary directories
-	tmpDir, err := os.MkdirTemp("", "plakar-config-test")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		os.RemoveAll(tmpDir)
-	})
-
-	configPath := filepath.Join(tmpDir, "config.yaml")
-	cfg, err := config.LoadOldConfigIfExists(configPath)
-	require.NoError(t, err)
-	ctx := appcontext.NewAppContext()
-	ctx.Config = cfg
-	ctx.ConfigDir = tmpDir
-	ctx.Stdout = bufOut
-	ctx.Stderr = bufErr
+	ctx, _, _ := newCtx(t)
 
 	args := []string{}
-	err = configure(ctx, "source", args)
+	err := configure(ctx, "source", args)
 	require.NoError(t, err)
 
 	args = []string{"unknown"}
@@ -167,26 +130,10 @@ func TestCmdRemote(t *testing.T) {
 }
 
 func TestCmdRepository(t *testing.T) {
-	bufOut := bytes.NewBuffer(nil)
-	bufErr := bytes.NewBuffer(nil)
-	// init temporary directories
-	tmpDir, err := os.MkdirTemp("", "plakar-config-test")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		os.RemoveAll(tmpDir)
-	})
-
-	configPath := filepath.Join(tmpDir, "config.yaml")
-	cfg, err := config.LoadOldConfigIfExists(configPath)
-	require.NoError(t, err)
-	ctx := appcontext.NewAppContext()
-	ctx.Config = cfg
-	ctx.ConfigDir = tmpDir
-	ctx.Stdout = bufOut
-	ctx.Stderr = bufErr
+	ctx, _, _ := newCtx(t)
 
 	args := []string{"unknown"}
-	err = configure(ctx, "store", args)
+	err := configure(ctx, "store", args)
 	require.EqualError(t, err, "usage: plakar store [add|check|import|ping|rm|set|show|unset]")
 
 	args = []string{"add", "my-repo", "fs:/tmp/my-repo"}

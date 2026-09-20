@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/PlakarKorp/kloset/repository"
-	"github.com/PlakarKorp/plakar/appcontext"
-	"github.com/PlakarKorp/plakar/config"
 	"github.com/PlakarKorp/plakar/subcommands"
 	"github.com/stretchr/testify/require"
 )
@@ -34,22 +32,6 @@ func TestConfigRegisteredFactories(t *testing.T) {
 
 // newConfigCtx returns a context with an empty on-disk config rooted in a temp
 // dir, plus buffered stdout/stderr.
-func newConfigCtx(t *testing.T) (*appcontext.AppContext, *bytes.Buffer, *bytes.Buffer) {
-	t.Helper()
-	tmpDir := t.TempDir()
-	cfg, err := config.LoadOldConfigIfExists(filepath.Join(tmpDir, "config.yaml"))
-	require.NoError(t, err)
-
-	bufOut := bytes.NewBuffer(nil)
-	bufErr := bytes.NewBuffer(nil)
-	ctx := appcontext.NewAppContext()
-	ctx.Config = cfg
-	ctx.ConfigDir = tmpDir
-	ctx.Stdout = bufOut
-	ctx.Stderr = bufErr
-	return ctx, bufOut, bufErr
-}
-
 // ---------- helpers ----------
 
 func TestNormalizeHelpers(t *testing.T) {
@@ -69,7 +51,7 @@ func TestMarshalINISections(t *testing.T) {
 }
 
 func TestDispatchUnknownCmd(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	err := dispatchSubcommand(ctx, "bogus", "show", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unknown cmd")
@@ -78,7 +60,7 @@ func TestDispatchUnknownCmd(t *testing.T) {
 // ---------- store / source / destination entity wrappers ----------
 
 func TestEntityParseNoAction(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 
 	require.Error(t, (&ConfigStoreCmd{}).Parse(ctx, []string{}))
 	require.Error(t, (&ConfigSourceCmd{}).Parse(ctx, []string{}))
@@ -87,7 +69,7 @@ func TestEntityParseNoAction(t *testing.T) {
 }
 
 func TestDestinationParseExecute(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	repo := &repository.Repository{}
 
 	cmd := &ConfigDestinationCmd{}
@@ -106,7 +88,7 @@ func TestDestinationParseExecute(t *testing.T) {
 }
 
 func TestSourceParseExecute(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	repo := &repository.Repository{}
 
 	cmd := &ConfigSourceCmd{}
@@ -120,7 +102,7 @@ func TestSourceParseExecute(t *testing.T) {
 // ---------- dispatchSubcommand actions ----------
 
 func TestDispatchAddDuplicateAndMalformed(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:/tmp/r"}))
 
@@ -147,7 +129,7 @@ func TestDispatchAddRejectsNameWithSlash(t *testing.T) {
 		expectedError     = "invalid configuration name"
 	)
 
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 
 	err := dispatchSubcommand(ctx, configCommand, configSubcommand, []string{invalidConfigName, configLocation})
 	require.Error(t, err)
@@ -156,14 +138,14 @@ func TestDispatchAddRejectsNameWithSlash(t *testing.T) {
 }
 
 func TestDispatchAddWithOptions(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:/tmp/r", "key=val", "k2=v2"}))
 	require.Equal(t, "val", ctx.Config.Repositories["r"]["key"])
 	require.Equal(t, "v2", ctx.Config.Repositories["r"]["k2"])
 }
 
 func TestDispatchSetUnset(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:/tmp/r"}))
 
 	// set on unknown name
@@ -187,7 +169,7 @@ func TestDispatchSetUnset(t *testing.T) {
 }
 
 func TestDispatchRm(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:/tmp/r"}))
 
 	// rm unknown
@@ -203,7 +185,7 @@ func TestDispatchShowSecretsRevealed(t *testing.T) {
 	// -secrets must be checked first: non-secret show mutates the in-memory
 	// config map (overwriting the value with "********"), so it has to run on a
 	// fresh config.
-	ctx, bufOut, _ := newConfigCtx(t)
+	ctx, bufOut, _ := newCtx(t)
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
 		[]string{"r", "fs:/tmp/r", "passphrase=topsecret"}))
 
@@ -212,7 +194,7 @@ func TestDispatchShowSecretsRevealed(t *testing.T) {
 }
 
 func TestDispatchShowFormats(t *testing.T) {
-	ctx, bufOut, _ := newConfigCtx(t)
+	ctx, bufOut, _ := newCtx(t)
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
 		[]string{"r", "fs:/tmp/r", "passphrase=topsecret", "plain=visible"}))
 
@@ -235,7 +217,7 @@ func TestDispatchShowFormats(t *testing.T) {
 }
 
 func TestDispatchShowAllAndMissing(t *testing.T) {
-	ctx, bufOut, bufErr := newConfigCtx(t)
+	ctx, bufOut, bufErr := newCtx(t)
 	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:/tmp/r"}))
 
 	// no name -> show all
@@ -251,7 +233,7 @@ func TestDispatchShowAllAndMissing(t *testing.T) {
 }
 
 func TestDispatchImportFromFile(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 
 	// Write a YAML config with two store sections.
 	tmp := filepath.Join(t.TempDir(), "stores.yaml")
@@ -264,7 +246,7 @@ func TestDispatchImportFromFile(t *testing.T) {
 }
 
 func TestDispatchImportSelectedSection(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	tmp := filepath.Join(t.TempDir(), "stores.yaml")
 	content := "alpha:\n  location: fs:/tmp/alpha\nbeta:\n  location: fs:/tmp/beta\n"
 	require.NoError(t, os.WriteFile(tmp, []byte(content), 0644))
@@ -276,14 +258,14 @@ func TestDispatchImportSelectedSection(t *testing.T) {
 }
 
 func TestDispatchImportMissingFile(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	err := dispatchSubcommand(ctx, "store", "import", []string{"-config", "/nonexistent/x.yaml"})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to open file")
 }
 
 func TestDispatchCheckUnknown(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	// check unknown name
 	require.Error(t, dispatchSubcommand(ctx, "store", "check", []string{"ghost"}))
 	// check wrong arg count
@@ -291,7 +273,7 @@ func TestDispatchCheckUnknown(t *testing.T) {
 }
 
 func TestDispatchPingUnknown(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	require.Error(t, dispatchSubcommand(ctx, "store", "ping", []string{"ghost"}))
 	require.Error(t, dispatchSubcommand(ctx, "store", "ping", []string{}))
 }
@@ -299,7 +281,7 @@ func TestDispatchPingUnknown(t *testing.T) {
 // ---------- dispatchPolicy ----------
 
 func TestPolicyParseExecute(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	repo := &repository.Repository{}
 
 	cmd := &ConfigPolicyCmd{}
@@ -314,7 +296,7 @@ func TestPolicyParseExecute(t *testing.T) {
 }
 
 func TestDispatchPolicyLifecycle(t *testing.T) {
-	ctx, bufOut, _ := newConfigCtx(t)
+	ctx, bufOut, _ := newCtx(t)
 
 	// unknown subcommand
 	require.Error(t, dispatchPolicy(ctx, "policy", "bogus", nil))
@@ -350,7 +332,7 @@ func TestDispatchPolicyLifecycle(t *testing.T) {
 }
 
 func TestDispatchPolicyLoadError(t *testing.T) {
-	ctx, _, _ := newConfigCtx(t)
+	ctx, _, _ := newCtx(t)
 	// A malformed policies.yml makes the loader fail.
 	require.NoError(t, os.WriteFile(filepath.Join(ctx.ConfigDir, "policies.yml"),
 		[]byte("this: : : not valid\n  - broken"), 0644))
