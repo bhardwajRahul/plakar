@@ -14,9 +14,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// ctxOpt seeds an AppContext before a test uses it.
+type ctxOpt func(t *testing.T, ctx *appcontext.AppContext)
+
+// withPolicy adds a policy entry to the context.
+func withPolicy(name string, kv ...string) ctxOpt {
+	return func(t *testing.T, ctx *appcontext.AppContext) {
+		t.Helper()
+		require.NoError(t, dispatchPolicy(ctx, "policy", "add", append([]string{name}, kv...)))
+	}
+}
+
 // newCtx builds an AppContext backed by an empty on-disk config in a temp dir,
 // with stdout and stderr captured.
-func newCtx(t *testing.T) (*appcontext.AppContext, *bytes.Buffer, *bytes.Buffer) {
+func newCtx(t *testing.T, opts ...ctxOpt) (*appcontext.AppContext, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
 
 	tmpDir := t.TempDir()
@@ -31,6 +42,10 @@ func newCtx(t *testing.T) (*appcontext.AppContext, *bytes.Buffer, *bytes.Buffer)
 	ctx.ConfigDir = tmpDir
 	ctx.Stdout = bufOut
 	ctx.Stderr = bufErr
+
+	for _, opt := range opts {
+		opt(t, ctx)
+	}
 
 	return ctx, bufOut, bufErr
 }

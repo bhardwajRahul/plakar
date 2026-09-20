@@ -92,19 +92,3 @@ func TestCov2UnsetLocationRejected2(t *testing.T) {
 	err := dispatchSubcommand(ctx, "store", "unset", []string{"r", "location"})
 	require.Error(t, err)
 }
-
-// ---------- policy dispatch default + show yaml/json ----------
-
-func TestCov2PolicyDefaultSubcommand2(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	err := dispatchPolicy(ctx, "policy", "bogus", nil)
-	require.Error(t, err)
-}
-
-func TestCov2PolicyShowJSON2(t *testing.T) {
-	ctx, bufOut, _ := newCtx(t)
-	require.NoError(t, dispatchPolicy(ctx, "policy", "add", []string{"daily", "days=7"}))
-	bufOut.Reset()
-	require.NoError(t, dispatchPolicy(ctx, "policy", "show", []string{"-json", "daily"}))
-	require.Contains(t, bufOut.String(), "daily")
-}

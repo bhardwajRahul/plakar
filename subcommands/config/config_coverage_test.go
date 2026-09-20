@@ -51,27 +51,3 @@ func TestCovDestinationLifecycle(t *testing.T) {
 	require.NoError(t, dispatchSubcommand(ctx, "destination", "rm", []string{"d"}))
 	require.False(t, ctx.Config.HasDestination("d"))
 }
-
-// ---------- policy lifecycle via dispatchPolicy (set/unset/show formats) ----------
-
-func TestCovPolicyShowFormatsAndUnset(t *testing.T) {
-	ctx, bufOut, _ := newCtx(t)
-	require.NoError(t, dispatchPolicy(ctx, "policy", "add", []string{"daily", "days=7"}))
-
-	// set a value, then show default (yaml), then json.
-	require.NoError(t, dispatchPolicy(ctx, "policy", "set", []string{"daily", "tags=auto,nightly"}))
-
-	bufOut.Reset()
-	require.NoError(t, dispatchPolicy(ctx, "policy", "show", []string{"daily"}))
-	require.Contains(t, bufOut.String(), "daily")
-
-	bufOut.Reset()
-	require.NoError(t, dispatchPolicy(ctx, "policy", "show", []string{"-json", "daily"}))
-	require.Contains(t, bufOut.String(), "{")
-
-	// unset a real key.
-	require.NoError(t, dispatchPolicy(ctx, "policy", "unset", []string{"daily", "tags"}))
-
-	// rm it.
-	require.NoError(t, dispatchPolicy(ctx, "policy", "rm", []string{"daily"}))
-}

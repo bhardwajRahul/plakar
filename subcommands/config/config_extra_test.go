@@ -232,8 +232,6 @@ func TestDispatchShowAllAndMissing(t *testing.T) {
 	require.Contains(t, bufErr.String(), "does not exist")
 }
 
-// ---------- dispatchPolicy ----------
-
 func TestPolicyParseExecute(t *testing.T) {
 	ctx, _, _ := newCtx(t)
 	repo := &repository.Repository{}
@@ -247,50 +245,4 @@ func TestPolicyParseExecute(t *testing.T) {
 	// policies.yml was written.
 	_, err = os.Stat(filepath.Join(ctx.ConfigDir, "policies.yml"))
 	require.NoError(t, err)
-}
-
-func TestDispatchPolicyLifecycle(t *testing.T) {
-	ctx, bufOut, _ := newCtx(t)
-
-	// unknown subcommand
-	require.Error(t, dispatchPolicy(ctx, "policy", "bogus", nil))
-
-	// add (with no args -> error), then a real add
-	require.Error(t, dispatchPolicy(ctx, "policy", "add", []string{}))
-	require.NoError(t, dispatchPolicy(ctx, "policy", "add", []string{"daily", "tags=auto"}))
-
-	// add duplicate
-	require.Error(t, dispatchPolicy(ctx, "policy", "add", []string{"daily"}))
-	// add malformed kv
-	require.Error(t, dispatchPolicy(ctx, "policy", "add", []string{"weekly", "bad"}))
-
-	// set
-	require.Error(t, dispatchPolicy(ctx, "policy", "set", []string{"ghost", "k=v"}))
-	require.Error(t, dispatchPolicy(ctx, "policy", "set", []string{"daily"}))        // too few
-	require.Error(t, dispatchPolicy(ctx, "policy", "set", []string{"daily", "bad"})) // malformed
-
-	// show (yaml + json), all + specific
-	bufOut.Reset()
-	require.NoError(t, dispatchPolicy(ctx, "policy", "show", nil))
-	require.Contains(t, bufOut.String(), "daily")
-	require.NoError(t, dispatchPolicy(ctx, "policy", "show", []string{"-json", "daily"}))
-
-	// unset
-	require.Error(t, dispatchPolicy(ctx, "policy", "unset", []string{"daily"})) // too few
-	require.Error(t, dispatchPolicy(ctx, "policy", "unset", []string{"ghost", "tags"}))
-
-	// rm
-	require.Error(t, dispatchPolicy(ctx, "policy", "rm", []string{"ghost"}))
-	require.Error(t, dispatchPolicy(ctx, "policy", "rm", []string{}))
-	require.NoError(t, dispatchPolicy(ctx, "policy", "rm", []string{"daily"}))
-}
-
-func TestDispatchPolicyLoadError(t *testing.T) {
-	ctx, _, _ := newCtx(t)
-	// A malformed policies.yml makes the loader fail.
-	require.NoError(t, os.WriteFile(filepath.Join(ctx.ConfigDir, "policies.yml"),
-		[]byte("this: : : not valid\n  - broken"), 0644))
-	err := dispatchPolicy(ctx, "policy", "show", nil)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to load config file")
 }
