@@ -37,9 +37,7 @@ func TestValidAliasName(t *testing.T) {
 
 	for name, expect := range suite {
 		got := validAliasName(name)
-		if got != expect {
-			t.Errorf("%s: got %v but expected %v", name, got, expect)
-		}
+		require.Equal(t, expect, got)
 	}
 }
 
