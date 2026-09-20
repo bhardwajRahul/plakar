@@ -54,36 +54,6 @@ func TestCov2StoreExecuteSuccessStatus2(t *testing.T) {
 	require.Equal(t, 0, status)
 }
 
-// ---------- show: aggregate missing-name error & default masking ----------
-
-func TestCov2ShowMissingNameAggregateError2(t *testing.T) {
-	ctx, _, bufErr := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:///x"}))
-	err := dispatchSubcommand(ctx, "store", "show", []string{"r", "ghost"})
-	require.Error(t, err)
-	require.Contains(t, bufErr.String(), "does not exist")
-}
-
-func TestCov2ShowMasksSecretsByDefault2(t *testing.T) {
-	ctx, bufOut, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
-		[]string{"r", "fs:///x", "secret_access_key=topsecret", "x_token=abc"}))
-	bufOut.Reset()
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"r"}))
-	out := bufOut.String()
-	require.Contains(t, out, "********")
-	require.NotContains(t, out, "topsecret")
-	require.NotContains(t, out, "abc")
-}
-
-func TestCov2ShowJSONFormat2(t *testing.T) {
-	ctx, bufOut, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:///x"}))
-	bufOut.Reset()
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-json", "r"}))
-	require.Contains(t, bufOut.String(), "\"location\"")
-}
-
 // ---------- unset cannot remove location ----------
 
 func TestCov2UnsetLocationRejected2(t *testing.T) {

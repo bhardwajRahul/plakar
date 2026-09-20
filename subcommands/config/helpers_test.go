@@ -25,6 +25,14 @@ func withPolicy(name string, kv ...string) ctxOpt {
 	}
 }
 
+// withStore adds a store entry to the context.
+func withStore(name, location string, kv ...string) ctxOpt {
+	return func(t *testing.T, ctx *appcontext.AppContext) {
+		t.Helper()
+		require.NoError(t, dispatchSubcommand(ctx, "store", "add", append([]string{name, location}, kv...)))
+	}
+}
+
 // newCtx builds an AppContext backed by an empty on-disk config in a temp dir,
 // with stdout and stderr captured.
 func newCtx(t *testing.T, opts ...ctxOpt) (*appcontext.AppContext, *bytes.Buffer, *bytes.Buffer) {

@@ -308,3 +308,66 @@ func TestDispatchImport(t *testing.T) {
 		require.Error(t, dispatchSubcommand(ctx, "store", "import", []string{"-rclone", "-config", conf}))
 	})
 }
+
+// TestDispatchShow covers the show action of dispatchSubcommand: the output
+// formats, secret masking, and name selection.
+func TestDispatchShow(t *testing.T) {
+	const loc = "fs:///x"
+
+	t.Run("yaml-masks-secrets", func(t *testing.T) {
+		ctx, bufOut, _ := newCtx(t, withStore("r", loc,
+			"passphrase=topsecret", "secret_access_key=alsosecret", "x_token=abc", "plain=visible"))
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"r"}))
+		out := bufOut.String()
+		require.Contains(t, out, "********")
+		require.NotContains(t, out, "topsecret")
+		require.NotContains(t, out, "alsosecret")
+		require.NotContains(t, out, "abc")
+		require.Contains(t, out, "visible")
+	})
+
+	t.Run("secrets-revealed", func(t *testing.T) {
+		ctx, bufOut, _ := newCtx(t, withStore("r", loc, "passphrase=topsecret"))
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-secrets", "r"}))
+		require.Contains(t, bufOut.String(), "topsecret")
+	})
+
+	t.Run("json", func(t *testing.T) {
+		ctx, bufOut, _ := newCtx(t, withStore("r", loc))
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-json", "r"}))
+		require.Contains(t, bufOut.String(), "{")
+		require.Contains(t, bufOut.String(), `"location"`)
+	})
+
+	t.Run("ini", func(t *testing.T) {
+		ctx, bufOut, _ := newCtx(t, withStore("r", loc, "extra=val"))
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-ini", "r"}))
+		require.Contains(t, bufOut.String(), "[r]")
+		require.Contains(t, bufOut.String(), "extra")
+	})
+
+	t.Run("all", func(t *testing.T) {
+		ctx, bufOut, _ := newCtx(t, withStore("r", loc))
+
+		require.NoError(t, dispatchSubcommand(ctx, "store", "show", nil))
+		require.Contains(t, bufOut.String(), "r")
+	})
+
+	t.Run("unknown-name", func(t *testing.T) {
+		ctx, _, bufErr := newCtx(t, withStore("r", loc))
+
+		require.Error(t, dispatchSubcommand(ctx, "store", "show", []string{"ghost"}))
+		require.Contains(t, bufErr.String(), "does not exist")
+	})
+
+	t.Run("known-and-unknown-name", func(t *testing.T) {
+		ctx, _, bufErr := newCtx(t, withStore("r", loc))
+
+		require.Error(t, dispatchSubcommand(ctx, "store", "show", []string{"r", "ghost"}))
+		require.Contains(t, bufErr.String(), "does not exist")
+	})
+}

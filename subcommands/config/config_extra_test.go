@@ -181,57 +181,6 @@ func TestDispatchRm(t *testing.T) {
 	require.False(t, ctx.Config.HasRepository("r"))
 }
 
-func TestDispatchShowSecretsRevealed(t *testing.T) {
-	// -secrets must be checked first: non-secret show mutates the in-memory
-	// config map (overwriting the value with "********"), so it has to run on a
-	// fresh config.
-	ctx, bufOut, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
-		[]string{"r", "fs:/tmp/r", "passphrase=topsecret"}))
-
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-secrets", "r"}))
-	require.Contains(t, bufOut.String(), "topsecret")
-}
-
-func TestDispatchShowFormats(t *testing.T) {
-	ctx, bufOut, _ := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add",
-		[]string{"r", "fs:/tmp/r", "passphrase=topsecret", "plain=visible"}))
-
-	// default (yaml), secrets masked
-	bufOut.Reset()
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"r"}))
-	require.Contains(t, bufOut.String(), "********")
-	require.NotContains(t, bufOut.String(), "topsecret")
-	require.Contains(t, bufOut.String(), "visible")
-
-	// json
-	bufOut.Reset()
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-json", "r"}))
-	require.Contains(t, bufOut.String(), "{")
-
-	// ini
-	bufOut.Reset()
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", []string{"-ini", "r"}))
-	require.Contains(t, bufOut.String(), "[r]")
-}
-
-func TestDispatchShowAllAndMissing(t *testing.T) {
-	ctx, bufOut, bufErr := newCtx(t)
-	require.NoError(t, dispatchSubcommand(ctx, "store", "add", []string{"r", "fs:/tmp/r"}))
-
-	// no name -> show all
-	bufOut.Reset()
-	require.NoError(t, dispatchSubcommand(ctx, "store", "show", nil))
-	require.Contains(t, bufOut.String(), "r")
-
-	// a missing name reports an error and writes to stderr
-	bufErr.Reset()
-	err := dispatchSubcommand(ctx, "store", "show", []string{"ghost"})
-	require.Error(t, err)
-	require.Contains(t, bufErr.String(), "does not exist")
-}
-
 func TestPolicyParseExecute(t *testing.T) {
 	ctx, _, _ := newCtx(t)
 	repo := &repository.Repository{}
