@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"maps"
-	"net/http"
 	"os"
 	"strings"
 
@@ -200,21 +199,12 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 
 		var rd = ctx.Stdin
 		if opt_config != "" {
-			if strings.HasPrefix(opt_config, "http://") || strings.HasPrefix(opt_config, "https://") {
-				resp, err := http.Get(opt_config)
-				if err != nil {
-					return fmt.Errorf("failed to fetch config from %q: %w", opt_config, err)
-				}
-				defer resp.Body.Close()
-				rd = resp.Body
-			} else {
-				f, err := os.Open(opt_config)
-				if err != nil {
-					return fmt.Errorf("failed to open file %q: %w", opt_config, err)
-				}
-				defer f.Close()
-				rd = f
+			f, err := os.Open(opt_config)
+			if err != nil {
+				return fmt.Errorf("failed to open file %q: %w", opt_config, err)
 			}
+			defer f.Close()
+			rd = f
 		}
 
 		thirdParty := ""
@@ -228,6 +218,22 @@ func dispatchSubcommand(ctx *appcontext.AppContext, cmd string, subcmd string, a
 		}
 		if len(newConfMap) == 0 {
 			return fmt.Errorf("no valid %ss found in config", cmd)
+		}
+
+		if cmd == "store" {
+			for section := range newConfMap {
+				for k := range newConfMap[section] {
+					if k == "passphrase_cmd" {
+						fmt.Fprintln(ctx.Stderr,
+							cmd, fmt.Sprintf("%q", section),
+							"has a passphrase_cmd which will be",
+							"executed when unlocking the store",
+						)
+						fmt.Fprintln(ctx.Stderr,
+							"make sure you trust this configuration")
+					}
+				}
+			}
 		}
 
 		if flags.NArg() == 0 {
